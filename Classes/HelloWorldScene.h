@@ -39,6 +39,18 @@ public:
     
     // implement the "static create()" method manually
     CREATE_FUNC(HelloWorld);
+
+    void plantAtPosition(const cocos2d::Vec2& pos);
+
+    void addPeashooterAnimation(cocos2d::Sprite* sprite);
+
+private:
+    int _row = 5;
+    int _col = 9;
+    bool _plantSelected = false;
+    cocos2d::Size _cellSize;
+    cocos2d::Vec2 _gridOrigin;
+
 };
 
 #endif // __HELLOWORLD_SCENE_H__

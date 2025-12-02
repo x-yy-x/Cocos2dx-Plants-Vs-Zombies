@@ -41,6 +41,7 @@ static void problemLoading(const char* filename)
 // on "init" you need to initialize your instance
 bool HelloWorld::init()
 {
+    CCLOG("Init started!");
     //////////////////////////////
     // 1. super init first
     if ( !Scene::init() )
@@ -49,7 +50,12 @@ bool HelloWorld::init()
     }
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
+
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
+
+    //初始写死，后续需要修改
+    _cellSize.setSize(130, 120);
+    _gridOrigin = origin + Vec2(10, 10);
 
     /////////////////////////////
     // 2. add a menu item with "X" image, which is clicked to quit the program
@@ -101,19 +107,92 @@ bool HelloWorld::init()
     }
 
     // add "HelloWorld" splash screen"
-    auto sprite = Sprite::create("HelloWorld.png");
+    auto sprite = Sprite::create("background.png");
+    auto sprite_seedpacket_peashooter = Sprite::create("seedpacket_peashooter.png");
     if (sprite == nullptr)
     {
-        problemLoading("'HelloWorld.png'");
+        problemLoading("'background.png'");
     }
     else
     {
         // position the sprite on the center of the screen
         sprite->setPosition(Vec2(visibleSize.width/2 + origin.x, visibleSize.height/2 + origin.y));
 
+
+        auto bgSize = sprite->getContentSize();
+
+
+        float scaleX = visibleSize.width / bgSize.width;
+        float scaleY = visibleSize.height / bgSize.height;
+
+        sprite->setScale(scaleX, scaleY);
+
         // add the sprite as a child to this layer
         this->addChild(sprite, 0);
     }
+
+    if (sprite_seedpacket_peashooter == nullptr)
+    {
+        problemLoading("'seedpacket_peashooter.png'");
+    }
+    else
+    {
+        // position the sprite on the center of the screen
+        sprite_seedpacket_peashooter->setPosition(Vec2(187,667));
+
+
+        auto bgSize = sprite_seedpacket_peashooter->getContentSize();
+
+
+
+
+        // add the sprite as a child to this layer
+        this->addChild(sprite_seedpacket_peashooter, 0);
+    }
+
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(true);
+    listener->onTouchBegan = [this, sprite_seedpacket_peashooter](Touch* touch, Event* event) {
+        Vec2 pos = this->convertToNodeSpace(touch->getLocation());
+
+        CCLOG("touch at: %f, %f", pos.x, pos.y);
+
+        if (sprite_seedpacket_peashooter->getBoundingBox().containsPoint(pos)) {
+            this->_plantSelected = true;
+            CCLOG("peashooter card selected");
+            return true;
+        }
+        return false; // 返回 false：不拦截事件
+        };
+
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, this);
+
+    auto touchListener = EventListenerTouchOneByOne::create();
+
+    // 点击开始
+    touchListener->onTouchBegan = [](Touch* touch, Event* event) {
+        return true;   // 必须 return true 才能接收到 touch ended
+        };
+
+    // 点击结束
+    touchListener->onTouchEnded = [this](Touch* touch, Event* event) {
+        Vec2 pos = touch->getLocation();
+
+        // 如果当前没有选植物 → 什么都不做
+        if (!this->_plantSelected)
+            return;
+
+        CCLOG("Touch at: %f, %f", pos.x, pos.y);
+
+        // 种植物
+        this->plantAtPosition(pos);
+
+        // 重置选择状态
+        this->_plantSelected = false;
+        };
+
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, this);
+
     return true;
 }
 
@@ -129,4 +208,69 @@ void HelloWorld::menuCloseCallback(Ref* pSender)
     //_eventDispatcher->dispatchEvent(&customEndEvent);
 
 
+}
+
+void HelloWorld::plantAtPosition(const Vec2& pos)
+{
+    int col = (pos.x - _gridOrigin.x) / _cellSize.width;
+    int row = (pos.y - _gridOrigin.y) / _cellSize.height;
+
+    CCLOG("row=%d col=%d", row, col);
+
+    // 防止越界（可以根据你的草地排布调整）
+    if (col < 0 || col >= 9 || row < 0 || row >= 5) {
+        CCLOG("invalid grid cell");
+        return;
+    }
+
+    // 3. 计算网格中心点的像素位置
+    float centerX = _gridOrigin.x + col * _cellSize.width + _cellSize.width * 0.5f;
+    float centerY = _gridOrigin.y + row * _cellSize.height + _cellSize.height * 0.5f;
+
+    int dx = 30, dy = 8;
+    Vec2 plantPos(centerX + dx, centerY + dy);
+
+    // 4. 创建一个豌豆射手 sprite
+    auto plant = Sprite::create("peashooter_spritesheet.png", Rect(0, 512 - 128, 85.333, 128));
+    plant->setPosition(plantPos);
+    this->addChild(plant);
+
+    // 加动画
+    addPeashooterAnimation(plant);
+    CCLOG("planted peashooter at row=%d, col=%d", row, col);
+}
+
+void HelloWorld::addPeashooterAnimation(Sprite* sprite)
+{
+    const float sheetWidth = 512.0f;
+    const float sheetHeight = 512.0f;
+
+    const int cols = 6;
+    const int rows = 4;
+
+    const float frameWidth = 100;   // ≈ 85.333
+    const float frameHeight = 100;// = 128
+
+    Vector<SpriteFrame*> frames;
+
+    for (int row = 0; row < 4; row++)
+    {
+        for (int col = 0; col < 6; col++)
+        {
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                "Peashooter_spritesheet.png",
+                Rect(x, y, frameWidth, frameHeight)
+            );
+
+            frames.pushBack(frame);
+        }
+    }
+
+    auto animation = Animation::createWithSpriteFrames(frames,0.07f);
+    auto animate = Animate::create(animation);
+
+    sprite->runAction(RepeatForever::create(animate));
 }
