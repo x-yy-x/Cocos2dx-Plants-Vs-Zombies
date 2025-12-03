@@ -1,8 +1,9 @@
 #include "GameWorld.h"
-#include "GameWorld.h"
 #include "BackGround.h"
 #include "Plant.h"
 #include "PeaShooter.h"
+#include "Sunflower.h"
+#include "Wallnut.h"
 #include "Zombie.h"
 #include "Shovel.h"
 #include "Bullet.h"
@@ -77,6 +78,31 @@ bool GameWorld::init()
     {
         sprite_seedpacket_peashooter->setPosition(Vec2(187, 667));
         this->addChild(sprite_seedpacket_peashooter, 0);
+        sprite_seedpacket.push_back(sprite_seedpacket_peashooter);
+    }
+
+    auto sprite_seedpacket_sunflower = Sprite::create("seedpacket_sunflower.png");
+    if (sprite_seedpacket_sunflower == nullptr)
+    {
+        problemLoading("'seedpacket_sunflower.png'");
+    }
+    else
+    {
+        sprite_seedpacket_sunflower->setPosition(Vec2(287, 667));
+        this->addChild(sprite_seedpacket_sunflower, 0);
+        sprite_seedpacket.push_back(sprite_seedpacket_sunflower);
+    }
+
+    auto sprite_seedpacket_wallnut = Sprite::create("seedpacket_wallnut.png");
+    if (sprite_seedpacket_wallnut == nullptr)
+    {
+        problemLoading("'seedpacket_wallnut.png'");
+    }
+    else
+    {
+        sprite_seedpacket_wallnut->setPosition(Vec2(387, 667));
+        this->addChild(sprite_seedpacket_wallnut, 0);
+        sprite_seedpacket.push_back(sprite_seedpacket_wallnut);
     }
 
     // Create shovel background
@@ -121,7 +147,7 @@ bool GameWorld::init()
     }
 
     // Setup user interaction for planting and shoveling
-    setupUserInteraction(sprite_seedpacket_peashooter);
+    setupUserInteraction();
 
     // Enable update loop
     this->scheduleUpdate();
@@ -129,12 +155,12 @@ bool GameWorld::init()
     return true;
 }
 
-void GameWorld::setupUserInteraction(Sprite* sprite_seedpacket_peashooter)
+void GameWorld::setupUserInteraction()
 {
     auto unifiedListener = EventListenerTouchOneByOne::create();
     unifiedListener->setSwallowTouches(true); 
 
-    unifiedListener->onTouchBegan = [this, sprite_seedpacket_peashooter](Touch* touch, Event* event) {
+    unifiedListener->onTouchBegan = [this](Touch* touch, Event* event) {
         Vec2 pos = this->convertToNodeSpace(touch->getLocation());
 
         if (_shovel && _shovel->containsPoint(pos)) {
@@ -143,8 +169,21 @@ void GameWorld::setupUserInteraction(Sprite* sprite_seedpacket_peashooter)
             return true;
         }
 
-        if (sprite_seedpacket_peashooter && sprite_seedpacket_peashooter->getBoundingBox().containsPoint(pos)) {
+        if (sprite_seedpacket[0] && sprite_seedpacket[0]->getBoundingBox().containsPoint(pos)) {
             this->_plantSelected = true;
+            plantType = 0;
+            return true;
+        }
+
+        if (sprite_seedpacket[1] && sprite_seedpacket[1]->getBoundingBox().containsPoint(pos)) {
+            this->_plantSelected = true;
+            plantType = 1;
+            return true;
+        }
+
+        if (sprite_seedpacket[2] && sprite_seedpacket[2]->getBoundingBox().containsPoint(pos)) {
+            this->_plantSelected = true;
+            plantType = 2;
             return true;
         }
 
@@ -177,7 +216,7 @@ void GameWorld::setupUserInteraction(Sprite* sprite_seedpacket_peashooter)
 
         if (_plantSelected)
         {
-            bool planted = this->tryPlantAtPosition(pos);
+            bool planted = this->tryPlantAtPosition(pos, plantType);
             
             if (planted) CCLOG("Plant placed!");
             else CCLOG("Cannot plant!");
@@ -189,21 +228,46 @@ void GameWorld::setupUserInteraction(Sprite* sprite_seedpacket_peashooter)
     _eventDispatcher->addEventListenerWithSceneGraphPriority(unifiedListener, this);
 }
 
-bool GameWorld::tryPlantAtPosition(const Vec2& globalPos)
+bool GameWorld::tryPlantAtPosition(const Vec2& globalPos,int plantType)
 {
     int row, col;
-    
+    CCLOG("plantType=%d", plantType);
     if (!getGridCoordinates(globalPos, row, col)) return false;
 
     if (_plantGrid[row][col] != nullptr) return false;
 
-    auto peaShooter = PeaShooter::plantAtPosition(globalPos);
-    if (peaShooter)
-    {
-        this->addChild(peaShooter, PLANT_LAYER);
-        _plantGrid[row][col] = peaShooter;
-        _plants.push_back(peaShooter); // Add to vector for easier iteration if needed
-        return true;
+    if (plantType == 0) {
+        plantType = -1;
+        auto peaShooter = PeaShooter::plantAtPosition(globalPos);
+        if (peaShooter)
+        {
+            this->addChild(peaShooter, PLANT_LAYER);
+            _plantGrid[row][col] = peaShooter;
+            _plants.push_back(peaShooter); // Add to vector for easier iteration if needed
+            return true;
+        }
+    }
+    else if (plantType == 1) {
+        plantType = -1;
+        auto sunflower = Sunflower::plantAtPosition(globalPos);
+        if (sunflower)
+        {
+            this->addChild(sunflower, PLANT_LAYER);
+            _plantGrid[row][col] = sunflower;
+            _plants.push_back(sunflower); // Add to vector for easier iteration if needed
+            return true;
+        }
+    }
+    else if (plantType == 2) {
+        plantType = -1;
+        auto wallnut = Wallnut::plantAtPosition(globalPos);
+        if (wallnut)
+        {
+            this->addChild(wallnut, PLANT_LAYER);
+            _plantGrid[row][col] = wallnut;
+            _plants.push_back(wallnut); // Add to vector for easier iteration if needed
+            return true;
+        }
     }
 
     return false;

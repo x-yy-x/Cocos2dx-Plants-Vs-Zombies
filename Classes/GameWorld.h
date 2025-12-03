@@ -35,14 +35,14 @@ private:
      * @brief Setup user interaction (touch events for planting and shoveling)
      * @param sprite_seedpacket_peashooter The seed packet sprite for peashooter
      */
-    void setupUserInteraction(cocos2d::Sprite* sprite_seedpacket_peashooter);
+    void setupUserInteraction();
 
     /**
      * @brief Try to plant a plant at the given position
      * @param globalPos The global position where the user touched
      * @return true if planting was successful, false otherwise
      */
-    bool tryPlantAtPosition(const cocos2d::Vec2& globalPos);
+    bool tryPlantAtPosition(const cocos2d::Vec2& globalPos,int plantType);
 
     /**
      * @brief Try to remove a plant at the given position using shovel
@@ -122,6 +122,10 @@ private:
     int _tickCount;                  // Total tick count (1 tick = 1/30 second)
     int _nextWaveTickCount;          // Tick count when next wave should spawn
     bool _gameStarted;               // Whether game has started
+
+
+    std::vector<cocos2d::Sprite*> sprite_seedpacket;
+    int plantType = -1;
 };
 
 // Wave spawning parameters (reduced difficulty)
