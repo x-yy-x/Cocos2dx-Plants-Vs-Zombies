@@ -25,8 +25,8 @@
 #ifndef __HELLOWORLD_SCENE_H__
 #define __HELLOWORLD_SCENE_H__
 
+#pragma once
 #include "cocos2d.h"
-
 class HelloWorld : public cocos2d::Scene
 {
 public:
@@ -50,7 +50,8 @@ private:
     bool _plantSelected = false;
     cocos2d::Size _cellSize;
     cocos2d::Vec2 _gridOrigin;
-
+    std::vector<cocos2d::Sprite*>_plant;
 };
+
 
 #endif // __HELLOWORLD_SCENE_H__

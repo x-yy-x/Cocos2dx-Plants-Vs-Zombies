@@ -23,7 +23,7 @@
  ****************************************************************************/
 
 #include "HelloWorldScene.h"
-
+#include "Zombie.h"
 USING_NS_CC;
 
 Scene* HelloWorld::createScene()
@@ -193,6 +193,18 @@ bool HelloWorld::init()
 
     _eventDispatcher->addEventListenerWithSceneGraphPriority(touchListener, this);
 
+    // 1. 创建一个僵尸
+    auto zombie = Zombie::createZombie();
+
+    // 2. 设置僵尸初始位置（从右边走进来）
+    zombie->setPosition(Vec2(1300, 120));  // 根据你的草坪高度调整
+
+    // 3. 把植物列表告诉僵尸（非常重要）
+    zombie->setPlantList(&_plant);
+
+    // 4. 把僵尸加入场景
+    this->addChild(zombie, 5);
+
     return true;
 }
 
@@ -231,7 +243,8 @@ void HelloWorld::plantAtPosition(const Vec2& pos)
     Vec2 plantPos(centerX + dx, centerY + dy);
 
     // 4. 创建一个豌豆射手 sprite
-    auto plant = Sprite::create("peashooter_spritesheet.png", Rect(0, 512 - 128, 85.333, 128));
+    auto plant = Sprite::create("peashooter_spritesheet.png", Rect(0, 0, 100, 100));
+    _plant.push_back(plant);
     plant->setPosition(plantPos);
     this->addChild(plant);
 
@@ -274,3 +287,9 @@ void HelloWorld::addPeashooterAnimation(Sprite* sprite)
 
     sprite->runAction(RepeatForever::create(animate));
 }
+
+
+
+
+
+
