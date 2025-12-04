@@ -5,6 +5,9 @@
 #include "GameDefs.h"
 #include "Pea.h"
 
+// Forward declaration
+class Sun;
+
 class Sunflower : public Plant
 {
 public:
@@ -29,6 +32,12 @@ public:
      */
     virtual void update(float delta) override;
 
+    /**
+     * @brief Produce sun if cooldown is finished
+     * @return Sun* Returns Sun instance if ready, nullptr otherwise
+     */
+    Sun* produceSun();
+
 
 protected:
     // ----------------------------------------------------
@@ -38,6 +47,7 @@ protected:
     static const cocos2d::Rect INITIAL_PIC_RECT;
     static const cocos2d::Size OBJECT_SIZE;
     static const float ATTACK_RANGE;  // PeaShooter's attack range
+    static const float SUN_PRODUCTION_INTERVAL;  // Time between sun productions (24 seconds)
 
     /**
      * @brief Set up animation frames

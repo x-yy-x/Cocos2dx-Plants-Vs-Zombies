@@ -8,6 +8,11 @@
 #include "Shovel.h"
 #include "Bullet.h"
 #include "Pea.h"
+#include "SeedPacket.h"
+#include "PeaShooterSeedPacket.h"
+#include "SunflowerSeedPacket.h"
+#include "WallnutSeedPacket.h"
+#include "Sun.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -46,15 +51,22 @@ bool GameWorld::init()
         }
     }
     _plantSelected = false;
+    _selectedSeedPacketIndex = -1;
+    _previewPlant = nullptr;
     _shovelSelected = false;
     _shovel = nullptr;
     _shovelBack = nullptr;
+    _sunCount = 10000; // Initial sun count
+    _sunCountLabel = nullptr;
 
     // Initialize wave spawning system
     _currentWave = 0;
     _tickCount = 0;
     _nextWaveTickCount = FIRST_WAVE_TICK;
     _gameStarted = true;
+
+    // Initialize sun spawning system
+    _sunSpawnTimer = 0.0f;
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
@@ -68,41 +80,36 @@ bool GameWorld::init()
     }
     this->addChild(backGround, BACKGROUND_LAYER);
 
-    // Create peashooter seed packet sprite
-    auto sprite_seedpacket_peashooter = Sprite::create("seedpacket_peashooter.png");
-    if (sprite_seedpacket_peashooter == nullptr)
+    // Create seed packets
+    auto sunflowerPacket = SunflowerSeedPacket::create();
+    auto peashooterPacket = PeaShooterSeedPacket::create();
+    auto wallnutPacket = WallnutSeedPacket::create();
+
+    if (sunflowerPacket && peashooterPacket && wallnutPacket)
     {
-        problemLoading("'seedpacket_peashooter.png'");
-    }
-    else
-    {
-        sprite_seedpacket_peashooter->setPosition(Vec2(187, 667));
-        this->addChild(sprite_seedpacket_peashooter, 0);
-        sprite_seedpacket.push_back(sprite_seedpacket_peashooter);
+        _seedPackets.push_back(sunflowerPacket);
+        _seedPackets.push_back(peashooterPacket);
+        _seedPackets.push_back(wallnutPacket);
+
+        // Set positions for seed packets (more compact spacing)
+        float baseX = 187.0f;
+        float baseY = 667.0f;
+        float spacing = 65.0f;  // Reduced spacing for more compact layout
+
+        for (size_t i = 0; i < _seedPackets.size(); ++i)
+        {
+            _seedPackets[i]->setPosition(Vec2(baseX + i * spacing, baseY));
+            this->addChild(_seedPackets[i], 5); // High layer for UI
+        }
     }
 
-    auto sprite_seedpacket_sunflower = Sprite::create("seedpacket_sunflower.png");
-    if (sprite_seedpacket_sunflower == nullptr)
+    // Create sun counter label
+    _sunCountLabel = Label::createWithSystemFont(std::to_string(_sunCount), "Arial", 20);
+    if (_sunCountLabel)
     {
-        problemLoading("'seedpacket_sunflower.png'");
-    }
-    else
-    {
-        sprite_seedpacket_sunflower->setPosition(Vec2(287, 667));
-        this->addChild(sprite_seedpacket_sunflower, 0);
-        sprite_seedpacket.push_back(sprite_seedpacket_sunflower);
-    }
-
-    auto sprite_seedpacket_wallnut = Sprite::create("seedpacket_wallnut.png");
-    if (sprite_seedpacket_wallnut == nullptr)
-    {
-        problemLoading("'seedpacket_wallnut.png'");
-    }
-    else
-    {
-        sprite_seedpacket_wallnut->setPosition(Vec2(387, 667));
-        this->addChild(sprite_seedpacket_wallnut, 0);
-        sprite_seedpacket.push_back(sprite_seedpacket_wallnut);
+        _sunCountLabel->setPosition(Vec2(100, visibleSize.height - 90));
+        _sunCountLabel->setColor(Color3B::BLACK);
+        this->addChild(_sunCountLabel, 10); // Very high layer for UI
     }
 
     // Create shovel background
@@ -114,7 +121,7 @@ bool GameWorld::init()
     else
     {
         _shovelBack->setPosition(Vec2(visibleSize.width - 100, visibleSize.height - 80));
-        this->addChild(_shovelBack, 1);
+        this->addChild(_shovelBack, 5);
     }
 
     // Create shovel
@@ -127,15 +134,16 @@ bool GameWorld::init()
     {
         Vec2 shovelPos = _shovelBack ? _shovelBack->getPosition() : Vec2(visibleSize.width - 100, visibleSize.height - 80);
         _shovel->setOriginalPosition(shovelPos);
-        this->addChild(_shovel, 2);
+        this->addChild(_shovel, 6);
     }
 
     // DEBUG: Spawn one zombie at start for testing
+    // TODO: Remove this before final release
     {
         auto debugZombie = Zombie::createZombie();
         if (debugZombie)
         {
-            int row = 2; // Middle row for testing
+            int row = 2;
             const float ZOMBIE_Y_OFFSET = 0.7f;
             float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
             float x = visibleSize.width - 200; 
@@ -146,7 +154,7 @@ bool GameWorld::init()
         }
     }
 
-    // Setup user interaction for planting and shoveling
+    // Setup user interaction
     setupUserInteraction();
 
     // Enable update loop
@@ -163,44 +171,84 @@ void GameWorld::setupUserInteraction()
     unifiedListener->onTouchBegan = [this](Touch* touch, Event* event) {
         Vec2 pos = this->convertToNodeSpace(touch->getLocation());
 
+        // Check if touched any sun (highest priority)
+        for (auto sun : _suns)
+        {
+            if (sun && sun->isCollectible())
+            {
+                if (sun->getBoundingBox().containsPoint(pos))
+                {
+                    int sunValue = sun->collect();
+                    _sunCount += sunValue;
+                    updateSunDisplay();
+                    CCLOG("Sun collected! +%d sun (Total: %d)", sunValue, _sunCount);
+                    return true;
+                }
+            }
+        }
+
+        // Check if touched shovel
         if (_shovel && _shovel->containsPoint(pos)) {
             _shovelSelected = true;
             _shovel->setDragging(true);
             return true;
         }
 
-        if (sprite_seedpacket[0] && sprite_seedpacket[0]->getBoundingBox().containsPoint(pos)) {
-            this->_plantSelected = true;
-            plantType = 0;
-            return true;
-        }
+        // Check if touched any seed packet
+        for (size_t i = 0; i < _seedPackets.size(); ++i)
+        {
+            if (_seedPackets[i] && _seedPackets[i]->getBoundingBox().containsPoint(pos))
+            {
+                SeedPacket* packet = _seedPackets[i];
+                
+                // Check if ready and enough sun
+                if (packet->isReady() && _sunCount >= packet->getSunCost())
+                {
+                    _plantSelected = true;
+                    _selectedSeedPacketIndex = i;
 
-        if (sprite_seedpacket[1] && sprite_seedpacket[1]->getBoundingBox().containsPoint(pos)) {
-            this->_plantSelected = true;
-            plantType = 1;
-            return true;
-        }
+                    // Create preview plant
+                    _previewPlant = packet->createPreviewPlant();
+                    if (_previewPlant)
+                    {
+                        _previewPlant->setPosition(touch->getLocation());
+                        this->addChild(_previewPlant, 10); // Very high layer
+                    }
 
-        if (sprite_seedpacket[2] && sprite_seedpacket[2]->getBoundingBox().containsPoint(pos)) {
-            this->_plantSelected = true;
-            plantType = 2;
-            return true;
+                    CCLOG("Seed packet %d selected", (int)i);
+                    return true;
+                }
+                else
+                {
+                    CCLOG("Seed packet not ready or not enough sun!");
+                    return true;
+                }
+            }
         }
 
         return true;
     };
 
     unifiedListener->onTouchMoved = [this](Touch* touch, Event* event) {
+        Vec2 pos = touch->getLocation();
+
+        // Handle shovel dragging
         if (_shovelSelected && _shovel)
         {
-            Vec2 pos = touch->getLocation();
             _shovel->updatePosition(pos);
+        }
+
+        // Handle preview plant dragging
+        if (_plantSelected && _previewPlant)
+        {
+            _previewPlant->setPosition(pos);
         }
     };
 
     unifiedListener->onTouchEnded = [this](Touch* touch, Event* event) {
         Vec2 pos = touch->getLocation();
 
+        // Handle shovel removal
         if (_shovelSelected)
         {
             Vec2 shovelTipPos = _shovel ? _shovel->getPosition() : pos;
@@ -214,60 +262,64 @@ void GameWorld::setupUserInteraction()
             return;
         }
 
+        // Handle planting
         if (_plantSelected)
         {
-            bool planted = this->tryPlantAtPosition(pos, plantType);
-            
-            if (planted) CCLOG("Plant placed!");
-            else CCLOG("Cannot plant!");
+            SeedPacket* selectedPacket = nullptr;
+            if (_selectedSeedPacketIndex >= 0 && _selectedSeedPacketIndex < (int)_seedPackets.size())
+            {
+                selectedPacket = _seedPackets[_selectedSeedPacketIndex];
+            }
+
+            if (selectedPacket)
+            {
+                bool planted = this->tryPlantAtPosition(pos, selectedPacket);
+                
+                if (planted)
+                {
+                    CCLOG("Plant placed!");
+                    // Deduct sun
+                    _sunCount -= selectedPacket->getSunCost();
+                    updateSunDisplay();
+                    // Start cooldown
+                    selectedPacket->startCooldown();
+                }
+                else
+                {
+                    CCLOG("Cannot plant!");
+                }
+            }
+
+            // Remove preview plant
+            if (_previewPlant)
+            {
+                this->removeChild(_previewPlant);
+                _previewPlant = nullptr;
+            }
 
             _plantSelected = false;
+            _selectedSeedPacketIndex = -1;
         }
     };
 
     _eventDispatcher->addEventListenerWithSceneGraphPriority(unifiedListener, this);
 }
 
-bool GameWorld::tryPlantAtPosition(const Vec2& globalPos,int plantType)
+bool GameWorld::tryPlantAtPosition(const Vec2& globalPos, SeedPacket* seedPacket)
 {
     int row, col;
-    CCLOG("plantType=%d", plantType);
+    
     if (!getGridCoordinates(globalPos, row, col)) return false;
 
     if (_plantGrid[row][col] != nullptr) return false;
 
-    if (plantType == 0) {
-        plantType = -1;
-        auto peaShooter = PeaShooter::plantAtPosition(globalPos);
-        if (peaShooter)
-        {
-            this->addChild(peaShooter, PLANT_LAYER);
-            _plantGrid[row][col] = peaShooter;
-            _plants.push_back(peaShooter); // Add to vector for easier iteration if needed
-            return true;
-        }
-    }
-    else if (plantType == 1) {
-        plantType = -1;
-        auto sunflower = Sunflower::plantAtPosition(globalPos);
-        if (sunflower)
-        {
-            this->addChild(sunflower, PLANT_LAYER);
-            _plantGrid[row][col] = sunflower;
-            _plants.push_back(sunflower); // Add to vector for easier iteration if needed
-            return true;
-        }
-    }
-    else if (plantType == 2) {
-        plantType = -1;
-        auto wallnut = Wallnut::plantAtPosition(globalPos);
-        if (wallnut)
-        {
-            this->addChild(wallnut, PLANT_LAYER);
-            _plantGrid[row][col] = wallnut;
-            _plants.push_back(wallnut); // Add to vector for easier iteration if needed
-            return true;
-        }
+    // Use seed packet to create plant
+    Plant* plant = seedPacket->plantAt(globalPos);
+    if (plant)
+    {
+        this->addChild(plant, PLANT_LAYER);
+        _plantGrid[row][col] = plant;
+        return true;
     }
 
     return false;
@@ -297,10 +349,6 @@ bool GameWorld::tryRemovePlantAtPosition(const Vec2& globalPos)
     this->removeChild(plantToRemove);
     _plantGrid[row][col] = nullptr;
     
-    // Also remove from _plants vector
-    auto it = std::find(_plants.begin(), _plants.end(), plantToRemove);
-    if (it != _plants.end()) _plants.erase(it);
-    
     return true;
 }
 
@@ -320,6 +368,14 @@ void GameWorld::update(float delta)
         _nextWaveTickCount = _tickCount + interval;
     }
 
+    // Sun spawning system (every 5 seconds)
+    _sunSpawnTimer += delta;
+    if (_sunSpawnTimer >= 5.0f)
+    {
+        spawnSunFromSky();
+        _sunSpawnTimer = 0.0f;
+    }
+
     // Update Plants (Firing logic)
     updatePlants(delta);
 
@@ -329,10 +385,14 @@ void GameWorld::update(float delta)
     // Update Zombies (Movement and Eating)
     updateZombies(delta);
 
+    // Update Suns (Movement and lifetime)
+    updateSuns(delta);
+
     // Cleanup
     removeDeadPlants();
     removeDeadZombies();
     removeInactiveBullets();
+    removeExpiredSuns();
 }
 
 void GameWorld::spawnZombieWave(int waveNumber)
@@ -367,34 +427,44 @@ void GameWorld::updatePlants(float delta)
             Plant* plant = _plantGrid[row][col];
             if (plant && !plant->isDead())
             {
-                // Check if any zombie exists to the right of this plant in the same row
-                // Optimization: Only check if plant can attack? 
-                // For now, we check zombies first, then try to attack.
-                // Alternatively, we can let plant->attack() decide, but passing zombies to it might be complex.
-                // Current logic: Check zombie presence -> Call attack() -> If bullet returned, add it.
-                
-                bool zombieDetected = false;
-                float plantX = plant->getPositionX();
-                
-                for (auto zombie : _zombiesInRow[row])
+                // Check if plant is a Sunflower
+                Sunflower* sunflower = dynamic_cast<Sunflower*>(plant);
+                if (sunflower)
                 {
-                    if (zombie && !zombie->isDead() && zombie->getPositionX() > plantX)
+                    // Try to produce sun
+                    Sun* sun = sunflower->produceSun();
+                    if (sun)
                     {
-                        zombieDetected = true;
-                        break;
+                        this->addChild(sun, SUNLAYER);
+                        _suns.push_back(sun);
+                        CCLOG("Sunflower produced sun at position (%.2f, %.2f)", sun->getPositionX(), sun->getPositionY());
                     }
                 }
-
-                if (zombieDetected)
+                else
                 {
-                    // Try to attack
-                    // This is generic for all plants. If a plant doesn't attack, it returns nullptr.
-                    Bullet* bullet = plant->attack();
-                    if (bullet)
+                    // For attacking plants, check for zombies
+                    bool zombieDetected = false;
+                    float plantX = plant->getPositionX();
+                    
+                    for (auto zombie : _zombiesInRow[row])
                     {
-                        // Add bullet to scene and container
-                        this->addChild(bullet, BULLET_LAYER);
-                        _bullets.push_back(bullet);
+                        if (zombie && !zombie->isDead() && zombie->getPositionX() > plantX)
+                        {
+                            zombieDetected = true;
+                            break;
+                        }
+                    }
+
+                    if (zombieDetected)
+                    {
+                        // Try to attack (generic for all plants)
+                        Bullet* bullet = plant->attack();
+                        if (bullet)
+                        {
+                            // Add bullet to scene and container
+                            this->addChild(bullet, BULLET_LAYER);
+                            _bullets.push_back(bullet);
+                        }
                     }
                 }
             }
@@ -475,9 +545,6 @@ void GameWorld::removeDeadPlants()
             {
                 this->removeChild(plant);
                 _plantGrid[row][col] = nullptr;
-                
-                auto it = std::find(_plants.begin(), _plants.end(), plant);
-                if (it != _plants.end()) _plants.erase(it);
             }
         }
     }
@@ -522,6 +589,63 @@ void GameWorld::removeInactiveBullets()
         {
             ++it;
         }
+    }
+}
+
+void GameWorld::updateSunDisplay()
+{
+    if (_sunCountLabel)
+    {
+        _sunCountLabel->setString(std::to_string(_sunCount));
+    }
+}
+
+void GameWorld::updateSuns(float delta)
+{
+    for (auto sun : _suns)
+    {
+        if (sun)
+        {
+            sun->update(delta);
+        }
+    }
+}
+
+void GameWorld::removeExpiredSuns()
+{
+    auto it = _suns.begin();
+    while (it != _suns.end())
+    {
+        if ((*it) && (*it)->shouldRemove())
+        {
+            Sun* sun = *it;
+            it = _suns.erase(it);
+            if (sun) sun->removeFromParent();
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+void GameWorld::spawnSunFromSky()
+{
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    
+    // Random grid column
+    int targetCol = rand() % MAX_COL;
+    
+    // Start position: above seed packets (around y = 700)
+    float startY = 700.0f;
+    
+    // Create sun from sky
+    Sun* sun = Sun::createFromSky(targetCol, startY);
+    if (sun)
+    {
+        this->addChild(sun, SUNLAYER);
+        _suns.push_back(sun);
+        CCLOG("Sun spawned from sky, target column: %d", targetCol);
     }
 }
 

@@ -17,3 +17,4 @@ const int PLANT_LAYER = 1;
 const int BULLET_LAYER = 2;
 const int ENEMY_LAYER = 3;
 const int SUNLAYER = 4;
+const int SEEDPACKET_LAYER = 5;

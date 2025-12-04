@@ -149,15 +149,15 @@ void Wallnut::update(float delta)
         ? WallnutState::NORMAL
         : WallnutState::CRACKED;
 
-    // Ö»ÓÐ×´Ì¬±ä»¯Ê±²ÅÇÐ»»¶¯»­£¨±ÜÃâÎÞÏÞ runAction£©
+    // Ö»ï¿½ï¿½×´Ì¬ï¿½ä»¯Ê±ï¿½ï¿½ï¿½Ð»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ runActionï¿½ï¿½
     if (newState != _currentState)
     {
         _currentState = newState;
 
-        this->stopAllActions();  //  ±ØÐëÍ£µô¾É¶¯»­
+        this->stopAllActions();  //  ï¿½ï¿½ï¿½ï¿½Í£ï¿½ï¿½ï¿½É¶ï¿½ï¿½ï¿½
 
         if (_currentState == WallnutState::NORMAL)
-            this->runAction(normalAnimation);    //  ÕýÈ·Ê¹ÓÃ
+            this->runAction(normalAnimation);    //  ï¿½ï¿½È·Ê¹ï¿½ï¿½
         else
             this->runAction(crackedAnimation);
     }

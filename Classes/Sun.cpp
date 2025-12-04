@@ -1,0 +1,160 @@
+#include "Sun.h"
+
+USING_NS_CC;
+
+// ----------------------------------------------------
+// Static constant definitions
+// ----------------------------------------------------
+const std::string Sun::IMAGE_FILENAME = "sun_spritesheet.png";
+const int Sun::SUN_VALUE = 25;
+const float Sun::FALL_SPEED = 50.0f;  // pixels per second
+const float Sun::LIFETIME = 10.0f;    // 10 seconds
+
+// Constructor
+Sun::Sun()
+    : _isCollected(false)
+    , _isFalling(false)
+    , _lifeTime(0.0f)
+    , _targetPos(Vec2::ZERO)
+{
+    CCLOG("Sun created.");
+}
+
+// Destructor
+Sun::~Sun()
+{
+    CCLOG("Sun destroyed.");
+}
+
+// Initialization
+bool Sun::init()
+{
+    if (!GameObject::init())
+    {
+        return false;
+    }
+
+    // Load sun image
+    if (!Sprite::initWithFile(IMAGE_FILENAME, Rect(0, 0, 79, 78)))
+    {
+        CCLOG("Failed to load sun image: %s", IMAGE_FILENAME.c_str());
+        return false;
+    }
+
+    _isCollected = false;
+    _lifeTime = 0.0f;
+
+    // Set up animation (placeholder for now)
+    setAnimation();
+
+    // Enable update
+    this->scheduleUpdate();
+
+    return true;
+}
+
+// Create sun from sunflower
+Sun* Sun::createFromSunflower(const Vec2& pos)
+{
+    Sun* sun = Sun::create();
+    if (sun)
+    {
+        sun->setPosition(pos);
+        sun->_isFalling = false;
+    }
+    return sun;
+}
+
+// Create sun from sky
+Sun* Sun::createFromSky(int targetGridCol, float startY)
+{
+    Sun* sun = Sun::create();
+    if (sun)
+    {
+        // Calculate target position (grid center)
+        float targetX = GRID_ORIGIN.x + targetGridCol * CELLSIZE.width + CELLSIZE.width * 0.5f;
+        int randomRow = rand() % MAX_ROW;
+        float targetY = GRID_ORIGIN.y + randomRow * CELLSIZE.height + CELLSIZE.height * 0.5f;
+
+        sun->_targetPos = Vec2(targetX, targetY);
+        sun->setPosition(Vec2(targetX, startY)); // Start from top
+        sun->_isFalling = true;
+    }
+    return sun;
+}
+
+// Update function
+void Sun::update(float delta)
+{
+    if (_isCollected)
+    {
+        return;
+    }
+
+    _lifeTime += delta;
+
+    // Handle falling from sky
+    if (_isFalling)
+    {
+        Vec2 currentPos = this->getPosition();
+        
+        // Fall until reaching target Y
+        if (currentPos.y > _targetPos.y)
+        {
+            float newY = currentPos.y - FALL_SPEED * delta;
+            if (newY < _targetPos.y)
+            {
+                newY = _targetPos.y;
+                _isFalling = false; // Stop falling
+            }
+            this->setPositionY(newY);
+        }
+    }
+
+    // Auto-disappear after lifetime
+    if (_lifeTime >= LIFETIME)
+    {
+        CCLOG("Sun expired after %f seconds", _lifeTime);
+        this->removeFromParent();
+    }
+}
+
+// Check if collectible
+bool Sun::isCollectible() const
+{
+    return !_isCollected;
+}
+
+// Collect sun
+int Sun::collect()
+{
+    if (_isCollected)
+    {
+        return 0;
+    }
+
+    _isCollected = true;
+    
+    // Fade out and remove
+    auto fadeOut = FadeOut::create(0.2f);
+    auto remove = RemoveSelf::create();
+    auto sequence = Sequence::create(fadeOut, remove, nullptr);
+    this->runAction(sequence);
+
+    CCLOG("Sun collected!");
+    return SUN_VALUE;
+}
+
+// Check if should be removed
+bool Sun::shouldRemove() const
+{
+    return _isCollected || (_lifeTime >= LIFETIME);
+}
+
+// Set animation (placeholder)
+void Sun::setAnimation()
+{
+    // TODO: Implement sun animation here
+    // For now, just use static image
+    CCLOG("Sun::setAnimation() - not implemented yet");
+}

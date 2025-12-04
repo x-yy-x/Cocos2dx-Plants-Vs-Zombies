@@ -10,6 +10,8 @@ class Plant;
 class Zombie;
 class Shovel;
 class Bullet;
+class SeedPacket;
+class Sun;
 
 class GameWorld : public cocos2d::Scene
 {
@@ -33,16 +35,16 @@ public:
 private:
     /**
      * @brief Setup user interaction (touch events for planting and shoveling)
-     * @param sprite_seedpacket_peashooter The seed packet sprite for peashooter
      */
     void setupUserInteraction();
 
     /**
-     * @brief Try to plant a plant at the given position
+     * @brief Try to plant using selected seed packet
      * @param globalPos The global position where the user touched
+     * @param seedPacket The seed packet to use for planting
      * @return true if planting was successful, false otherwise
      */
-    bool tryPlantAtPosition(const cocos2d::Vec2& globalPos,int plantType);
+    bool tryPlantAtPosition(const cocos2d::Vec2& globalPos, SeedPacket* seedPacket);
 
     /**
      * @brief Try to remove a plant at the given position using shovel
@@ -99,11 +101,34 @@ private:
      */
     void removeInactiveBullets();
 
+    /**
+     * @brief Update sun counter display
+     */
+    void updateSunDisplay();
+
+    /**
+     * @brief Update all suns (movement and lifetime)
+     * @param delta Time delta
+     */
+    void updateSuns(float delta);
+
+    /**
+     * @brief Remove expired or collected suns
+     */
+    void removeExpiredSuns();
+
+    /**
+     * @brief Spawn a sun from sky at random grid column
+     */
+    void spawnSunFromSky();
+
     // Grid storage system - stores Plant pointers directly
     Plant* _plantGrid[MAX_ROW][MAX_COL];
     
     // Plant selection state
     bool _plantSelected;
+    int _selectedSeedPacketIndex;  // Index of selected seed packet (-1 if none)
+    Plant* _previewPlant;          // Transparent preview plant following cursor
 
     // Shovel state
     bool _shovelSelected;
@@ -111,11 +136,16 @@ private:
     // UI elements
     Shovel* _shovel;
     cocos2d::Sprite* _shovelBack;
+    std::vector<SeedPacket*> _seedPackets;
+    
+    // Sun system
+    int _sunCount;
+    cocos2d::Label* _sunCountLabel;
 
     // Containers for game objects
-    std::vector<Plant*> _plants; // Keep for general iteration if needed, but main logic uses grid/row
     std::vector<Zombie*> _zombiesInRow[MAX_ROW];
     std::vector<Bullet*> _bullets;
+    std::vector<Sun*> _suns;
 
     // Wave spawning system
     int _currentWave;                // Current wave number (starts at 0)
@@ -123,9 +153,8 @@ private:
     int _nextWaveTickCount;          // Tick count when next wave should spawn
     bool _gameStarted;               // Whether game has started
 
-
-    std::vector<cocos2d::Sprite*> sprite_seedpacket;
-    int plantType = -1;
+    // Sun spawning system
+    float _sunSpawnTimer;            // Timer for sun spawning (every 5 seconds)
 };
 
 // Wave spawning parameters (reduced difficulty)

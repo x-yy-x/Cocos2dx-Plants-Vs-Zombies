@@ -1,4 +1,5 @@
 #include "Sunflower.h"
+#include "Sun.h"
 
 USING_NS_CC;
 
@@ -8,6 +9,7 @@ USING_NS_CC;
 const std::string Sunflower::IMAGE_FILENAME = "Sunflower_spritesheet.png";
 const cocos2d::Rect Sunflower::INITIAL_PIC_RECT = Rect(0, 512 - 128, 85.333, 128);
 const cocos2d::Size Sunflower::OBJECT_SIZE = Size(85.333, 128);
+const float Sunflower::SUN_PRODUCTION_INTERVAL = 24.0f;  // Produce sun every 24 seconds
 
 // Protected constructor
 Sunflower::Sunflower()
@@ -32,7 +34,7 @@ bool Sunflower::init()
 
     _maxHealth = 300;
     _currentHealth = 300;
-    _cooldownInterval = 1.5f;  // Attack once every 1.5 seconds
+    _cooldownInterval = SUN_PRODUCTION_INTERVAL;  // Produce sun every 24 seconds
     _accumulatedTime = 0.0f;
 
     this->setAnimation();
@@ -108,6 +110,26 @@ void Sunflower::update(float delta)
 {
     Plant::update(delta);
     // Plant::update handles cooldown logic
-    // GameWorld will call attack() when conditions are met
+    // GameWorld will call produceSun() to check if sun is ready
+}
+
+// ------------------------------------------------------------------------
+// 5. Produce sun
+// ------------------------------------------------------------------------
+Sun* Sunflower::produceSun()
+{
+    // Check if cooldown is finished
+    if (_accumulatedTime >= _cooldownInterval)
+    {
+        // Reset cooldown
+        _accumulatedTime = 0.0f;
+
+        // Create sun at sunflower position
+        Sun* sun = Sun::createFromSunflower(this->getPosition());
+        CCLOG("Sunflower produced a sun!");
+        return sun;
+    }
+
+    return nullptr;
 }
 
