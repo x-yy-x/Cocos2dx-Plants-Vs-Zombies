@@ -613,20 +613,24 @@ void GameWorld::updateSuns(float delta)
 
 void GameWorld::removeExpiredSuns()
 {
-    auto it = _suns.begin();
-    while (it != _suns.end())
-    {
-        if ((*it) && (*it)->shouldRemove())
-        {
-            Sun* sun = *it;
-            it = _suns.erase(it);
-            if (sun) sun->removeFromParent();
-        }
-        else
-        {
-            ++it;
-        }
-    }
+    _suns.erase(
+        std::remove_if(
+            _suns.begin(),
+            _suns.end(),
+            [&](Sun* sun)
+            {
+                if (!sun) return true;  // 移除无效指针
+
+                if (sun->shouldRemove())
+                {
+                    sun->removeFromParent();
+                    return true; // 从 vector 删除
+                }
+                return false;
+            }
+        ),
+        _suns.end()
+    );
 }
 
 void GameWorld::spawnSunFromSky()

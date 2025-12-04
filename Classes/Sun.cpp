@@ -8,7 +8,7 @@ USING_NS_CC;
 const std::string Sun::IMAGE_FILENAME = "sun_spritesheet.png";
 const int Sun::SUN_VALUE = 25;
 const float Sun::FALL_SPEED = 50.0f;  // pixels per second
-const float Sun::LIFETIME = 10.0f;    // 10 seconds
+const float Sun::LIFETIME = 5.0f;    // 10 seconds
 
 // Constructor
 Sun::Sun()
@@ -35,7 +35,7 @@ bool Sun::init()
     }
 
     // Load sun image
-    if (!Sprite::initWithFile(IMAGE_FILENAME, Rect(0, 0, 79, 78)))
+    if (!Sprite::initWithFile(IMAGE_FILENAME, Rect(0, 0, 100, 100)))
     {
         CCLOG("Failed to load sun image: %s", IMAGE_FILENAME.c_str());
         return false;
@@ -91,8 +91,6 @@ void Sun::update(float delta)
         return;
     }
 
-    _lifeTime += delta;
-
     // Handle falling from sky
     if (_isFalling)
     {
@@ -109,14 +107,10 @@ void Sun::update(float delta)
             }
             this->setPositionY(newY);
         }
+        return;
     }
 
-    // Auto-disappear after lifetime
-    if (_lifeTime >= LIFETIME)
-    {
-        CCLOG("Sun expired after %f seconds", _lifeTime);
-        this->removeFromParent();
-    }
+    _lifeTime += delta;
 }
 
 // Check if collectible
@@ -156,5 +150,32 @@ void Sun::setAnimation()
 {
     // TODO: Implement sun animation here
     // For now, just use static image
+    const float frameWidth = 100;
+    const float frameHeight = 100;
+
+    Vector<SpriteFrame*> frames;
+
+    for (int row = 0; row < 2; row++)
+    {
+        for (int col = 0; col < 6; col++)
+        {
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                IMAGE_FILENAME,
+                Rect(x, y, frameWidth, frameHeight)
+            );
+
+            frames.pushBack(frame);
+        }
+    }
+
+    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
+    auto animate = Animate::create(animation);
+
+    this->runAction(RepeatForever::create(animate));
+
+
     CCLOG("Sun::setAnimation() - not implemented yet");
 }
