@@ -31,8 +31,8 @@ bool PeaShooter::init()
         return false;
     }
 
-    _maxHealth = 300;
-    _currentHealth = 300;
+    _maxHealth = 100;
+    _currentHealth = 100;
     _cooldownInterval = 1.5f;  // Attack once every 1.5 seconds
     _accumulatedTime = 0.0f;
 

@@ -1,5 +1,5 @@
 
-#include "Zombie.h"
+#include "PoleVaulter.h"
 #include "Plant.h"
 
 USING_NS_CC;
@@ -7,65 +7,74 @@ USING_NS_CC;
 // ----------------------------------------------------
 // Static constant definitions
 // ----------------------------------------------------
-const std::string Zombie::IMAGE_FILENAME = "zombie_walk_spritesheet.png";
-const cocos2d::Rect Zombie::INITIAL_PIC_RECT = Rect::ZERO;
-const cocos2d::Size Zombie::OBJECT_SIZE = Size(125, 173.8);
-const float Zombie::MOVE_SPEED = 20.0f;       // Move 20 pixels per second
-const float Zombie::ATTACK_DAMAGE = 10.0f;    // Damage per attack
-const float Zombie::ATTACK_RANGE = 50.0f;     // Attack range
-
+const std::string PoleVaulter::IMAGE_FILENAME = "pole_vaulter_walk_spritesheet.png";
+const cocos2d::Rect PoleVaulter::INITIAL_PIC_RECT = Rect::ZERO;
+const cocos2d::Size PoleVaulter::OBJECT_SIZE = Size(125, 173.8);
+const float PoleVaulter::MOVE_SPEED = 20.0f;       // Move 20 pixels per second
+const float PoleVaulter::ATTACK_DAMAGE = 10.0f;    // Damage per attack
+const float PoleVaulter::ATTACK_RANGE = 50.0f;     // Attack range
+const float PoleVaulter::RUNNING_SPEED = 40.0f;
 // Protected constructor
-Zombie::Zombie()
-    : _currentState(ZombieState::WALKING)
+PoleVaulter::PoleVaulter()
+    : _currentState(PoleVaulterState::RUNNING)
     , _isDead(false)
-    , _maxHealth(200)
-    , _currentHealth(200)
+    , _maxHealth(300)
+    , _currentHealth(300)
     , _attackInterval(0.5f)
     , _accumulatedTime(0.0f)
     , _zombiePos(Vec2::ZERO)
     , _walkAction(nullptr)
     , _eatAction(nullptr)
+    , _jumpAction(nullptr)
+    , _runAction(nullptr)
     , _isEating(false)
+    , _isJumping(false)
     , _targetPlant(nullptr)
-    , _speed(MOVE_SPEED)
-    , _normalSpeed(MOVE_SPEED)
+    , _speed(RUNNING_SPEED)
+    , _hasJumped(false)
 {
     CCLOG("Zombie created.");
 }
 
 // Destructor
-Zombie::~Zombie()
+PoleVaulter::~PoleVaulter()
 {
     CC_SAFE_RELEASE(_walkAction);
     CC_SAFE_RELEASE(_eatAction);
+    CC_SAFE_RELEASE(_runAction);
+    CC_SAFE_RELEASE(_jumpAction);
     CCLOG("Zombie destroyed.");
 }
 
 // Initialization function
-bool Zombie::init()
+bool PoleVaulter::init()
 {
+
     // Call parent class initialization
     if (!Sprite::init())
     {
         return false;
     }
 
+    this->setScale(0.9);
+
     // Enable per-frame update
     this->scheduleUpdate();
-
     return true;
 }
 
 // Static factory method to create zombie with animations
-Zombie* Zombie::createZombie()
+PoleVaulter* PoleVaulter::createZombie()
 {
-    Zombie* z = new Zombie();
+    PoleVaulter* z = new PoleVaulter();
     if (z && z->init())
     {
         z->autorelease();
         z->initWalkAnimation();
         z->initEatAnimation();
-        z->runAction(z->_walkAction);
+        z->initRunningAnimation();
+        z->initJumpingAnimation();
+        z->runAction(z->_runAction);
         return z;
     }
     delete z;
@@ -73,10 +82,10 @@ Zombie* Zombie::createZombie()
 }
 
 // Initialize walking animation
-void Zombie::initWalkAnimation()
+void PoleVaulter::initWalkAnimation()
 {
     const float frameWidth = 125;
-    const float frameHeight = 173.8;
+    const float frameHeight = 225;
 
     Vector<SpriteFrame*> frames;
 
@@ -84,14 +93,14 @@ void Zombie::initWalkAnimation()
     {
         for (int col = 0; col < 10; col++)
         {
-            if (row == 4 && col == 6)
+            if (row == 4 && col == 4)
                 break;
 
             float x = col * frameWidth;
             float y = row * frameHeight;
 
             auto frame = SpriteFrame::create(
-                "zombie_walk_spritesheet.png",
+                "pole_vaulter_walk_spritesheet.png",
                 Rect(x, y, frameWidth, frameHeight)
             );
 
@@ -107,25 +116,25 @@ void Zombie::initWalkAnimation()
 }
 
 // Initialize eating animation
-void Zombie::initEatAnimation()
+void PoleVaulter::initEatAnimation()
 {
     const float frameWidth = 125;
-    const float frameHeight = 173.8;
+    const float frameHeight = 225;
 
     Vector<SpriteFrame*> frames;
 
-    for (int row = 0; row < 4; row++)
+    for (int row = 0; row < 3; row++)
     {
         for (int col = 0; col < 10; col++)
         {
-            if (row == 3 && col == 9)
+            if (row == 2 && col == 7)
                 break;
 
             float x = col * frameWidth;
             float y = row * frameHeight;
 
             auto frame = SpriteFrame::create(
-                "zombie_eat_spritesheet.png",
+                "pole_vaulter_eat_spritesheet.png",
                 Rect(x, y, frameWidth, frameHeight)
             );
 
@@ -140,8 +149,73 @@ void Zombie::initEatAnimation()
     _eatAction->retain();
 }
 
+void PoleVaulter::initRunningAnimation()
+{
+    const float frameWidth = 375;
+    const float frameHeight = 225;
+
+    Vector<SpriteFrame*> frames;
+
+    for (int row = 0; row < 6; row++)
+    {
+        for (int col = 0; col < 6; col++)
+        {
+
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                "pole_vaulter_run_spritesheet.png",
+                Rect(x, y, frameWidth, frameHeight)
+            );
+
+            frames.pushBack(frame);
+        }
+    }
+
+    auto animation = Animation::createWithSpriteFrames(frames, 0.03f);
+    auto animate = Animate::create(animation);
+
+    this->_runAction = RepeatForever::create(animate);
+    _runAction->retain();
+}
+
+void PoleVaulter::initJumpingAnimation()
+{
+    const float frameWidth = 625;
+    const float frameHeight = 225;
+
+    Vector<SpriteFrame*> frames;
+
+    for (int row = 0; row < 11; row++)
+    {
+        for (int col = 0; col < 4; col++)
+        {
+            if (row == 10 && col == 2)
+                break;
+
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                "pole_vaulter_jump_spritesheet.png",
+                Rect(x, y, frameWidth, frameHeight)
+            );
+
+            frames.pushBack(frame);
+        }
+    }
+
+    auto animation = Animation::createWithSpriteFrames(frames, 0.03f);
+    auto animate = Animate::create(animation);
+
+    this->_jumpAction = Animate::create(animation);
+    _jumpAction->retain();
+}
+
+
 // Update every frame
-void Zombie::update(float delta)
+void PoleVaulter::update(float delta)
 {
     if (_isDead)
     {
@@ -151,7 +225,7 @@ void Zombie::update(float delta)
     _accumulatedTime += delta;
 
     // If zombie is not eating, continue walking left
-    if (!_isEating)
+    if (!_isEating&&!_isJumping)
     {
         float newX = this->getPositionX() - _speed * delta;
         this->setPositionX(newX);
@@ -163,7 +237,7 @@ void Zombie::update(float delta)
             CCLOG("Zombie reached the house!");
         }
     }
-    else
+    else if(_isEating)
     {
         // If eating, deal damage periodically
         if (_accumulatedTime >= _attackInterval)
@@ -190,16 +264,15 @@ void Zombie::update(float delta)
 }
 
 // Get zombie state
-Zombie::ZombieState Zombie::getState() const
+PoleVaulter::PoleVaulterState PoleVaulter::getState() const
 {
-    CCLOG("getstate调用");
+    CCLOG("getstated调用");
     return _currentState;
 }
 
 // Set zombie state
-void Zombie::setState(ZombieState newState)
+void PoleVaulter::setState(PoleVaulterState newState)
 {
-
     if (_currentState != newState)
     {
         _currentState = newState;
@@ -209,13 +282,13 @@ void Zombie::setState(ZombieState newState)
 }
 
 // Check if dead
-bool Zombie::isDead() const
+bool PoleVaulter::isDead() const
 {
     return _isDead;
 }
 
 // Take damage
-void Zombie::takeDamage(int damage)
+void PoleVaulter::takeDamage(int damage)
 {
     if (_isDead)
     {
@@ -229,7 +302,7 @@ void Zombie::takeDamage(int damage)
     {
         _currentHealth = 0;
         _isDead = true;
-        setState(ZombieState::DYING);
+        setState(PoleVaulterState::DYING);
         CCLOG("Zombie is dead.");
         
         // Stop all actions and remove from scene after a delay
@@ -244,57 +317,83 @@ void Zombie::takeDamage(int damage)
 }
 
 // Set animation default implementation
-void Zombie::setAnimation()
+void PoleVaulter::setAnimation()
 {
     CCLOG("Zombie::setAnimation() called.");
     setAnimationForState(_currentState);
 }
 
 // Set animation corresponding to state
-void Zombie::setAnimationForState(ZombieState state)
+void PoleVaulter::setAnimationForState(PoleVaulterState state)
 {
+    // 放在 switch 外!
+    auto jumpAnim = _jumpAction;
+
     switch (state)
     {
-    case ZombieState::WALKING:
-        CCLOG("Setting WALKING animation.");
-        if (_eatAction)
-        {
-            this->stopAction(_eatAction);
-        }
-        if (_walkAction)
-        {
+        case PoleVaulterState::WALKING:
+            CCLOG("Setting WALKING animation.");
             this->runAction(_walkAction);
-        }
-        break;
-    case ZombieState::EATING:
-        CCLOG("Setting EATING animation.");
-        if (_walkAction)
-        {
+            this->stopAction(_eatAction);
+            this->stopAction(_runAction);
+            this->stopAction(_jumpAction);
+            break;
+
+        case PoleVaulterState::EATING:
+            CCLOG("Setting EATING animation.");
             this->stopAction(_walkAction);
-        }
-        if (_eatAction)
-        {
             this->runAction(_eatAction);
-        }
-        break;
-    case ZombieState::DYING:
-        CCLOG("Setting DYING animation.");
-        break;
-    default:
-        break;
+            this->stopAction(_runAction);
+            this->stopAction(_jumpAction);
+            break;
+
+        case PoleVaulterState::DYING:
+            CCLOG("Setting DYING animation.");
+            break;
+
+        case PoleVaulterState::JUMPING:
+            CCLOG("Setting JUMPING animation.");
+            this->stopAllActions();
+
+            // 跳跃动作写成一次性 Sequence
+            this->runAction(
+                Sequence::create(
+                    jumpAnim,
+                    CallFunc::create([this]() {
+                        this->_isJumping = false;
+                        this->_speed = _normalSpeed;
+                        this->setState(PoleVaulterState::WALKING);  // 跳完进入 rush 状态
+                        }),
+                    MoveBy::create(0.0001f, Vec2(-170, 0)),
+                    nullptr
+                )
+            );
+            break;
+
+        case PoleVaulterState::RUNNING:
+            CCLOG("Setting RUNNING animation.");
+            this->stopAction(_walkAction);
+            this->stopAction(_eatAction);
+            this->runAction(_runAction);
+            this->stopAction(_jumpAction);
+            break;
+
+        default:
+            break;
     }
 }
 
+
 // Check and handle plant encounters
-void Zombie::encounterPlant(const std::vector<Plant*>& plants)
+void PoleVaulter::encounterPlant(const std::vector<Plant*>& plants)
 {
     checkCollision(plants);
 }
 
 // Check collision with plants
-void Zombie::checkCollision(const std::vector<Plant*>& plants)
+void PoleVaulter::checkCollision(const std::vector<Plant*>& plants)
 {
-    if (_isEating) return;
+    if (_isEating||_isJumping) return;
 
     for (auto plant : plants)
     {
@@ -305,6 +404,10 @@ void Zombie::checkCollision(const std::vector<Plant*>& plants)
             // Adjust COLLISION_OFFSET_X to control how close the zombie needs to be
             float COLLISION_OFFSET_X = 40.0f;
             float SIZE_CORRECTION = 100.0f;
+            if (!_hasJumped) {
+                COLLISION_OFFSET_X = 110.0f;
+                SIZE_CORRECTION = 160.0f;
+            }
             Rect zombieRect = this->getBoundingBox();
             // Move the rect slightly to the left/right or adjust width
             // Here we check if the zombie's "eating mouth" (left side) overlaps with plant
@@ -313,7 +416,11 @@ void Zombie::checkCollision(const std::vector<Plant*>& plants)
 
             if (zombieRect.intersectsRect(plant->getBoundingBox()))
             {
-                startEating(plant);
+                CCLOG("!!!should jump!!!");
+                if (_hasJumped)
+                    startEating(plant);
+                else
+                    startJumping();
                 return;
             }
         }
@@ -321,21 +428,30 @@ void Zombie::checkCollision(const std::vector<Plant*>& plants)
 }
 
 // Start eating a plant
-void Zombie::startEating(Plant* plant)
+void PoleVaulter::startEating(Plant* plant)
 {
     _isEating = true;
     _targetPlant = plant;
     _speed = 0;  // Stop moving
-    setState(ZombieState::EATING);
+    setState(PoleVaulterState::EATING);
     CCLOG("Zombie start eating plant!");
 }
 
+void PoleVaulter::startJumping()
+{
+    _hasJumped = true;
+    _isJumping = true;
+    _speed = 0;
+    setState(PoleVaulterState::JUMPING);
+    CCLOG("Zombie start jumping!");
+}
+
 // Called when plant dies
-void Zombie::onPlantDied()
+void PoleVaulter::onPlantDied()
 {
     _isEating = false;
     _speed = _normalSpeed;
     _targetPlant = nullptr;
-    setState(ZombieState::WALKING);
+    setState(PoleVaulterState::WALKING);
     CCLOG("Zombie resume walking");
 }

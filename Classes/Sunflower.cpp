@@ -32,8 +32,8 @@ bool Sunflower::init()
         return false;
     }
 
-    _maxHealth = 300;
-    _currentHealth = 300;
+    _maxHealth = 100;
+    _currentHealth = 100;
     _cooldownInterval = SUN_PRODUCTION_INTERVAL;  // Produce sun every 24 seconds
     _accumulatedTime = 0.0f;
 

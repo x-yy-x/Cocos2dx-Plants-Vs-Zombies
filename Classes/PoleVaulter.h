@@ -4,6 +4,7 @@
 #include "cocos2d.h"
 #include "GameObject.h"
 #include "GameDefs.h"
+#include "Zombie.h"
 #include <vector>
 
 // Forward declaration
@@ -14,14 +15,16 @@ class Plant;
  * Zombies have different states: walking, eating plants, dying.
  * Zombie can be directly instantiated as a normal zombie.
  */
-class Zombie : public GameObject
+class PoleVaulter : public Zombie
 {
 public:
     /**
      * @brief Zombie state enumeration
      */
-    enum class ZombieState
+    enum class PoleVaulterState
     {
+        RUNNING,
+        JUMPING,
         WALKING,      // Walking state
         EATING,       // Eating plant state
         DYING         // Dying state
@@ -33,13 +36,13 @@ public:
     virtual bool init() override;
 
     // Implement the auto-generated static Zombie* create() function
-    CREATE_FUNC(Zombie);
+    CREATE_FUNC(PoleVaulter);
 
     /**
      * @brief Static factory method to create a zombie with animations
      * @return Zombie* Created zombie instance
      */
-    static Zombie* createZombie();
+    static PoleVaulter* createZombie();
 
     /**
      * @brief Update function called every frame for movement, attack, death, etc.
@@ -51,13 +54,13 @@ public:
      * @brief Get current zombie state
      * @return ZombieState Current state
      */
-    ZombieState getState() const;
+    PoleVaulterState getState() const;
 
     /**
      * @brief Set zombie state
      * @param newState New state
      */
-    void setState(ZombieState newState);
+    void setState(PoleVaulterState newState);
 
     /**
      * @brief Check if zombie is dead.
@@ -75,14 +78,20 @@ public:
      * @brief Check and handle plant encounters
      * @param plants Vector of all plants in the scene
      */
-    virtual void encounterPlant(const std::vector<Plant*>& plants);
+    void encounterPlant(const std::vector<Plant*>& plants) override;
 
 protected:
     // Protected constructor
-    Zombie();
+    PoleVaulter();
 
     // Virtual destructor
-    virtual ~Zombie();
+    virtual ~PoleVaulter();
+
+    void initRunningAnimation();
+
+    void initJumpingAnimation();
+
+
 
     /**
      * @brief Initialize walking animation
@@ -103,7 +112,7 @@ protected:
      * @brief Set animation corresponding to state
      * @param state Target state
      */
-    void setAnimationForState(ZombieState state);
+    void setAnimationForState(PoleVaulterState state);
 
     /**
      * @brief Check collision with plants
@@ -121,6 +130,9 @@ protected:
      */
     void onPlantDied();
 
+
+    void startJumping();
+
     // ----------------------------------------------------
     // Static constants
     // ----------------------------------------------------
@@ -130,25 +142,27 @@ protected:
     static const float MOVE_SPEED;     // Movement speed
     static const float ATTACK_DAMAGE;  // Attack damage per hit
     static const float ATTACK_RANGE;   // Attack range
-
+    static const float RUNNING_SPEED;
     // ----------------------------------------------------
     // Member variables
     // ----------------------------------------------------
-    ZombieState _currentState;       // Current state
+    PoleVaulterState _currentState;       // Current state
     bool _isDead;                    // Is dead flag
     int _maxHealth;                  // Maximum health
     int _currentHealth;              // Current health
     float _attackInterval;           // Attack interval
     float _accumulatedTime;          // Cooldown accumulated time
     cocos2d::Vec2 _zombiePos;        // Zombie position
-    
+
     // Animation actions
     cocos2d::RepeatForever* _walkAction;
     cocos2d::RepeatForever* _eatAction;
-    
+    cocos2d::RepeatForever* _runAction;
+    cocos2d::Animate* _jumpAction;
     // Eating state
-    bool _isEating;                  // Is currently eating
+    bool _isEating;
+    bool _isJumping;
+    bool _hasJumped;
     Plant* _targetPlant;             // Target plant being eaten
     float _speed;                    // Current movement speed
-    float _normalSpeed;              // Normal walking speed
 };

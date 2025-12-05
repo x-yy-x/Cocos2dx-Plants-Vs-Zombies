@@ -13,6 +13,7 @@
 #include "SunflowerSeedPacket.h"
 #include "WallnutSeedPacket.h"
 #include "Sun.h"
+#include "PoleVaulter.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -140,7 +141,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = Zombie::createZombie();
+        auto debugZombie = PoleVaulter::createZombie();
         if (debugZombie)
         {
             int row = 2;
@@ -404,16 +405,28 @@ void GameWorld::spawnZombieWave(int waveNumber)
     for (int i = 0; i < zombieCount; ++i)
     {
         auto zombie = Zombie::createZombie();
-        if (zombie)
+        auto pole_vaulter = PoleVaulter::createZombie();
+        if (zombie&&pole_vaulter)
         {
             int row = rand() % MAX_ROW;
+            int type = rand() % 2;
             const float ZOMBIE_Y_OFFSET = 0.7f;
             float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
             float x = visibleSize.width + 50 + (i * 50);
 
-            zombie->setPosition(Vec2(x, y));
-            this->addChild(zombie, ENEMY_LAYER);
-            _zombiesInRow[row].push_back(zombie);
+            if (type == 0) {
+                CCLOG("normal zombie created");
+                zombie->setPosition(Vec2(x, y));
+                this->addChild(zombie, ENEMY_LAYER);
+                _zombiesInRow[row].push_back(zombie);
+            }
+            else if (type == 1) {
+                CCLOG("pole vaulter created");
+                pole_vaulter->setPosition(Vec2(x, y));
+                this->addChild(pole_vaulter, ENEMY_LAYER);
+                _zombiesInRow[row].push_back(pole_vaulter);
+            }
+            
         }
     }
 }
