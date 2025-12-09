@@ -15,6 +15,60 @@ class SeedPacket : public GameObject
 {
 public:
     /**
+     * @brief Template-based factory method to create seed packet for any plant type
+     * Eliminates the need for separate SeedPacket subclasses
+     * 
+     * Usage:
+     *   auto packet = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50);
+     * 
+     * @param imageFile Seed packet image filename
+     * @param cooldownTime Cooldown time in seconds
+     * @param sunCost Sun cost to plant
+     * @return Pointer to created seed packet, or nullptr if failed
+     */
+    template<typename PlantType>
+    static SeedPacket* create(const std::string& imageFile, float cooldownTime, int sunCost)
+    {
+        // Internal template class for specific plant type
+        class SeedPacketImpl : public SeedPacket
+        {
+        public:
+            SeedPacketImpl(const std::string& imageFile, float cooldownTime, int sunCost)
+            {
+                _seedPacketImage = imageFile;
+                _cooldownTime = cooldownTime;
+                _sunCost = sunCost;
+                _isOnCooldown = false;
+                _accumulatedTime = 0.0f;
+            }
+
+            virtual Plant* plantAt(const cocos2d::Vec2& globalPos) override
+            {
+                return PlantType::plantAtPosition(globalPos);
+            }
+
+            virtual Plant* createPreviewPlant() override
+            {
+                auto preview = PlantType::create();
+                if (preview)
+                {
+                    preview->setOpacity(128); // 50% transparent
+                }
+                return preview;
+            }
+        };
+
+        auto packet = new (std::nothrow) SeedPacketImpl(imageFile, cooldownTime, sunCost);
+        if (packet && packet->init())
+        {
+            packet->autorelease();
+            return packet;
+        }
+        delete packet;
+        return nullptr;
+    }
+
+    /**
      * @brief Initialization function
      */
     virtual bool init() override;

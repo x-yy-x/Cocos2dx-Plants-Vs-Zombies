@@ -15,12 +15,6 @@
 #include "Bullet.h"
 #include "Pea.h"
 #include "SeedPacket.h"
-#include "PeaShooterSeedPacket.h"
-#include "RepeaterSeedPacket.h"
-#include "ThreePeaterSeedPacket.h"
-#include "SunflowerSeedPacket.h"
-#include "WallnutSeedPacket.h"
-#include "CherryBombSeedPacket.h"
 #include "Sun.h"
 #include "PoleVaulter.h"
 #include <algorithm>
@@ -90,13 +84,13 @@ bool GameWorld::init()
     }
     this->addChild(backGround, BACKGROUND_LAYER);
 
-    // Create seed packets
-    auto sunflowerPacket = SunflowerSeedPacket::create();
-    auto peashooterPacket = PeaShooterSeedPacket::create();
-    auto repeaterPacket = RepeaterSeedPacket::create();
-    auto threepeaterPacket = ThreePeaterSeedPacket::create();
-    auto wallnutPacket = WallnutSeedPacket::create();
-    auto cherryBombPacket = CherryBombSeedPacket::create();
+    // Create seed packets using template method (no need for separate subclasses!)
+    auto sunflowerPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50);
+    auto peashooterPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100);
+    auto repeaterPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200);
+    auto threepeaterPacket = SeedPacket::create<ThreePeater>("seedpacket_threepeater(1).png", 3.0f, 325);
+    auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50);
+    auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 30.0f, 150);
 
     if (sunflowerPacket && peashooterPacket && repeaterPacket && threepeaterPacket && wallnutPacket && cherryBombPacket)
     {
