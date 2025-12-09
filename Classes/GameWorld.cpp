@@ -6,6 +6,7 @@
 #include "BombPlant.h"
 #include "PeaShooter.h"
 #include "Repeater.h"
+#include "ThreePeater.h"
 #include "Sunflower.h"
 #include "Wallnut.h"
 #include "CherryBomb.h"
@@ -16,6 +17,7 @@
 #include "SeedPacket.h"
 #include "PeaShooterSeedPacket.h"
 #include "RepeaterSeedPacket.h"
+#include "ThreePeaterSeedPacket.h"
 #include "SunflowerSeedPacket.h"
 #include "WallnutSeedPacket.h"
 #include "CherryBombSeedPacket.h"
@@ -92,14 +94,16 @@ bool GameWorld::init()
     auto sunflowerPacket = SunflowerSeedPacket::create();
     auto peashooterPacket = PeaShooterSeedPacket::create();
     auto repeaterPacket = RepeaterSeedPacket::create();
+    auto threepeaterPacket = ThreePeaterSeedPacket::create();
     auto wallnutPacket = WallnutSeedPacket::create();
     auto cherryBombPacket = CherryBombSeedPacket::create();
 
-    if (sunflowerPacket && peashooterPacket && repeaterPacket && wallnutPacket && cherryBombPacket)
+    if (sunflowerPacket && peashooterPacket && repeaterPacket && threepeaterPacket && wallnutPacket && cherryBombPacket)
     {
         _seedPackets.push_back(sunflowerPacket);
         _seedPackets.push_back(peashooterPacket);
         _seedPackets.push_back(repeaterPacket);
+        _seedPackets.push_back(threepeaterPacket);
         _seedPackets.push_back(wallnutPacket);
         _seedPackets.push_back(cherryBombPacket);
 
@@ -339,8 +343,8 @@ bool GameWorld::tryPlantAtPosition(const Vec2& globalPos, SeedPacket* seedPacket
 
 bool GameWorld::getGridCoordinates(const Vec2& globalPos, int& outRow, int& outCol)
 {
-    int col = (globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width;
-    int row = (globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height;
+    int col = static_cast<int>((globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width);
+    int row = static_cast<int>((globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height);
 
     if (col < 0 || col >= MAX_COL || row < 0 || row >= MAX_ROW) return false;
 
@@ -472,9 +476,11 @@ void GameWorld::updatePlants(float delta)
 
                 case PlantCategory::ATTACKING:
                 {
-                    // Attacking plants (e.g., PeaShooter, Repeater, Wallnut)
+                    // Attacking plants (e.g., PeaShooter, Repeater, ThreePeater, Wallnut)
+                    // Pass all zombies to plant, let plant decide which rows to check
                     AttackingPlant* attackPlant = static_cast<AttackingPlant*>(plant);
-                    std::vector<Bullet*> newBullets = attackPlant->checkAndAttack(_zombiesInRow[row]);
+                    
+                    std::vector<Bullet*> newBullets = attackPlant->checkAndAttack(_zombiesInRow, row);
                     
                     // Add all created bullets to scene and container
                     for (Bullet* bullet : newBullets)
@@ -512,7 +518,7 @@ void GameWorld::updateBullets(float delta)
         if (bullet && bullet->isActive())
         {
             // Calculate row from bullet Y
-            int row = (bullet->getPositionY() - GRID_ORIGIN.y) / CELLSIZE.height;
+            int row = static_cast<int>((bullet->getPositionY() - GRID_ORIGIN.y) / CELLSIZE.height);
             
             // Check if bullet is within valid row bounds
             if (row >= 0 && row < MAX_ROW)

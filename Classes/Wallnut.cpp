@@ -6,8 +6,8 @@ USING_NS_CC;
 // 0. Static constant definitions
 // ------------------------------------------------------------------------
 const std::string Wallnut::IMAGE_FILENAME = "wallnut_spritesheet.png";
-const cocos2d::Rect Wallnut::INITIAL_PIC_RECT = Rect(0, 512 - 128, 85.333, 128);
-const cocos2d::Size Wallnut::OBJECT_SIZE = Size(85.333, 128);
+const cocos2d::Rect Wallnut::INITIAL_PIC_RECT = Rect(0.0f, 512.0f - 128.0f, 85.333f, 128.0f);
+const cocos2d::Size Wallnut::OBJECT_SIZE = Size(85.333f, 128.0f);
 
 // Protected constructor
 Wallnut::Wallnut()
@@ -48,27 +48,7 @@ bool Wallnut::init()
 // ------------------------------------------------------------------------
 Wallnut* Wallnut::plantAtPosition(const Vec2& globalPos)
 {
-    int col = (globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width;
-    int row = (globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height;
-
-    if (col < 0 || col >= MAX_COL || row < 0 || row >= MAX_ROW) {
-        return nullptr;
-    }
-
-    float centerX = GRID_ORIGIN.x + col * CELLSIZE.width + CELLSIZE.width * 0.5f;
-    float centerY = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * 0.5f;
-
-    int dx = 30, dy = 8;
-    Vec2 plantPos(centerX + dx, centerY + dy);
-
-    auto plant = Wallnut::create();
-
-    if (plant)
-    {
-        plant->setPlantPosition(plantPos);
-    }
-
-    return plant;
+    return createPlantAtPosition<Wallnut>(globalPos);
 }
 
 // ------------------------------------------------------------------------
@@ -166,7 +146,7 @@ void Wallnut::update(float delta)
 // ------------------------------------------------------------------------
 // 5. Wallnut does not attack
 // ------------------------------------------------------------------------
-std::vector<Bullet*> Wallnut::checkAndAttack(const std::vector<Zombie*>& zombiesInRow)
+std::vector<Bullet*> Wallnut::checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow)
 {
     // Wallnut is a defensive plant, does not attack
     return std::vector<Bullet*>();

@@ -66,8 +66,8 @@ protected:
     template<typename T>
     static T* createPlantAtPosition(const cocos2d::Vec2& globalPos, int dx = 30, int dy = 8)
     {
-        int col = (globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width;
-        int row = (globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height;
+        int col = static_cast<int>((globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width);
+        int row = static_cast<int>((globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height);
 
         if (col < 0 || col >= MAX_COL || row < 0 || row >= MAX_ROW) {
             return nullptr;
@@ -76,7 +76,7 @@ protected:
         float centerX = GRID_ORIGIN.x + col * CELLSIZE.width + CELLSIZE.width * 0.5f;
         float centerY = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * 0.5f;
 
-        cocos2d::Vec2 plantPos(centerX + dx, centerY + dy);
+        cocos2d::Vec2 plantPos(centerX + static_cast<float>(dx), centerY + static_cast<float>(dy));
 
         auto plant = T::create();
         if (plant)

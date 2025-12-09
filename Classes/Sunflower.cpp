@@ -7,8 +7,8 @@ USING_NS_CC;
 // 0. Static constant definitions
 // ------------------------------------------------------------------------
 const std::string Sunflower::IMAGE_FILENAME = "Sunflower_spritesheet.png";
-const cocos2d::Rect Sunflower::INITIAL_PIC_RECT = Rect(0, 512 - 128, 85.333, 128);
-const cocos2d::Size Sunflower::OBJECT_SIZE = Size(85.333, 128);
+const cocos2d::Rect Sunflower::INITIAL_PIC_RECT = Rect(0.0f, 512.0f - 128.0f, 85.333f, 128.0f);
+const cocos2d::Size Sunflower::OBJECT_SIZE = Size(85.333f, 128.0f);
 const float Sunflower::SUN_PRODUCTION_INTERVAL = 24.0f;  // Produce sun every 24 seconds
 
 // Protected constructor
@@ -18,29 +18,11 @@ Sunflower::Sunflower()
 }
 
 // ------------------------------------------------------------------------
-// 1. PeaShooter initialization
+// 1. Sunflower initialization
 // ------------------------------------------------------------------------
 bool Sunflower::init()
 {
-    if (!Plant::init())
-    {
-        return false;
-    }
-
-    if (!Sprite::initWithFile(IMAGE_FILENAME, INITIAL_PIC_RECT))
-    {
-        return false;
-    }
-
-    _maxHealth = 100;
-    _currentHealth = 100;
-    _cooldownInterval = SUN_PRODUCTION_INTERVAL;  // Produce sun every 24 seconds
-    _accumulatedTime = 0.0f;
-
-    this->setAnimation();
-    this->scheduleUpdate();
-
-    return true;
+    return initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 100, SUN_PRODUCTION_INTERVAL);
 }
 
 // ------------------------------------------------------------------------
@@ -48,59 +30,15 @@ bool Sunflower::init()
 // ------------------------------------------------------------------------
 Sunflower* Sunflower::plantAtPosition(const Vec2& globalPos)
 {
-    int col = (globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width;
-    int row = (globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height;
-
-    if (col < 0 || col >= MAX_COL || row < 0 || row >= MAX_ROW) {
-        return nullptr;
-    }
-
-    float centerX = GRID_ORIGIN.x + col * CELLSIZE.width + CELLSIZE.width * 0.5f;
-    float centerY = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * 0.5f;
-
-    int dx = 30, dy = 8;
-    Vec2 plantPos(centerX + dx, centerY + dy);
-
-    auto plant = Sunflower::create();
-
-    if (plant)
-    {
-        plant->setPlantPosition(plantPos);
-    }
-
-    return plant;
+    return createPlantAtPosition<Sunflower>(globalPos);
 }
 
 // ------------------------------------------------------------------------
-// 3. PeaShooter animation
+// 3. Sunflower animation
 // ------------------------------------------------------------------------
 void Sunflower::setAnimation()
 {
-    const float frameWidth = 100;
-    const float frameHeight = 100;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 4; row++)
-    {
-        for (int col = 0; col < 6; col++)
-        {
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                IMAGE_FILENAME,
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
-    }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
-    auto animate = Animate::create(animation);
-
-    this->runAction(RepeatForever::create(animate));
+    createAndRunAnimation(IMAGE_FILENAME, 100, 100, 4, 6);
 }
 
 // ------------------------------------------------------------------------

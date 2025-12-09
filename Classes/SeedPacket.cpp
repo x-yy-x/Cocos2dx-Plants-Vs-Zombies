@@ -22,7 +22,9 @@ SeedPacket::~SeedPacket()
 // Initialization
 bool SeedPacket::init()
 {
-    if (!GameObject::init())
+    // Don't call GameObject::init() because it tries to load empty IMAGE_FILENAME
+    // Call Sprite::init() directly
+    if (!Sprite::init())
     {
         return false;
     }
@@ -36,6 +38,10 @@ bool SeedPacket::init()
             return false;
         }
     }
+    else
+    {
+        CCLOG("Warning: SeedPacket _seedPacketImage is empty!");
+    }
 
     _isOnCooldown = false;
     _accumulatedTime = 0.0f;
@@ -43,6 +49,7 @@ bool SeedPacket::init()
     // Enable update for cooldown animation
     this->scheduleUpdate();
 
+    CCLOG("SeedPacket initialized with image: %s", _seedPacketImage.c_str());
     return true;
 }
 

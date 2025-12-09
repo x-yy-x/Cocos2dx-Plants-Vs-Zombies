@@ -57,64 +57,41 @@ bool CherryBomb::init()
 // ------------------------------------------------------------------------
 CherryBomb* CherryBomb::plantAtPosition(const Vec2& globalPos)
 {
-    int col = (globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width;
-    int row = (globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height;
-
-    if (col < 0 || col >= MAX_COL || row < 0 || row >= MAX_ROW) {
-        return nullptr;
-    }
-
-    float centerX = GRID_ORIGIN.x + col * CELLSIZE.width + CELLSIZE.width * 0.5f;
-    float centerY = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * 0.5f;
-
-    int dx = 30, dy = 8;
-    Vec2 plantPos(centerX + dx, centerY + dy);
-
-    auto plant = CherryBomb::create();
-
-    if (plant)
-    {
-        plant->setPlantPosition(plantPos);
-    }
-
-    return plant;
+    return createPlantAtPosition<CherryBomb>(globalPos);
 }
 
 // ------------------------------------------------------------------------
-// 3. CherryBomb animation (4x4 sprite sheet)
+// 3. CherryBomb animation (4x4 sprite sheet, plays once)
 // ------------------------------------------------------------------------
 void CherryBomb::setAnimation()
 {
-    const float frameWidth = 150;
-    const float frameHeight = 145;
+    const float frameWidth = 150.0f;
+    const float frameHeight = 145.0f;
+    const int totalFrames = 16;
+    
+    // Calculate animation duration
+    _idleAnimationDuration = totalFrames * 0.07f;  // 1.12 seconds
 
+    // Create animation frames
     Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 4; row++)
+    for (int i = 0; i < totalFrames; i++)
     {
-        for (int col = 0; col < 4; col++)
-        {
-            float x = col * frameWidth;
-            float y = row * frameHeight;
+        int row = i / 4;
+        int col = i % 4;
+        float x = col * frameWidth;
+        float y = row * frameHeight;
 
-            auto frame = SpriteFrame::create(
-                IMAGE_FILENAME,
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
+        auto frame = SpriteFrame::create(IMAGE_FILENAME, Rect(x, y, frameWidth, frameHeight));
+        if (frame) frames.pushBack(frame);
     }
 
-    // 16 frames total, 0.07s per frame = ~1.12 seconds total
-    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
-    auto animate = Animate::create(animation);
-
-    // Calculate animation duration
-    _idleAnimationDuration = 16 * 0.07f;  // 1.12 seconds
-
-    // Play once (not repeat)
-    this->runAction(animate);
+    // Play animation once (not repeat)
+    if (!frames.empty())
+    {
+        auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
+        auto animate = Animate::create(animation);
+        this->runAction(animate);
+    }
 }
 
 // ------------------------------------------------------------------------

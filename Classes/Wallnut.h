@@ -38,7 +38,7 @@ public:
      * @brief Wallnut does not attack (override from AttackingPlant)
      * @return Always returns empty vector
      */
-    virtual std::vector<Bullet*> checkAndAttack(const std::vector<Zombie*>& zombiesInRow) override;
+    virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
 
 protected:
     // ----------------------------------------------------

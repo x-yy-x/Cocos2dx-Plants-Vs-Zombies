@@ -21,17 +21,19 @@ public:
 
     /**
      * @brief Static planting function for Repeater
-     * @param globalPos Touch position in global coordinates
-     * @return Repeater* Returns Repeater instance on success, nullptr on failure
      */
-    static Repeater* plantAtPosition(const cocos2d::Vec2& globalPos);
+    static Repeater* plantAtPosition(const cocos2d::Vec2& globalPos)
+    {
+        return createPlantAtPosition<Repeater>(globalPos);
+    }
 
     /**
      * @brief Check for zombies and attack with two peas (override from PeaShooter)
-     * @param zombiesInRow All zombies in the same row
+     * @param allZombiesInRow All zombies in each row
+     * @param plantRow The row this plant is in
      * @return std::vector<Bullet*> Returns vector containing two Pea bullets if attack happened
      */
-    virtual std::vector<Bullet*> checkAndAttack(const std::vector<Zombie*>& zombiesInRow) override;
+    virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
 
 protected:
     // ----------------------------------------------------
@@ -39,7 +41,6 @@ protected:
     // ----------------------------------------------------
     static const std::string IMAGE_FILENAME;
     static const cocos2d::Rect INITIAL_PIC_RECT;
-    static const cocos2d::Size OBJECT_SIZE;
 
     /**
      * @brief Set up animation frames for Repeater

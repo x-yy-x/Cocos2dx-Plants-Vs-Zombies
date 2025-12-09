@@ -9,7 +9,7 @@ USING_NS_CC;
 // ----------------------------------------------------
 const std::string Zombie::IMAGE_FILENAME = "zombie_walk_spritesheet.png";
 const cocos2d::Rect Zombie::INITIAL_PIC_RECT = Rect::ZERO;
-const cocos2d::Size Zombie::OBJECT_SIZE = Size(125, 173.8);
+const cocos2d::Size Zombie::OBJECT_SIZE = Size(125.0f, 173.8f);
 const float Zombie::MOVE_SPEED = 20.0f;       // Move 20 pixels per second
 const float Zombie::ATTACK_DAMAGE = 10.0f;    // Damage per attack
 const float Zombie::ATTACK_RANGE = 50.0f;     // Attack range
@@ -75,8 +75,8 @@ Zombie* Zombie::createZombie()
 // Initialize walking animation
 void Zombie::initWalkAnimation()
 {
-    const float frameWidth = 125;
-    const float frameHeight = 173.8;
+    const float frameWidth = 125.0f;
+    const float frameHeight = 173.8f;
 
     Vector<SpriteFrame*> frames;
 
@@ -109,8 +109,8 @@ void Zombie::initWalkAnimation()
 // Initialize eating animation
 void Zombie::initEatAnimation()
 {
-    const float frameWidth = 125;
-    const float frameHeight = 173.8;
+    const float frameWidth = 125.0f;
+    const float frameHeight = 173.8f;
 
     Vector<SpriteFrame*> frames;
 
@@ -192,7 +192,7 @@ void Zombie::update(float delta)
 // Get zombie state
 Zombie::ZombieState Zombie::getState() const
 {
-    CCLOG("getstateµ÷ÓÃ");
+    CCLOG("getstateï¿½ï¿½ï¿½ï¿½");
     return _currentState;
 }
 

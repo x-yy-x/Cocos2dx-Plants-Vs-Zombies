@@ -6,8 +6,8 @@ USING_NS_CC;
 // 0. Static constant definitions
 // ------------------------------------------------------------------------
 const std::string PeaShooter::IMAGE_FILENAME = "peashooter_spritesheet.png";
-const cocos2d::Rect PeaShooter::INITIAL_PIC_RECT = Rect(0, 512 - 128, 85.333, 128);
-const cocos2d::Size PeaShooter::OBJECT_SIZE = Size(85.333, 128);
+const cocos2d::Rect PeaShooter::INITIAL_PIC_RECT = Rect(0.0f, 512.0f - 128.0f, 85.333f, 128.0f);
+const cocos2d::Size PeaShooter::OBJECT_SIZE = Size(85.333f, 128.0f);
 const float PeaShooter::ATTACK_RANGE = 2000.0f;
 
 // Protected constructor
@@ -21,25 +21,7 @@ PeaShooter::PeaShooter()
 // ------------------------------------------------------------------------
 bool PeaShooter::init()
 {
-    if (!Plant::init())
-    {
-        return false;
-    }
-
-    if (!Sprite::initWithFile(IMAGE_FILENAME, INITIAL_PIC_RECT))
-    {
-        return false;
-    }
-
-    _maxHealth = 100;
-    _currentHealth = 100;
-    _cooldownInterval = 1.5f;  // Attack once every 1.5 seconds
-    _accumulatedTime = 0.0f;
-
-    this->setAnimation();
-    this->scheduleUpdate();
-
-    return true;
+    return initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 300, 1.5f);
 }
 
 // ------------------------------------------------------------------------
@@ -47,27 +29,7 @@ bool PeaShooter::init()
 // ------------------------------------------------------------------------
 PeaShooter* PeaShooter::plantAtPosition(const Vec2& globalPos)
 {
-    int col = (globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width;
-    int row = (globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height;
-
-    if (col < 0 || col >= MAX_COL || row < 0 || row >= MAX_ROW) {
-        return nullptr;
-    }
-
-    float centerX = GRID_ORIGIN.x + col * CELLSIZE.width + CELLSIZE.width * 0.5f;
-    float centerY = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * 0.5f;
-
-    int dx = 30, dy = 8;
-    Vec2 plantPos(centerX + dx, centerY + dy);
-
-    auto plant = PeaShooter::create();
-
-    if (plant)
-    {
-        plant->setPlantPosition(plantPos);
-    }
-
-    return plant;
+    return createPlantAtPosition<PeaShooter>(globalPos);
 }
 
 // ------------------------------------------------------------------------
@@ -75,31 +37,7 @@ PeaShooter* PeaShooter::plantAtPosition(const Vec2& globalPos)
 // ------------------------------------------------------------------------
 void PeaShooter::setAnimation()
 {
-    const float frameWidth = 100;
-    const float frameHeight = 100;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 4; row++)
-    {
-        for (int col = 0; col < 6; col++)
-        {
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                IMAGE_FILENAME, 
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
-    }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
-    auto animate = Animate::create(animation);
-
-    this->runAction(RepeatForever::create(animate));
+    createAndRunAnimation(IMAGE_FILENAME, 100, 100, 4, 6);
 }
 
 // ------------------------------------------------------------------------
@@ -115,12 +53,12 @@ void PeaShooter::update(float delta)
 // ------------------------------------------------------------------------
 // 5. Check and attack logic (override from AttackingPlant)
 // ------------------------------------------------------------------------
-std::vector<Bullet*> PeaShooter::checkAndAttack(const std::vector<Zombie*>& zombiesInRow)
+std::vector<Bullet*> PeaShooter::checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow)
 {
     std::vector<Bullet*> bullets;
 
-    // Check if any zombie is in range (to the right)
-    if (!isZombieInRange(zombiesInRow))
+    // Check if any zombie is in range in current row (to the right)
+    if (!isZombieInRange(allZombiesInRow[plantRow]))
     {
         return bullets;
     }
@@ -132,7 +70,7 @@ std::vector<Bullet*> PeaShooter::checkAndAttack(const std::vector<Zombie*>& zomb
         
         // Create a new Pea bullet at the plant's position
         // Offset slightly to spawn from the "mouth"
-        Vec2 spawnPos = this->getPosition() + Vec2(30, 20); 
+        Vec2 spawnPos = this->getPosition() + Vec2(30.0f, 20.0f); 
         
         Pea* pea = Pea::create(spawnPos);
         if (pea)

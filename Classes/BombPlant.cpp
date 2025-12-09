@@ -21,8 +21,8 @@ std::vector<Zombie*> BombPlant::getZombiesInRange(std::vector<Zombie*> allZombie
             {
                 // Calculate zombie's grid position
                 Vec2 zombiePos = zombie->getPosition();
-                int zombieCol = (zombiePos.x - GRID_ORIGIN.x) / CELLSIZE.width;
-                int zombieRow = (zombiePos.y - GRID_ORIGIN.y) / CELLSIZE.height;
+                int zombieCol = static_cast<int>((zombiePos.x - GRID_ORIGIN.x) / CELLSIZE.width);
+                int zombieRow = static_cast<int>((zombiePos.y - GRID_ORIGIN.y) / CELLSIZE.height);
 
                 // Check if zombie is within explosion radius
                 int colDist = std::abs(zombieCol - centerCol);

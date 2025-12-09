@@ -9,7 +9,7 @@ USING_NS_CC;
 // ----------------------------------------------------
 const std::string PoleVaulter::IMAGE_FILENAME = "pole_vaulter_walk_spritesheet.png";
 const cocos2d::Rect PoleVaulter::INITIAL_PIC_RECT = Rect::ZERO;
-const cocos2d::Size PoleVaulter::OBJECT_SIZE = Size(125, 173.8);
+const cocos2d::Size PoleVaulter::OBJECT_SIZE = Size(125.0f, 173.8f);
 const float PoleVaulter::MOVE_SPEED = 20.0f;       // Move 20 pixels per second
 const float PoleVaulter::ATTACK_DAMAGE = 10.0f;    // Damage per attack
 const float PoleVaulter::ATTACK_RANGE = 50.0f;     // Attack range
@@ -56,7 +56,7 @@ bool PoleVaulter::init()
         return false;
     }
 
-    this->setScale(0.9);
+    this->setScale(0.9f);
 
     // Enable per-frame update
     this->scheduleUpdate();
@@ -266,7 +266,7 @@ void PoleVaulter::update(float delta)
 // Get zombie state
 PoleVaulter::PoleVaulterState PoleVaulter::getState() const
 {
-    CCLOG("getstatedµ÷ÓÃ");
+    CCLOG("getstatedï¿½ï¿½ï¿½ï¿½");
     return _currentState;
 }
 
@@ -326,7 +326,7 @@ void PoleVaulter::setAnimation()
 // Set animation corresponding to state
 void PoleVaulter::setAnimationForState(PoleVaulterState state)
 {
-    // ·ÅÔÚ switch Íâ!
+    // ï¿½ï¿½ï¿½ï¿½ switch ï¿½ï¿½!
     auto jumpAnim = _jumpAction;
 
     switch (state)
@@ -355,14 +355,14 @@ void PoleVaulter::setAnimationForState(PoleVaulterState state)
             CCLOG("Setting JUMPING animation.");
             this->stopAllActions();
 
-            // ÌøÔ¾¶¯×÷Ð´³ÉÒ»´ÎÐÔ Sequence
+            // ï¿½ï¿½Ô¾ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ Sequence
             this->runAction(
                 Sequence::create(
                     jumpAnim,
                     CallFunc::create([this]() {
                         this->_isJumping = false;
                         this->_speed = _normalSpeed;
-                        this->setState(PoleVaulterState::WALKING);  // ÌøÍê½øÈë rush ×´Ì¬
+                        this->setState(PoleVaulterState::WALKING);  // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ rush ×´Ì¬
                         }),
                     MoveBy::create(0.0001f, Vec2(-170, 0)),
                     nullptr

@@ -31,10 +31,11 @@ public:
 
     /**
      * @brief Check for zombies and attack if possible (override from AttackingPlant)
-     * @param zombiesInRow All zombies in the same row
+     * @param allZombiesInRow All zombies in each row
+     * @param plantRow The row this plant is in
      * @return std::vector<Bullet*> Returns vector containing Pea bullet if attack happened, empty otherwise
      */
-    virtual std::vector<Bullet*> checkAndAttack(const std::vector<Zombie*>& zombiesInRow) override;
+    virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
 
 protected:
     // ----------------------------------------------------
