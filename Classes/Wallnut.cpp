@@ -149,19 +149,26 @@ void Wallnut::update(float delta)
         ? WallnutState::NORMAL
         : WallnutState::CRACKED;
 
-    // ֻ��״̬�仯ʱ���л��������������� runAction��
+    // Only switch animation when state changes
     if (newState != _currentState)
     {
         _currentState = newState;
 
-        this->stopAllActions();  //  ����ͣ���ɶ���
+        this->stopAllActions();
 
         if (_currentState == WallnutState::NORMAL)
-            this->runAction(normalAnimation);    //  ��ȷʹ��
+            this->runAction(normalAnimation);
         else
             this->runAction(crackedAnimation);
     }
 }
 
-
+// ------------------------------------------------------------------------
+// 5. Wallnut does not attack
+// ------------------------------------------------------------------------
+std::vector<Bullet*> Wallnut::checkAndAttack(const std::vector<Zombie*>& zombiesInRow)
+{
+    // Wallnut is a defensive plant, does not attack
+    return std::vector<Bullet*>();
+}
 

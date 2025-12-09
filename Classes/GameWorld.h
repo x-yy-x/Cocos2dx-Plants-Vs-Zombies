@@ -12,6 +12,9 @@ class Shovel;
 class Bullet;
 class SeedPacket;
 class Sun;
+class SunProducingPlant;
+class AttackingPlant;
+class BombPlant;
 
 class GameWorld : public cocos2d::Scene
 {

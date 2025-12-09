@@ -1,14 +1,13 @@
 #pragma once
 
 #include "cocos2d.h"
-#include "Plant.h"
+#include "SunProducingPlant.h"
 #include "GameDefs.h"
-#include "Pea.h"
 
 // Forward declaration
 class Sun;
 
-class Sunflower : public Plant
+class Sunflower : public SunProducingPlant
 {
 public:
     /**
@@ -33,10 +32,10 @@ public:
     virtual void update(float delta) override;
 
     /**
-     * @brief Produce sun if cooldown is finished
+     * @brief Produce sun if cooldown is finished (override from SunProducingPlant)
      * @return Sun* Returns Sun instance if ready, nullptr otherwise
      */
-    Sun* produceSun();
+    virtual Sun* produceSun() override;
 
 
 protected:

@@ -1,11 +1,11 @@
 #pragma once
 
 #include "cocos2d.h"
-#include "Plant.h"
+#include "AttackingPlant.h"
 #include "GameDefs.h"
 #include "Pea.h"
 
-class PeaShooter : public Plant
+class PeaShooter : public AttackingPlant
 {
 public:
     /**
@@ -30,10 +30,11 @@ public:
     virtual void update(float delta) override;
 
     /**
-     * @brief Attack logic: Create and return a Pea bullet
-     * @return Pointer to created Pea bullet (upcast to Bullet*)
+     * @brief Check for zombies and attack if possible (override from AttackingPlant)
+     * @param zombiesInRow All zombies in the same row
+     * @return std::vector<Bullet*> Returns vector containing Pea bullet if attack happened, empty otherwise
      */
-    virtual Bullet* attack() override;
+    virtual std::vector<Bullet*> checkAndAttack(const std::vector<Zombie*>& zombiesInRow) override;
 
 protected:
     // ----------------------------------------------------

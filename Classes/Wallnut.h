@@ -1,11 +1,10 @@
 #pragma once
 
 #include "cocos2d.h"
-#include "Plant.h"
+#include "AttackingPlant.h"
 #include "GameDefs.h"
-#include "Pea.h"
 
-class Wallnut : public Plant
+class Wallnut : public AttackingPlant
 {
 public:
     /**
@@ -35,9 +34,11 @@ public:
      */
     virtual void update(float delta) override;
 
-    //WallnutState getState() const;
-
-    //void setState(WallnutState newState);
+    /**
+     * @brief Wallnut does not attack (override from AttackingPlant)
+     * @return Always returns empty vector
+     */
+    virtual std::vector<Bullet*> checkAndAttack(const std::vector<Zombie*>& zombiesInRow) override;
 
 protected:
     // ----------------------------------------------------

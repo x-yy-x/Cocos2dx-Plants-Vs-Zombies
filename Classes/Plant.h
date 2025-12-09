@@ -32,6 +32,12 @@ public:
     virtual void update(float delta) override;
 
     /**
+     * @brief Get plant category (Sun-producing, Attacking, or Bomb)
+     * @return PlantCategory enum value
+     */
+    virtual PlantCategory getCategory() const = 0;
+
+    /**
      * @brief Check if the plant is dead.
      * @return true if dead, false if alive
      */
@@ -42,13 +48,6 @@ public:
      * @param damage Damage value
      */
     void takeDamage(int damage);
-
-    /**
-     * @brief Virtual attack method. Default implementation returns nullptr.
-     * Subclasses that can attack (like PeaShooter) should override this.
-     * @return Pointer to created Bullet, or nullptr if no attack happened
-     */
-    virtual Bullet* attack();
 
 protected:
     // Protected constructor
@@ -61,10 +60,61 @@ protected:
     void setPlantPosition(const cocos2d::Vec2& pos);
 
     /**
-     * @brief Detect and handle enemies within attack range.
-     * @param zombies Vector of all zombies currently in the scene
+     * @brief Template method for creating plant at position
+     * Reduces code duplication across all plant subclasses
      */
-    virtual void encounterEnemy(const std::vector<Zombie*>& zombies);
+    template<typename T>
+    static T* createPlantAtPosition(const cocos2d::Vec2& globalPos, int dx = 30, int dy = 8)
+    {
+        int col = (globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width;
+        int row = (globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height;
+
+        if (col < 0 || col >= MAX_COL || row < 0 || row >= MAX_ROW) {
+            return nullptr;
+        }
+
+        float centerX = GRID_ORIGIN.x + col * CELLSIZE.width + CELLSIZE.width * 0.5f;
+        float centerY = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * 0.5f;
+
+        cocos2d::Vec2 plantPos(centerX + dx, centerY + dy);
+
+        auto plant = T::create();
+        if (plant)
+        {
+            plant->setPlantPosition(plantPos);
+        }
+
+        return plant;
+    }
+
+    /**
+     * @brief Helper method to initialize plant with common settings
+     * @param imageFile Image file name
+     * @param initialRect Initial sprite rectangle
+     * @param maxHealth Maximum health
+     * @param cooldown Cooldown interval
+     * @return true if successful
+     */
+    bool initPlantWithSettings(const std::string& imageFile, 
+                               const cocos2d::Rect& initialRect,
+                               int maxHealth, 
+                               float cooldown);
+
+    /**
+     * @brief Create animation from sprite sheet
+     * @param imageFile Image file name
+     * @param frameWidth Width of each frame
+     * @param frameHeight Height of each frame
+     * @param rows Number of rows
+     * @param cols Number of columns
+     * @param frameDuration Duration per frame
+     * @param totalFrames Total frames (0 means rows*cols)
+     */
+    void createAndRunAnimation(const std::string& imageFile,
+                               float frameWidth, float frameHeight,
+                               int rows, int cols,
+                               float frameDuration = 0.07f,
+                               int totalFrames = 0);
 
     /**
      * @brief Set up animation frames. To be implemented by subclasses.

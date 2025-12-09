@@ -82,13 +82,6 @@ void Plant::takeDamage(int damage)
     }
 }
 
-// Virtual attack method
-Bullet* Plant::attack()
-{
-    // Default implementation does nothing
-    return nullptr;
-}
-
 // Set plant position
 void Plant::setPlantPosition(const cocos2d::Vec2& pos)
 {
@@ -96,11 +89,71 @@ void Plant::setPlantPosition(const cocos2d::Vec2& pos)
     this->setPosition(pos);
 }
 
-// Detect and handle enemies within range (not implemented yet)
-void Plant::encounterEnemy(const std::vector<Zombie*>& zombies)
+// Helper method to initialize plant with common settings
+bool Plant::initPlantWithSettings(const std::string& imageFile, 
+                                  const Rect& initialRect,
+                                  int maxHealth, 
+                                  float cooldown)
 {
-    // Will implement enemy detection and attack logic here later
-    // For example: find enemies within range and execute attack
+    if (!Plant::init())
+    {
+        return false;
+    }
+
+    if (!Sprite::initWithFile(imageFile, initialRect))
+    {
+        CCLOG("Failed to load plant image: %s", imageFile.c_str());
+        return false;
+    }
+
+    _maxHealth = maxHealth;
+    _currentHealth = maxHealth;
+    _cooldownInterval = cooldown;
+    _accumulatedTime = 0.0f;
+
+    this->setAnimation();
+    this->scheduleUpdate();
+
+    return true;
+}
+
+// Create animation from sprite sheet
+void Plant::createAndRunAnimation(const std::string& imageFile,
+                                  float frameWidth, float frameHeight,
+                                  int rows, int cols,
+                                  float frameDuration,
+                                  int totalFrames)
+{
+    Vector<SpriteFrame*> frames;
+    int maxFrames = (totalFrames > 0) ? totalFrames : (rows * cols);
+    int frameCount = 0;
+
+    for (int row = 0; row < rows && frameCount < maxFrames; row++)
+    {
+        for (int col = 0; col < cols && frameCount < maxFrames; col++)
+        {
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                imageFile,
+                Rect(x, y, frameWidth, frameHeight)
+            );
+
+            if (frame)
+            {
+                frames.pushBack(frame);
+                frameCount++;
+            }
+        }
+    }
+
+    if (!frames.empty())
+    {
+        auto animation = Animation::createWithSpriteFrames(frames, frameDuration);
+        auto animate = Animate::create(animation);
+        this->runAction(RepeatForever::create(animate));
+    }
 }
 
 // Set animation (to be implemented by subclasses)

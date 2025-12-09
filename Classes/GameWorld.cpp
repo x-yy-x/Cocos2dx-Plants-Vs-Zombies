@@ -1,17 +1,24 @@
 #include "GameWorld.h"
 #include "BackGround.h"
 #include "Plant.h"
+#include "SunProducingPlant.h"
+#include "AttackingPlant.h"
+#include "BombPlant.h"
 #include "PeaShooter.h"
+#include "Repeater.h"
 #include "Sunflower.h"
 #include "Wallnut.h"
+#include "CherryBomb.h"
 #include "Zombie.h"
 #include "Shovel.h"
 #include "Bullet.h"
 #include "Pea.h"
 #include "SeedPacket.h"
 #include "PeaShooterSeedPacket.h"
+#include "RepeaterSeedPacket.h"
 #include "SunflowerSeedPacket.h"
 #include "WallnutSeedPacket.h"
+#include "CherryBombSeedPacket.h"
 #include "Sun.h"
 #include "PoleVaulter.h"
 #include <algorithm>
@@ -84,13 +91,17 @@ bool GameWorld::init()
     // Create seed packets
     auto sunflowerPacket = SunflowerSeedPacket::create();
     auto peashooterPacket = PeaShooterSeedPacket::create();
+    auto repeaterPacket = RepeaterSeedPacket::create();
     auto wallnutPacket = WallnutSeedPacket::create();
+    auto cherryBombPacket = CherryBombSeedPacket::create();
 
-    if (sunflowerPacket && peashooterPacket && wallnutPacket)
+    if (sunflowerPacket && peashooterPacket && repeaterPacket && wallnutPacket && cherryBombPacket)
     {
         _seedPackets.push_back(sunflowerPacket);
         _seedPackets.push_back(peashooterPacket);
+        _seedPackets.push_back(repeaterPacket);
         _seedPackets.push_back(wallnutPacket);
+        _seedPackets.push_back(cherryBombPacket);
 
         // Set positions for seed packets (more compact spacing)
         float baseX = 187.0f;
@@ -100,7 +111,7 @@ bool GameWorld::init()
         for (size_t i = 0; i < _seedPackets.size(); ++i)
         {
             _seedPackets[i]->setPosition(Vec2(baseX + i * spacing, baseY));
-            this->addChild(_seedPackets[i], 5); // High layer for UI
+            this->addChild(_seedPackets[i], SEEDPACKET_LAYER);
         }
     }
 
@@ -110,7 +121,7 @@ bool GameWorld::init()
     {
         _sunCountLabel->setPosition(Vec2(100, visibleSize.height - 90));
         _sunCountLabel->setColor(Color3B::BLACK);
-        this->addChild(_sunCountLabel, 10); // Very high layer for UI
+        this->addChild(_sunCountLabel, UI_LAYER);
     }
 
     // Create shovel background
@@ -122,7 +133,7 @@ bool GameWorld::init()
     else
     {
         _shovelBack->setPosition(Vec2(visibleSize.width - 100, visibleSize.height - 80));
-        this->addChild(_shovelBack, 5);
+        this->addChild(_shovelBack, SEEDPACKET_LAYER);
     }
 
     // Create shovel
@@ -135,7 +146,7 @@ bool GameWorld::init()
     {
         Vec2 shovelPos = _shovelBack ? _shovelBack->getPosition() : Vec2(visibleSize.width - 100, visibleSize.height - 80);
         _shovel->setOriginalPosition(shovelPos);
-        this->addChild(_shovel, 6);
+        this->addChild(_shovel, SEEDPACKET_LAYER + 1);
     }
 
     // DEBUG: Spawn one zombie at start for testing
@@ -213,7 +224,7 @@ void GameWorld::setupUserInteraction()
                     if (_previewPlant)
                     {
                         _previewPlant->setPosition(touch->getLocation());
-                        this->addChild(_previewPlant, 10); // Very high layer
+                        this->addChild(_previewPlant, UI_LAYER);
                     }
 
                     CCLOG("Seed packet %d selected", (int)i);
@@ -412,7 +423,7 @@ void GameWorld::spawnZombieWave(int waveNumber)
             int type = rand() % 2;
             const float ZOMBIE_Y_OFFSET = 0.7f;
             float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
-            float x = visibleSize.width + 50 + (i * 50);
+            float x = visibleSize.width + 10;
 
             if (type == 0) {
                 CCLOG("normal zombie created");
@@ -440,45 +451,54 @@ void GameWorld::updatePlants(float delta)
             Plant* plant = _plantGrid[row][col];
             if (plant && !plant->isDead())
             {
-                // Check if plant is a Sunflower
-                Sunflower* sunflower = dynamic_cast<Sunflower*>(plant);
-                if (sunflower)
+                PlantCategory category = plant->getCategory();
+
+                switch (category)
                 {
-                    // Try to produce sun
-                    Sun* sun = sunflower->produceSun();
+                case PlantCategory::SUN_PRODUCING:
+                {
+                    // Sun-producing plants (e.g., Sunflower)
+                    SunProducingPlant* sunPlant = static_cast<SunProducingPlant*>(plant);
+                    Sun* sun = sunPlant->produceSun();
                     if (sun)
                     {
-                        this->addChild(sun, SUNLAYER);
+                        this->addChild(sun, SUN_LAYER);
                         _suns.push_back(sun);
-                        CCLOG("Sunflower produced sun at position (%.2f, %.2f)", sun->getPositionX(), sun->getPositionY());
+                        CCLOG("Sun-producing plant produced sun at position (%.2f, %.2f)", 
+                              sun->getPositionX(), sun->getPositionY());
                     }
+                    break;
                 }
-                else
-                {
-                    // For attacking plants, check for zombies
-                    bool zombieDetected = false;
-                    float plantX = plant->getPositionX();
-                    
-                    for (auto zombie : _zombiesInRow[row])
-                    {
-                        if (zombie && !zombie->isDead() && zombie->getPositionX() > plantX)
-                        {
-                            zombieDetected = true;
-                            break;
-                        }
-                    }
 
-                    if (zombieDetected)
+                case PlantCategory::ATTACKING:
+                {
+                    // Attacking plants (e.g., PeaShooter, Repeater, Wallnut)
+                    AttackingPlant* attackPlant = static_cast<AttackingPlant*>(plant);
+                    std::vector<Bullet*> newBullets = attackPlant->checkAndAttack(_zombiesInRow[row]);
+                    
+                    // Add all created bullets to scene and container
+                    for (Bullet* bullet : newBullets)
                     {
-                        // Try to attack (generic for all plants)
-                        Bullet* bullet = plant->attack();
                         if (bullet)
                         {
-                            // Add bullet to scene and container
                             this->addChild(bullet, BULLET_LAYER);
                             _bullets.push_back(bullet);
                         }
                     }
+                    break;
+                }
+
+                case PlantCategory::BOMB:
+                {
+                    // Bomb plants (e.g., CherryBomb)
+                    BombPlant* bombPlant = static_cast<BombPlant*>(plant);
+                    bombPlant->explode(_zombiesInRow, row, col);
+                    break;
+                }
+
+                default:
+                    CCLOG("Unknown plant category!");
+                    break;
                 }
             }
         }
@@ -632,12 +652,12 @@ void GameWorld::removeExpiredSuns()
             _suns.end(),
             [&](Sun* sun)
             {
-                if (!sun) return true;  // ÒÆ³ýÎÞÐ§Ö¸Õë
+                if (!sun) return true;  // ï¿½Æ³ï¿½ï¿½ï¿½Ð§Ö¸ï¿½ï¿½
 
                 if (sun->shouldRemove())
                 {
                     sun->removeFromParent();
-                    return true; // ´Ó vector É¾³ý
+                    return true; // ï¿½ï¿½ vector É¾ï¿½ï¿½
                 }
                 return false;
             }
@@ -660,7 +680,7 @@ void GameWorld::spawnSunFromSky()
     Sun* sun = Sun::createFromSky(targetCol, startY);
     if (sun)
     {
-        this->addChild(sun, SUNLAYER);
+        this->addChild(sun, SUN_LAYER);
         _suns.push_back(sun);
         CCLOG("Sun spawned from sky, target column: %d", targetCol);
     }

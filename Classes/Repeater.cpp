@@ -1,38 +1,41 @@
-#include "PeaShooter.h"
+#include "Repeater.h"
+#include "Pea.h"
 
 USING_NS_CC;
 
-// ------------------------------------------------------------------------
-// 0. Static constant definitions
-// ------------------------------------------------------------------------
-const std::string PeaShooter::IMAGE_FILENAME = "peashooter_spritesheet.png";
-const cocos2d::Rect PeaShooter::INITIAL_PIC_RECT = Rect(0, 512 - 128, 85.333, 128);
-const cocos2d::Size PeaShooter::OBJECT_SIZE = Size(85.333, 128);
-const float PeaShooter::ATTACK_RANGE = 2000.0f;
+// ----------------------------------------------------
+// Static constant definitions
+// ----------------------------------------------------
+const std::string Repeater::IMAGE_FILENAME = "repeater_spritesheet.png";
+const cocos2d::Rect Repeater::INITIAL_PIC_RECT = Rect(0, 0, 85.333, 85.333);
+const cocos2d::Size Repeater::OBJECT_SIZE = Size(85.333, 85.333);
 
 // Protected constructor
-PeaShooter::PeaShooter()
+Repeater::Repeater()
 {
-    CCLOG("PeaShooter created.");
+    CCLOG("Repeater created.");
 }
 
 // ------------------------------------------------------------------------
-// 1. PeaShooter initialization
+// 1. Repeater initialization
 // ------------------------------------------------------------------------
-bool PeaShooter::init()
+bool Repeater::init()
 {
+    // Call Plant::init() instead of PeaShooter::init() to avoid loading PeaShooter's image
     if (!Plant::init())
     {
         return false;
     }
 
+    // Load Repeater's specific image
     if (!Sprite::initWithFile(IMAGE_FILENAME, INITIAL_PIC_RECT))
     {
         return false;
     }
 
-    _maxHealth = 100;
-    _currentHealth = 100;
+    // Set Repeater stats (same as PeaShooter except different image)
+    _maxHealth = 300;
+    _currentHealth = 300;
     _cooldownInterval = 1.5f;  // Attack once every 1.5 seconds
     _accumulatedTime = 0.0f;
 
@@ -45,7 +48,7 @@ bool PeaShooter::init()
 // ------------------------------------------------------------------------
 // 2. Static planting function
 // ------------------------------------------------------------------------
-PeaShooter* PeaShooter::plantAtPosition(const Vec2& globalPos)
+Repeater* Repeater::plantAtPosition(const Vec2& globalPos)
 {
     int col = (globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width;
     int row = (globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height;
@@ -60,7 +63,7 @@ PeaShooter* PeaShooter::plantAtPosition(const Vec2& globalPos)
     int dx = 30, dy = 8;
     Vec2 plantPos(centerX + dx, centerY + dy);
 
-    auto plant = PeaShooter::create();
+    auto plant = Repeater::create();
 
     if (plant)
     {
@@ -71,9 +74,9 @@ PeaShooter* PeaShooter::plantAtPosition(const Vec2& globalPos)
 }
 
 // ------------------------------------------------------------------------
-// 3. PeaShooter animation
+// 3. Repeater animation (4 rows x 6 columns, 512x512 / 24 frames)
 // ------------------------------------------------------------------------
-void PeaShooter::setAnimation()
+void Repeater::setAnimation()
 {
     const float frameWidth = 100;
     const float frameHeight = 100;
@@ -88,7 +91,7 @@ void PeaShooter::setAnimation()
             float y = row * frameHeight;
 
             auto frame = SpriteFrame::create(
-                IMAGE_FILENAME, 
+                IMAGE_FILENAME,
                 Rect(x, y, frameWidth, frameHeight)
             );
 
@@ -103,43 +106,43 @@ void PeaShooter::setAnimation()
 }
 
 // ------------------------------------------------------------------------
-// 4. Update function
+// 4. Check and attack logic - shoots TWO peas simultaneously
 // ------------------------------------------------------------------------
-void PeaShooter::update(float delta)
-{
-    Plant::update(delta);
-    // Plant::update handles cooldown logic
-    // GameWorld will call attack() when conditions are met
-}
-
-// ------------------------------------------------------------------------
-// 5. Check and attack logic (override from AttackingPlant)
-// ------------------------------------------------------------------------
-std::vector<Bullet*> PeaShooter::checkAndAttack(const std::vector<Zombie*>& zombiesInRow)
+std::vector<Bullet*> Repeater::checkAndAttack(const std::vector<Zombie*>& zombiesInRow)
 {
     std::vector<Bullet*> bullets;
 
-    // Check if any zombie is in range (to the right)
-    if (!isZombieInRange(zombiesInRow))
+    // Check if any zombie is in range and cooldown is ready
+    if (!isZombieInRange(zombiesInRow) || _accumulatedTime < _cooldownInterval)
     {
         return bullets;
     }
 
-    // Check if cooldown is ready
-    if (_accumulatedTime >= _cooldownInterval)
+    _accumulatedTime = 0.0f; // Reset cooldown
+    
+    // Create first pea
+    Vec2 spawnPos1 = this->getPosition() + Vec2(30, 20);
+    Pea* firstPea = Pea::create(spawnPos1);
+    
+    // Create second pea with horizontal offset (same height)
+    Vec2 spawnPos2 = this->getPosition() + Vec2(70, 20);  // +10 horizontal offset
+    Pea* secondPea = Pea::create(spawnPos2);
+    
+    if (firstPea)
     {
-        _accumulatedTime = 0.0f; // Reset cooldown
-        
-        // Create a new Pea bullet at the plant's position
-        // Offset slightly to spawn from the "mouth"
-        Vec2 spawnPos = this->getPosition() + Vec2(30, 20); 
-        
-        Pea* pea = Pea::create(spawnPos);
-        if (pea)
-        {
-             bullets.push_back(pea);
-             CCLOG("PeaShooter fired a pea at %f, %f", spawnPos.x, spawnPos.y);
-        }
+        bullets.push_back(firstPea);
     }
+    
+    if (secondPea)
+    {
+        bullets.push_back(secondPea);
+    }
+    
+    if (!bullets.empty())
+    {
+        CCLOG("Repeater fired %d peas", (int)bullets.size());
+    }
+    
     return bullets;
 }
+

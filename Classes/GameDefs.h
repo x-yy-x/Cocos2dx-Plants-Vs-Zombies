@@ -16,5 +16,16 @@ const int BACKGROUND_LAYER = 0;
 const int PLANT_LAYER = 1;
 const int BULLET_LAYER = 2;
 const int ENEMY_LAYER = 3;
-const int SUNLAYER = 4;
+const int SUN_LAYER = 4;
 const int SEEDPACKET_LAYER = 5;
+const int UI_LAYER = 10;  // For labels and other UI elements
+
+/**
+ * @brief Plant type enumeration for distinguishing plant categories
+ */
+enum class PlantCategory
+{
+    SUN_PRODUCING,   // Sun-producing plants (Sunflower)
+    ATTACKING,       // Attacking plants (PeaShooter, Wallnut)
+    BOMB             // Bomb plants (CherryBomb)
+};
