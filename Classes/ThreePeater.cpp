@@ -5,7 +5,7 @@ USING_NS_CC;
 // ----------------------------------------------------
 // Static constant definitions
 // ----------------------------------------------------
-const std::string ThreePeater::IMAGE_FILENAME = "threePeat.png";
+const std::string ThreePeater::IMAGE_FILENAME = "threepeat_spritesheet.png";
 const cocos2d::Rect ThreePeater::INITIAL_PIC_RECT = Rect(0.0f, 0.0f, 85.333f, 85.333f);
 
 // Protected constructor
@@ -29,7 +29,7 @@ void ThreePeater::setAnimation()
 {
     // 6 columns x 3 rows, but last column only has 1 frame (total 16 frames)
     const int totalFrames = 16;
-    createAndRunAnimation(IMAGE_FILENAME, 70.0f, 90.0f, 3, 6, 0.07f, totalFrames);
+    createAndRunAnimation(IMAGE_FILENAME, 91.0f, 100.0f, 4, 5, 0.09f, totalFrames);
 }
 
 // ------------------------------------------------------------------------

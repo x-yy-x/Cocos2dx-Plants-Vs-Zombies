@@ -17,6 +17,8 @@
 #include "SeedPacket.h"
 #include "Sun.h"
 #include "PoleVaulter.h"
+#include "FlagZombie.h"
+#include "Lmp.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -150,7 +152,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = PoleVaulter::createZombie();
+        auto debugZombie = Lmp::createZombie();
         if (debugZombie)
         {
             int row = 2;
