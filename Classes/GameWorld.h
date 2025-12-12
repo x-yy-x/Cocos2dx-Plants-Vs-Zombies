@@ -35,6 +35,9 @@ public:
      */
     virtual void update(float delta) override;
 
+    void addZombie(Zombie* z);
+
+
 private:
     /**
      * @brief Setup user interaction (touch events for planting and shoveling)

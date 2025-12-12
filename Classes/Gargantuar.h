@@ -4,6 +4,7 @@
 #include "cocos2d.h"
 #include "GameObject.h"
 #include "GameDefs.h"
+#include "Zombie.h"
 #include <vector>
 
 // Forward declaration
@@ -14,7 +15,7 @@ class Plant;
  * Zombies have different states: walking, eating plants, dying.
  * Zombie can be directly instantiated as a normal zombie.
  */
-class Zombie : public GameObject
+class Gargantuar : public Zombie
 {
 public:
     /**
@@ -23,8 +24,9 @@ public:
     enum class ZombieState
     {
         WALKING,      // Walking state
-        EATING,       // Eating plant state
-        DYING         // Dying state
+        SMASHING,       // Eating plant state
+        DYING,         // Dying state
+        THROWING
     };
 
     /**
@@ -33,13 +35,13 @@ public:
     virtual bool init() override;
 
     // Implement the auto-generated static Zombie* create() function
-    CREATE_FUNC(Zombie);
+    CREATE_FUNC(Gargantuar);
 
     /**
      * @brief Static factory method to create a zombie with animations
      * @return Zombie* Created zombie instance
      */
-    static Zombie* createZombie();
+    static Gargantuar* createZombie();
 
     /**
      * @brief Update function called every frame for movement, attack, death, etc.
@@ -69,20 +71,20 @@ public:
      * @brief Apply damage to zombie and reduce health.
      * @param damage Damage value
      */
-    virtual void takeDamage(int damage);
+    virtual void takeDamage(int damage) override;
 
     /**
      * @brief Check and handle plant encounters
      * @param plants Vector of all plants in the scene
      */
-    virtual void encounterPlant(const std::vector<Plant*>& plants);
+    virtual void encounterPlant(const std::vector<Plant*>& plants) override;
 
 protected:
     // Protected constructor
-    Zombie();
+    Gargantuar();
 
     // Virtual destructor
-    virtual ~Zombie();
+    virtual ~Gargantuar();
 
     /**
      * @brief Initialize walking animation
@@ -92,8 +94,10 @@ protected:
     /**
      * @brief Initialize eating animation
      */
-    void initEatAnimation();
+    void initSmashAnimation();
 
+
+    void initThrowAnimation();
     /**
      * @brief Set up animation
      */
@@ -121,6 +125,8 @@ protected:
      */
     void onPlantDied();
 
+    void throwImp();
+
     // ----------------------------------------------------
     // Static constants
     // ----------------------------------------------------
@@ -144,11 +150,13 @@ protected:
     
     // Animation actions
     cocos2d::RepeatForever* _walkAction;
-    cocos2d::RepeatForever* _eatAction;
-    
+    cocos2d::Animate* _smashAction;
+    cocos2d::Animate* _throwAction;
     // Eating state
-    bool _isEating;                  // Is currently eating
+    bool _isSmashing;                  // Is currently eating
+    bool _isThrowing;
     Plant* _targetPlant;             // Target plant being eaten
     float _speed;                    // Current movement speed
     float _normalSpeed;              // Normal walking speed
+    bool _hasthrown;
 };

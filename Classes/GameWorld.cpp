@@ -18,7 +18,8 @@
 #include "Sun.h"
 #include "PoleVaulter.h"
 #include "FlagZombie.h"
-#include "Lmp.h"
+#include "Imp.h"
+#include "Gargantuar.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -92,7 +93,7 @@ bool GameWorld::init()
     auto repeaterPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200);
     auto threepeaterPacket = SeedPacket::create<ThreePeater>("seedpacket_threepeater(1).png", 3.0f, 325);
     auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50);
-    auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 30.0f, 150);
+    auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150);
 
     if (sunflowerPacket && peashooterPacket && repeaterPacket && threepeaterPacket && wallnutPacket && cherryBombPacket)
     {
@@ -152,7 +153,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = Lmp::createZombie();
+        auto debugZombie = Gargantuar::createZombie();       
         if (debugZombie)
         {
             int row = 2;
@@ -691,4 +692,13 @@ void GameWorld::spawnSunFromSky()
 void GameWorld::menuCloseCallback(Ref* pSender)
 {
     Director::getInstance()->end();
+}
+
+void GameWorld::addZombie(Zombie* z)
+{
+    //float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET
+   float y = z->getPositionY();
+   int row = (y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height;
+   _zombiesInRow[row].push_back(z);
+   this->addChild(z, ENEMY_LAYER);
 }

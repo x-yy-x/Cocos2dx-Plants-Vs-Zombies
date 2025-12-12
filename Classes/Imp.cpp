@@ -1,5 +1,5 @@
 
-#include "Lmp.h"
+#include "Imp.h"
 #include "Plant.h"
 
 USING_NS_CC;
@@ -7,15 +7,15 @@ USING_NS_CC;
 // ----------------------------------------------------
 // Static constant definitions
 // ----------------------------------------------------
-const std::string Lmp::IMAGE_FILENAME = "flag_zombie_walk_spritesheet.png";
-const cocos2d::Rect Lmp::INITIAL_PIC_RECT = Rect::ZERO;
-const cocos2d::Size Lmp::OBJECT_SIZE = Size(125.0f, 173.8f);
-const float Lmp::MOVE_SPEED = 50.0f;       // Move 20 pixels per second
-const float Lmp::ATTACK_DAMAGE = 10.0f;    // Damage per attack
-const float Lmp::ATTACK_RANGE = 50.0f;     // Attack range
+const std::string Imp::IMAGE_FILENAME = "flag_zombie_walk_spritesheet.png";
+const cocos2d::Rect Imp::INITIAL_PIC_RECT = Rect::ZERO;
+const cocos2d::Size Imp::OBJECT_SIZE = Size(125.0f, 173.8f);
+const float Imp::MOVE_SPEED = 40.0f;       // Move 20 pixels per second
+const float Imp::ATTACK_DAMAGE = 10.0f;    // Damage per attack
+const float Imp::ATTACK_RANGE = 50.0f;     // Attack range
 
 // Protected constructor
-Lmp::Lmp()
+Imp::Imp()
     : _currentState(ZombieState::WALKING)
     , _isDead(false)
     , _maxHealth(200)
@@ -25,16 +25,18 @@ Lmp::Lmp()
     , _zombiePos(Vec2::ZERO)
     , _walkAction(nullptr)
     , _eatAction(nullptr)
+    , _flyAction(nullptr)
     , _isEating(false)
     , _targetPlant(nullptr)
     , _speed(MOVE_SPEED)
     , _normalSpeed(MOVE_SPEED)
+    ,_hasBeenThrown(false)
 {
     CCLOG("Zombie created.");
 }
 
 // Destructor
-Lmp::~Lmp()
+Imp::~Imp()
 {
     CC_SAFE_RELEASE(_walkAction);
     CC_SAFE_RELEASE(_eatAction);
@@ -42,7 +44,7 @@ Lmp::~Lmp()
 }
 
 // Initialization function
-bool Lmp::init()
+bool Imp::init()
 {
     // Call parent class initialization
     if (!Sprite::init())
@@ -57,15 +59,16 @@ bool Lmp::init()
 }
 
 // Static factory method to create zombie with animations
-Lmp* Lmp::createZombie()
+Imp* Imp::createZombie()
 {
-    Lmp* z = new Lmp();
+    Imp* z = new Imp();
     if (z && z->init())
     {
         z->autorelease();
         z->initWalkAnimation();
         z->initEatAnimation();
-        z->runAction(z->_walkAction);
+        z->initFlyAnimation();
+        z->setAnimation();
         return z;
     }
     delete z;
@@ -73,7 +76,7 @@ Lmp* Lmp::createZombie()
 }
 
 // Initialize walking animation
-void Lmp::initWalkAnimation()
+void Imp::initWalkAnimation()
 {
     const float frameWidth = 100.0f;
     const float frameHeight = 138.0f;
@@ -94,11 +97,11 @@ void Lmp::initWalkAnimation()
                 "lmp_walk_spritesheet.png",
                 Rect(x, y, frameWidth, frameHeight)
             );
-
             frames.pushBack(frame);
+
         }
     }
-
+    
     auto animation = Animation::createWithSpriteFrames(frames, 0.08f);
     auto animate = Animate::create(animation);
 
@@ -107,7 +110,7 @@ void Lmp::initWalkAnimation()
 }
 
 // Initialize eating animation
-void Lmp::initEatAnimation()
+void Imp::initEatAnimation()
 {
     const float frameWidth = 100.0f;
     const float frameHeight = 138.0f;
@@ -133,15 +136,45 @@ void Lmp::initEatAnimation()
         }
     }
 
-    auto animation = Animation::createWithSpriteFrames(frames, 0.1f);
+    auto animation = Animation::createWithSpriteFrames(frames, 0.15f);
     auto animate = Animate::create(animation);
 
     this->_eatAction = RepeatForever::create(animate);
     _eatAction->retain();
 }
 
+void Imp::initFlyAnimation()
+{
+    const float frameWidth = 100;
+    const float frameHeight = 138;
+
+    Vector<SpriteFrame*> frames;
+
+    for (int row = 0; row < 5; row++)
+    {
+        for (int col = 0; col < 5; col++)
+        {
+            if (row == 4 && col == 3)
+                break;
+
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                "imp_fly_spritesheet.png",
+                Rect(x, y, frameWidth, frameHeight)
+            );
+            frames.pushBack(frame);
+        }
+    }
+
+    auto animation = Animation::createWithSpriteFrames(frames, 0.08f);
+    this->_flyAction = Animate::create(animation);
+    _flyAction->retain();
+}
+
 // Update every frame
-void Lmp::update(float delta)
+void Imp::update(float delta)
 {
     if (_isDead)
     {
@@ -190,14 +223,14 @@ void Lmp::update(float delta)
 }
 
 // Get zombie state
-Lmp::ZombieState Lmp::getState() const
+Imp::ZombieState Imp::getState() const
 {
     CCLOG("getstate����");
     return _currentState;
 }
 
 // Set zombie state
-void Lmp::setState(ZombieState newState)
+void Imp::setState(ZombieState newState)
 {
 
     if (_currentState != newState)
@@ -209,13 +242,13 @@ void Lmp::setState(ZombieState newState)
 }
 
 // Check if dead
-bool Lmp::isDead() const
+bool Imp::isDead() const
 {
     return _isDead;
 }
 
 // Take damage
-void Lmp::takeDamage(int damage)
+void Imp::takeDamage(int damage)
 {
     if (_isDead)
     {
@@ -244,19 +277,19 @@ void Lmp::takeDamage(int damage)
 }
 
 // Set animation default implementation
-void Lmp::setAnimation()
+void Imp::setAnimation()
 {
     CCLOG("Zombie::setAnimation() called.");
     setAnimationForState(_currentState);
 }
 
 // Set animation corresponding to state
-void Lmp::setAnimationForState(ZombieState state)
+void Imp::setAnimationForState(ZombieState state)
 {
     switch (state)
     {
     case ZombieState::WALKING:
-        CCLOG("Setting WALKING animation.");
+        CCLOG("Setting imp WALKING animation.");
         if (_eatAction)
         {
             this->stopAction(_eatAction);
@@ -277,8 +310,21 @@ void Lmp::setAnimationForState(ZombieState state)
             this->runAction(_eatAction);
         }
         break;
+    case ZombieState::FLYING:
+        CCLOG("set state flying");
+        this->stopAllActions();
+        this->setScale(1.45f);
+        this->_speed = 70.0f;
+        this->runAction(Sequence::create( _flyAction, 
+            CallFunc::create([this]() {
+            this->_speed = _normalSpeed;
+            this->setState(ZombieState::WALKING);
+            this->setScale(1.0f);
+            }), 
+            MoveBy::create(0.0001f, Vec2(0, -40)), nullptr));
+        
     case ZombieState::DYING:
-        CCLOG("Setting DYING animation.");
+        CCLOG("Setting imp DYING animation.");
         break;
     default:
         break;
@@ -286,13 +332,13 @@ void Lmp::setAnimationForState(ZombieState state)
 }
 
 // Check and handle plant encounters
-void Lmp::encounterPlant(const std::vector<Plant*>& plants)
+void Imp::encounterPlant(const std::vector<Plant*>& plants)
 {
     checkCollision(plants);
 }
 
 // Check collision with plants
-void Lmp::checkCollision(const std::vector<Plant*>& plants)
+void Imp::checkCollision(const std::vector<Plant*>& plants)
 {
     if (_isEating) return;
 
@@ -321,7 +367,7 @@ void Lmp::checkCollision(const std::vector<Plant*>& plants)
 }
 
 // Start eating a plant
-void Lmp::startEating(Plant* plant)
+void Imp::startEating(Plant* plant)
 {
     _isEating = true;
     _targetPlant = plant;
@@ -331,7 +377,7 @@ void Lmp::startEating(Plant* plant)
 }
 
 // Called when plant dies
-void Lmp::onPlantDied()
+void Imp::onPlantDied()
 {
     _isEating = false;
     _speed = _normalSpeed;

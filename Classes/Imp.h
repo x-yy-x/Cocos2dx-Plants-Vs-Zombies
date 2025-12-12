@@ -15,7 +15,7 @@ class Plant;
  * Zombies have different states: walking, eating plants, dying.
  * Zombie can be directly instantiated as a normal zombie.
  */
-class Lmp : public Zombie
+class Imp : public Zombie
 {
 public:
     /**
@@ -25,7 +25,8 @@ public:
     {
         WALKING,      // Walking state
         EATING,       // Eating plant state
-        DYING         // Dying state
+        DYING,         // Dying state
+        FLYING
     };
 
     /**
@@ -34,13 +35,13 @@ public:
     virtual bool init() override;
 
     // Implement the auto-generated static Zombie* create() function
-    CREATE_FUNC(Lmp);
+    CREATE_FUNC(Imp);
 
     /**
      * @brief Static factory method to create a zombie with animations
      * @return Zombie* Created zombie instance
      */
-    static Lmp* createZombie();
+    static Imp* createZombie();
 
     /**
      * @brief Update function called every frame for movement, attack, death, etc.
@@ -80,10 +81,10 @@ public:
 
 protected:
     // Protected constructor
-    Lmp();
+    Imp();
 
     // Virtual destructor
-    virtual ~Lmp();
+    virtual ~Imp();
 
     /**
      * @brief Initialize walking animation
@@ -94,6 +95,8 @@ protected:
      * @brief Initialize eating animation
      */
     void initEatAnimation();
+
+    void initFlyAnimation();
 
     /**
      * @brief Set up animation
@@ -146,10 +149,12 @@ protected:
     // Animation actions
     cocos2d::RepeatForever* _walkAction;
     cocos2d::RepeatForever* _eatAction;
+    cocos2d::Animate* _flyAction;
     
     // Eating state
     bool _isEating;                  // Is currently eating
     Plant* _targetPlant;             // Target plant being eaten
     float _speed;                    // Current movement speed
     float _normalSpeed;              // Normal walking speed
+    bool _hasBeenThrown;
 };

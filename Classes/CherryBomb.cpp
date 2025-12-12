@@ -12,7 +12,7 @@ const std::string CherryBomb::EXPLOSION_IMAGE = "explosion.png";
 const cocos2d::Rect CherryBomb::INITIAL_PIC_RECT = Rect(0, 0, 128, 128);
 const cocos2d::Size CherryBomb::OBJECT_SIZE = Size(128, 128);
 const float CherryBomb::ATTACK_RANGE = 0.0f;  // Not used for bomb
-const int CherryBomb::EXPLOSION_DAMAGE = 100000;
+const int CherryBomb::EXPLOSION_DAMAGE = 1500;
 const int CherryBomb::EXPLOSION_RADIUS = 1;  // 3x3 grid (radius of 1 from center)
 
 // Protected constructor
