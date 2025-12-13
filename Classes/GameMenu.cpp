@@ -1,165 +1,199 @@
 /**
  * @file GameMenu.cpp
- * @brief ÊµÏÖÓÎÏ·Ö÷²Ëµ¥³¡¾°£¬°üº¬±³¾°ÉèÖÃºÍ²Ëµ¥¹¦ÄÜ¡£
+ * @brief Êµï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÃºÍ²Ëµï¿½ï¿½ï¿½ï¿½Ü¡ï¿½
  */
 
 #include "GameMenu.h"
-#include "GameWorld.h" // ÒýÈëÕ¼Î» GameWorld ³¡¾°Í·ÎÄ¼þ
+#include "GameWorld.h" 
 #include "cocos2d.h"
+#include "ui/UIButton.h" 
+#include "audio/include/AudioEngine.h"
+#include <vector> 
+#include <string> 
+#include <functional> 
 
- // Ê¹ÓÃÃüÃû¿Õ¼ä¼ò»¯´úÂë
+// Ê¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½ò»¯´ï¿½ï¿½ï¿½
 USING_NS_CC;
+using namespace ui;
+
+GameMenu::GameMenu()
+    : _backgroundMusicId(-1)
+{}
+
+GameMenu::~GameMenu()
+{
+    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_backgroundMusicId);
+    }
+}
 
 // =========================================================================
-// 1. ³¡¾°´´½¨ (createScene)
+// 1. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ (createScene)
 // =========================================================================
 
-/**
- * @brief ´´½¨²¢·µ»Ø GameMenu ³¡¾°¡£
- * * @return cocos2d::Scene* */
 Scene* GameMenu::createScene()
 {
-    // Ê¹ÓÃ Cocos2d-x µÄ CREATE_FUNC ºê´´½¨³¡¾°ÊµÀý
+    // Ê¹ï¿½ï¿½ Cocos2d-x ï¿½ï¿½ CREATE_FUNC ï¿½ê´´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Êµï¿½ï¿½
     return GameMenu::create();
 }
 
 // =========================================================================
-// 2. ³¡¾°³õÊ¼»¯ (init)
+// 2. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ã½á¹¹ï¿½ï¿½ (Ä£ï¿½å»¯ï¿½ï¿½ï¿½ï¿½)
 // =========================================================================
 
 /**
- * @brief ³õÊ¼»¯ GameMenu ³¡¾°µÄÄÚÈÝ¡£
- * * @return true ³õÊ¼»¯³É¹¦£¬false ³õÊ¼»¯Ê§°Ü
+ * @brief ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½ï¿½Å¥ï¿½ï¿½ï¿½ï¿½ï¿½Ã½á¹¹ï¿½å£¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½Ã¡ï¿½
  */
+struct ButtonConfig {
+    std::string text;
+    // ï¿½Øµï¿½ï¿½ï¿½ï¿½ï¿½
+    std::function<void(Ref*)> callback;
+};
+
+/**
+ * @brief ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½Å¥ï¿½ï¿½Ä£ï¿½å£©ï¿½ï¿½ï¿½Ó¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á¹¹ï¿½å¡£
+ */
+struct ButtonVisualTemplate {
+    float x_offset_ratio = 0.0f; // X ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½Ä¿ï¿½ï¿½Èµï¿½Æ«ï¿½Æ±ï¿½ï¿½ï¿½
+    float rotation_angle = 0.0f; // ï¿½ï¿½×ªï¿½Ç¶ï¿½
+    float scale_factor = 1.0f;   // ï¿½Å´ï¿½ï¿½ï¿½
+};
+
+// =========================================================================
+// 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ (init)
+// =========================================================================
+
 bool GameMenu::init()
 {
-    // µ÷ÓÃ¸¸Àà Scene µÄ init()
     if (!Scene::init())
     {
         return false;
     }
 
-    // »ñÈ¡¿É¼ûÇøÓò´óÐ¡ºÍÔ­µã£¬ÓÃÓÚÊÊÅä²»Í¬Éè±¸
+    cocos2d::AudioEngine::stopAll();
+    _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // --- A. È«¾Ö±³¾° (LoadingPage.png) ---
-    // Ê¹ÓÃ LoadingPage.png ×÷ÎªÈ«¾Ö±³¾° Sprite
-    auto background = Sprite::create("LoadingPage.png");
+    // --- A. ï¿½ï¿½ï¿½Ð»ï¿½ï¿½ï¿½ï¿½Ö²ï¿½ï¿½ï¿½ ---
+    const float FONT_SIZE = 40;
+    const float VERTICAL_PADDING = 120.0f; // ï¿½ï¿½Å¥Ö®ï¿½ï¿½Ä´ï¿½Ö±ï¿½ï¿½ï¿½
+    // ï¿½ï¿½ï¿½Þ¸Äµï¿½ 1ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ïµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½
+    const float START_Y_OFFSET = 250.0f; // ï¿½Ëµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½Äµï¿½ï¿½ï¿½ï¿½ï¿½Æ«ï¿½ï¿½ï¿½ï¿½
+
+    // --- B. ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½Å¥ï¿½ï¿½ï¿½Ó¾ï¿½Ä£ï¿½ï¿½ (ï¿½ï¿½ï¿½Ð°ï¿½Å¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ´ï¿½Ä£ï¿½ï¿½) ---
+    ButtonVisualTemplate DAY_MODE_TEMPLATE = {
+        // ï¿½ï¿½ï¿½Þ¸Äµï¿½ 2ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ X ï¿½ï¿½Æ«ï¿½Æ±ï¿½ï¿½ï¿½
+        0.2f,     // X ï¿½ï¿½Æ«ï¿½Æ±ï¿½ï¿½ï¿½ (0.1f ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä»ï¿½ï¿½ï¿½Èµï¿½ 10% Æ«ï¿½ï¿½)
+        // ï¿½ï¿½ï¿½Þ¸Äµï¿½ 3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ª 10 ï¿½ï¿½
+        5.0f,    // ï¿½ï¿½×ªï¿½Ç¶ï¿½ (10.0f)
+        1.2f      // ï¿½Å´ï¿½ï¿½ï¿½ (ï¿½ï¿½ï¿½Ö²ï¿½ï¿½ï¿½)
+    };
+
+    // --- C. ï¿½ï¿½ï¿½ï¿½ Lambda ï¿½ï¿½ï¿½ï¿½Ê½ï¿½ï¿½ï¿½Ú»Øµï¿½ ---
+    auto dayModeCallback = [](Ref* sender) {
+        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameWorld::createScene(false)));
+    };
+
+    auto nightModeCallback = [](Ref* sender) {
+        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameWorld::createScene(true)));
+    };
+
+    auto exitCallback = [this](Ref* sender) {
+        this->menuCloseCallback(sender);
+        };
+
+    // --- D. ï¿½ò»¯°ï¿½Å¥ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½ ---
+    std::vector<ButtonConfig> configs = {
+        { "1. day mode",         dayModeCallback },
+        { "2. nigth mode",       nightModeCallback },
+        { "3. shop",             nullptr },
+        { "4. exit",             exitCallback }
+    };
+
+    // --- E. È«ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ---
+    auto background = Sprite::create("MenuBackground.png");
     if (background)
     {
-        // ¾ÓÖÐÏÔÊ¾
         background->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-
-        // Ëõ·ÅÒÔÊÊÅäÆÁÄ»¿í¶ÈºÍ¸ß¶ÈÖÐ½Ï´óµÄ±ÈÀý£¬ÒÔÈ·±£»­ÃæÌîÂúÆÁÄ» (ÀàËÆ Zoom Ð§¹û)
         float scaleX = visibleSize.width / background->getContentSize().width;
         float scaleY = visibleSize.height / background->getContentSize().height;
         background->setScale(MAX(scaleX, scaleY));
-
-        this->addChild(background, 0); // Z-order 0 (×îµ×²ã)
+        this->addChild(background, 0);
     }
     else
     {
-        log("Error: Failed to load background image: LoadingPage.png");
+        log("Error: Failed to load background image: MenuBackground.png");
     }
 
-    // --- B. ²Ëµ¥±³¾°Í¼ (Menu.png) ---
+    // --- F. ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¶ï¿½Î»ï¿½ï¿½Å¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß¼ï¿½ï¿½ï¿½ ---
+    // ï¿½ï¿½ï¿½Þ¸Äµã¡¿ï¿½ï¿½Y ï¿½ï¿½ï¿½ï¿½Ê¼Î»ï¿½ï¿½Ê¹ï¿½ï¿½ï¿½Âµï¿½ START_Y_OFFSET
+    float currentY = visibleSize.height / 2 + origin.y + START_Y_OFFSET;
+    float centerX = visibleSize.width / 2 + origin.x;
 
-    auto menuBackground = Sprite::create("Menu.png");
-    if (menuBackground)
+    for (size_t i = 0; i < configs.size(); ++i)
     {
-        menuBackground->setPosition(Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y));
-        this->addChild(menuBackground, 1); // Z-order 1 (ÔÚÈ«¾Ö±³¾°Ö®ÉÏ)
+        const auto& config = configs[i];
+
+        auto button = Button::create();
+        button->setTitleText(config.text);
+        button->setTitleFontSize(FONT_SIZE);
+        button->setTitleColor(Color3B::WHITE);
+
+        // --- Ó¦ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ ---
+
+        // 1. ï¿½ï¿½ï¿½ï¿½ X ï¿½ï¿½ï¿½ê£¨Ê¹ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ X Æ«ï¿½Æ£ï¿½
+        float finalX = centerX + (visibleSize.width * DAY_MODE_TEMPLATE.x_offset_ratio);
+
+        // 2. ï¿½ï¿½ï¿½ï¿½Î»ï¿½Ã£ï¿½Y ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ­ï¿½ï¿½ï¿½Ð¼ï¿½ï¿½ã£©
+        button->setPosition(Vec2(finalX, currentY));
+
+        // 3. ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½Ç¶È£ï¿½Ê¹ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½Ç£ï¿½
+        button->setRotation(DAY_MODE_TEMPLATE.rotation_angle);
+
+        // 4. ï¿½ï¿½ï¿½Ã·Å´ï¿½ï¿½ï¿½ï¿½ï¿½Ê¹ï¿½ï¿½Ä£ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å±ï¿½ï¿½ï¿½ï¿½ï¿½
+        button->setScale(DAY_MODE_TEMPLATE.scale_factor);
+
+        // ------------------------------------
+
+        // ï¿½ï¿½ï¿½Ã»Øµï¿½ï¿½ï¿½ï¿½ï¿½
+        if (config.callback)
+        {
+            button->addTouchEventListener([callback = config.callback](Ref* sender, Widget::TouchEventType type) {
+                if (type == Widget::TouchEventType::ENDED) {
+                    callback(sender);
+                }
+                });
+        }
+
+        this->addChild(button, 2);
+
+        // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½Å¥ï¿½ï¿½Yï¿½ï¿½ï¿½ï¿½
+        currentY -= VERTICAL_PADDING;
     }
-    else
-    {
-        log("Error: Failed to load menu background image: Menu.png");
-    }
 
-    // --- C. ²Ëµ¥Ïî´´½¨ (MenuItemLabel) ---
-
-    // ¶¨Òå²Ëµ¥ÏîµÄ¹«¹²ÊôÐÔ
-    // ½øÒ»²½Ôö´ó×ÖÌå´óÐ¡£¬Ìá¸ß¿É¼ûÐÔºÍµã»÷ÇøÓò
-    const float FONT_SIZE = 100;
-    // Õý³£ÑÕÉ«£º°×É«
-    const Color3B NORMAL_COLOR = Color3B::WHITE;
-    // Ñ¡ÖÐÑÕÉ«£º»ÆÉ« (Ìá¹©ÊÓ¾õ·´À¡)
-    const Color3B SELECTED_COLOR = Color3B::YELLOW;
-    // Ôö¼Ó´¹Ö±¼ä¾à£¬½øÒ»²½È·±£µã»÷ÇøÓò·ÖÀë
-    const float VERTICAL_PADDING = 40.0f;
-
-    // ²Ëµ¥ÏîÎÄ±¾ÄÚÈÝ
-    const std::string DAY_MODE_TEXT = "1. day mode";
-    const std::string NIGHT_MODE_TEXT = "2. nigth mode";
-    const std::string SHOP_TEXT = "3.shop";
-    const std::string EXIT_TEXT = "4. exit";
-
-
-    /**
-     * @brief ¸¨Öúº¯Êý£º´´½¨ MenuItemLabel£¬Ê¹ÓÃÁ½¸ö Label ÊµÏÖÕý³£/Ñ¡ÖÐ×´Ì¬µÄÑÕÉ«ÇÐ»»¡£
-     * @param text ²Ëµ¥ÏîÏÔÊ¾µÄÎÄ±¾
-     * @param callback ²Ëµ¥ÏîµÄ»Øµ÷º¯Êý
-     * @return MenuItem* ´´½¨µÄ²Ëµ¥Ïî
-     */
-    auto createTextButton = [&](const std::string& text, const ccMenuCallback& callback) -> MenuItem* {
-        // Õý³£ Label (°×É«)
-        auto normalLabel = Label::create();
-        normalLabel->setString(text);
-		normalLabel->setScale(1.5); // Í³Ò»×ÖÌå´óÐ¡
-
-        return MenuItemLabel::create(normalLabel, callback);
-        };
-
-
-    // 1. °×ÌìÄ£Ê½ (¹¦ÄÜ°´Å¥) -> ½øÈë GameWorld ³¡¾°
-    auto dayModeItem = createTextButton(DAY_MODE_TEXT,
-        // ÄäÃûº¯Êý Lambda ±í´ïÊ½×÷Îª»Øµ÷
-        [](Ref* sender) {
-            // Ê¹ÓÃ TransitionFade ¹ý¶ÉÐ§¹û£¬ÇÐ»»µ½ GameWorld ³¡¾°
-            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameWorld::createScene()));
-        });
-
-    // 2. ºÚÒ¹Ä£Ê½ (Õ¼Î»·û)
-    auto nightModeItem = createTextButton(NIGHT_MODE_TEXT, nullptr);
-
-    // 3. ÉÌµê (Õ¼Î»·û)
-    auto shopItem = createTextButton(SHOP_TEXT, nullptr);
-
-    // 4. ÍË³öÓÎÏ· (¹¦ÄÜ°´Å¥) -> ÍË³ö³ÌÐò
-    auto exitItem = createTextButton(EXIT_TEXT, CC_CALLBACK_1(GameMenu::menuCloseCallback, this));
-
-
-    // ´´½¨ Menu
-    auto menu = Menu::create(dayModeItem, nightModeItem, shopItem, exitItem, nullptr);
-    menu->alignItemsVerticallyWithPadding(VERTICAL_PADDING); // ´¹Ö±ÅÅÁÐ£¬ÉèÖÃ¼ä¾à
-
-    // ½« Menu ·ÅÖÃÔÚÆÁÄ»ÖÐÑë
-    Vec2 menuPosition = Vec2(visibleSize.width / 2 + origin.x, visibleSize.height / 2 + origin.y);
-
-    // ÊÊµ±ÏòÉÏÆ«ÒÆ£¬ÈÃ²Ëµ¥¸ü¿¿½üÆÁÄ»ÖÐÐÄÉÏ·½£¬ÊÓ¾õÉÏ¸üÊæÊÊ
-    menuPosition.y += 50.0f;
-
-    menu->setPosition(menuPosition);
-
-    this->addChild(menu, 2); // Z-order 2 (ÔÚËùÓÐ±³¾°Ö®ÉÏ)
+    // Play menu music
+    _backgroundMusicId = cocos2d::AudioEngine::play2d("title.mp3", true);
 
     return true;
 }
 
 // =========================================================================
-// 3. ÍË³öÓÎÏ·»Øµ÷ (menuCloseCallback)
+// 4. ï¿½Ë³ï¿½ï¿½ï¿½Ï·ï¿½Øµï¿½ (menuCloseCallback)
 // =========================================================================
 
 /**
- * @brief ÍË³öÓÎÏ·µÄ»Øµ÷º¯Êý¡£
- * * @param sender ´¥·¢»Øµ÷µÄ¶ÔÏó
+ * @brief ï¿½Ë³ï¿½ï¿½ï¿½Ï·ï¿½Ä»Øµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+ * @param sender ï¿½ï¿½ï¿½ï¿½ï¿½Øµï¿½ï¿½Ä¶ï¿½ï¿½ï¿½
  */
 void GameMenu::menuCloseCallback(Ref* sender)
 {
-    // Í£Ö¹ Cocos2d-x ÒýÇæµÄÖ÷Ñ­»·
+    // Í£Ö¹ Cocos2d-x ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ­ï¿½ï¿½
     Director::getInstance()->end();
 
-    // Õë¶Ô iOS Æ½Ì¨£¬ÐèÒªÏÔÊ½µ÷ÓÃ exit(0)
+    // ï¿½ï¿½ï¿½ iOS Æ½Ì¨ï¿½ï¿½ï¿½ï¿½Òªï¿½ï¿½Ê½ï¿½ï¿½ï¿½ï¿½ exit(0)
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     exit(0);
 #endif

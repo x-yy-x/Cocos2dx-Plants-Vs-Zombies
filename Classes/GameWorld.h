@@ -19,15 +19,14 @@ class BombPlant;
 class GameWorld : public cocos2d::Scene
 {
 public:
-    static cocos2d::Scene* createScene();
+    static cocos2d::Scene* createScene(bool isNightMode = false);
+    static GameWorld* create(bool isNightMode = false);
 
     virtual bool init() override;
-    
+    virtual ~GameWorld();
+
     // A selector callback
     void menuCloseCallback(cocos2d::Ref* pSender);
-    
-    // Implement the "static create()" method manually
-    CREATE_FUNC(GameWorld);
 
     /**
      * @brief Update function called every frame
@@ -161,6 +160,8 @@ private:
 
     // Sun spawning system
     float _sunSpawnTimer;            // Timer for sun spawning (every 5 seconds)
+    int _backgroundMusicId{-1};
+    bool _isNightMode{ false };
 };
 
 // Wave spawning parameters (reduced difficulty)

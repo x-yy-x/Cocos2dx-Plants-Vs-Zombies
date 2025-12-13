@@ -23,12 +23,37 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
-Scene* GameWorld::createScene()
+GameWorld* GameWorld::create(bool isNightMode)
 {
-    return GameWorld::create();
+    GameWorld* instance = new (std::nothrow) GameWorld();
+    if (instance)
+    {
+        instance->_isNightMode = isNightMode;
+        if (instance->init())
+        {
+            instance->autorelease();
+            return instance;
+        }
+        delete instance;
+    }
+    return nullptr;
+}
+
+Scene* GameWorld::createScene(bool isNightMode)
+{
+    return GameWorld::create(isNightMode);
+}
+
+GameWorld::~GameWorld()
+{
+    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_backgroundMusicId);
+    }
 }
 
 // Print useful error message instead of segfaulting when files are not there.
@@ -48,6 +73,9 @@ bool GameWorld::init()
     {
         return false;
     }
+
+    cocos2d::AudioEngine::stopAll();
+    _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
 
     // Initialize plant grid (all cells empty at start)
     for (int row = 0; row < MAX_ROW; ++row)
@@ -79,7 +107,7 @@ bool GameWorld::init()
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
     // Create background
-    auto backGround = BackGround::create();
+    auto backGround = BackGround::create(_isNightMode);
     if (backGround == nullptr)
     {
         problemLoading("'background.png'");
@@ -133,7 +161,7 @@ bool GameWorld::init()
     }
     else
     {
-        _shovelBack->setPosition(Vec2(visibleSize.width - 100, visibleSize.height - 80));
+        _shovelBack->setPosition(Vec2(visibleSize.width - 465, visibleSize.height - 80));
         this->addChild(_shovelBack, SEEDPACKET_LAYER);
     }
 
@@ -145,7 +173,7 @@ bool GameWorld::init()
     }
     else
     {
-        Vec2 shovelPos = _shovelBack ? _shovelBack->getPosition() : Vec2(visibleSize.width - 100, visibleSize.height - 80);
+        Vec2 shovelPos = _shovelBack ? _shovelBack->getPosition() : Vec2(visibleSize.width - 500, visibleSize.height - 80);
         _shovel->setOriginalPosition(shovelPos);
         this->addChild(_shovel, SEEDPACKET_LAYER + 1);
     }
@@ -172,6 +200,9 @@ bool GameWorld::init()
 
     // Enable update loop
     this->scheduleUpdate();
+
+    const char* track = _isNightMode ? "night_scene.mp3" : "day_scene.mp3";
+    _backgroundMusicId = cocos2d::AudioEngine::play2d(track, true);
 
     return true;
 }
@@ -381,12 +412,15 @@ void GameWorld::update(float delta)
         _nextWaveTickCount = _tickCount + interval;
     }
 
-    // Sun spawning system (every 5 seconds)
-    _sunSpawnTimer += delta;
-    if (_sunSpawnTimer >= 5.0f)
+    if (!_isNightMode)
     {
-        spawnSunFromSky();
-        _sunSpawnTimer = 0.0f;
+        // Sun spawning system (every 5 seconds)
+        _sunSpawnTimer += delta;
+        if (_sunSpawnTimer >= 5.0f)
+        {
+            spawnSunFromSky();
+            _sunSpawnTimer = 0.0f;
+        }
     }
 
     // Update Plants (Firing logic)
@@ -694,9 +728,8 @@ void GameWorld::menuCloseCallback(Ref* pSender)
     Director::getInstance()->end();
 }
 
-void GameWorld::addZombie(Zombie* z)
+void GameWorld::addZombie(Zombie* z) 
 {
-    //float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET
    float y = z->getPositionY();
    int row = (y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height;
    _zombiesInRow[row].push_back(z);

@@ -6,6 +6,9 @@
 class GameMenu : public cocos2d::Scene
 {
 public:
+    GameMenu();
+    virtual ~GameMenu();
+
     virtual bool init() override;
 
     static cocos2d::Scene* createScene();
@@ -15,6 +18,9 @@ public:
 
     // implement the "static create()" method manually
     CREATE_FUNC(GameMenu);
+
+private:
+    int _backgroundMusicId{-1};
 };
 
 #endif

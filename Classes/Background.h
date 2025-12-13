@@ -5,14 +5,20 @@
 class BackGround : public GameObject
 {
 public:
+    static BackGround* create();
+    static BackGround* create(bool isNightMode);
+
     virtual bool init() override;
-    
-    // Implement the "static create()" method manually
-    CREATE_FUNC(BackGround);
+
+    void setNightMode(bool isNightMode)
+    {
+        _isNightMode = isNightMode;
+    }
 
 protected:
-    // BackGround class static constants
-    static const std::string IMAGE_FILENAME;
-    static const cocos2d::Rect INITIAL_PIC_RECT;
-    static const cocos2d::Size OBJECT_SIZE;
+    static const std::string DAY_IMAGE;
+    static const std::string NIGHT_IMAGE;
+
+private:
+    bool _isNightMode{ false };
 };
