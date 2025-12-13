@@ -1,6 +1,7 @@
 
 #include "PoleVaulter.h"
 #include "Plant.h"
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
@@ -444,6 +445,7 @@ void PoleVaulter::startJumping()
     _speed = 0;
     setState(PoleVaulterState::JUMPING);
     CCLOG("Zombie start jumping!");
+    cocos2d::AudioEngine::play2d("polevault.mp3", false);
 }
 
 // Called when plant dies

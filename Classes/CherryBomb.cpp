@@ -1,6 +1,7 @@
 #include "CherryBomb.h"
 #include "Zombie.h"
 #include "Sun.h"
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
@@ -180,5 +181,7 @@ void CherryBomb::playExplosionAnimation()
     }
 
     CCLOG("CherryBomb explosion animation played!");
+
+    cocos2d::AudioEngine::play2d("cherrybomb.mp3", false);
 }
 

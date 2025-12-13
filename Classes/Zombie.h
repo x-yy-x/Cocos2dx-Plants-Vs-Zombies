@@ -4,6 +4,7 @@
 #include "cocos2d.h"
 #include "GameObject.h"
 #include "GameDefs.h"
+#include "audio/include/AudioEngine.h"
 #include <vector>
 
 // Forward declaration
@@ -151,4 +152,5 @@ protected:
     Plant* _targetPlant;             // Target plant being eaten
     float _speed;                    // Current movement speed
     float _normalSpeed;              // Normal walking speed
+    int _groanAudioId;               // Audio ID for looped groan during eating
 };

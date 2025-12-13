@@ -25,6 +25,9 @@
 #include <cstdlib>
 #include "audio/include/AudioEngine.h"
 
+// CCRANDOM
+#include "base/ccRandom.h"
+
 USING_NS_CC;
 
 GameWorld* GameWorld::create(bool isNightMode)
@@ -102,6 +105,7 @@ bool GameWorld::init()
 
     // Initialize sun spawning system
     _sunSpawnTimer = 0.0f;
+    _zombieGroanTimer = 3.0f;
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
@@ -225,6 +229,7 @@ void GameWorld::setupUserInteraction()
                     int sunValue = sun->collect();
                     _sunCount += sunValue;
                     updateSunDisplay();
+                    cocos2d::AudioEngine::play2d("sun_pickup_sound.mp3", false);
                     CCLOG("Sun collected! +%d sun (Total: %d)", sunValue, _sunCount);
                     return true;
                 }
@@ -233,6 +238,9 @@ void GameWorld::setupUserInteraction()
 
         // Check if touched shovel
         if (_shovel && _shovel->containsPoint(pos)) {
+            // Play button click sound
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+
             _shovelSelected = true;
             _shovel->setDragging(true);
             return true;
@@ -244,10 +252,13 @@ void GameWorld::setupUserInteraction()
             if (_seedPackets[i] && _seedPackets[i]->getBoundingBox().containsPoint(pos))
             {
                 SeedPacket* packet = _seedPackets[i];
-                
+
                 // Check if ready and enough sun
                 if (packet->isReady() && _sunCount >= packet->getSunCost())
                 {
+                    // Play button click sound
+                    cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+
                     _plantSelected = true;
                     _selectedSeedPacketIndex = i;
 
@@ -264,6 +275,9 @@ void GameWorld::setupUserInteraction()
                 }
                 else
                 {
+                    // Play buzzer sound for invalid action
+                    cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+
                     CCLOG("Seed packet not ready or not enough sun!");
                     return true;
                 }
@@ -297,9 +311,18 @@ void GameWorld::setupUserInteraction()
         {
             Vec2 shovelTipPos = _shovel ? _shovel->getPosition() : pos;
             bool removed = this->tryRemovePlantAtPosition(shovelTipPos);
-            
-            if (removed) CCLOG("Plant removed!");
-            else CCLOG("No plant!");
+
+            if (removed)
+            {
+                int audioId = cocos2d::AudioEngine::play2d("planting.mp3", false);
+                CCLOG("Plant removed!");
+            }
+            else
+            {
+                // Play buzzer sound for invalid removal
+                cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+                CCLOG("No plant!");
+            }
 
             _shovelSelected = false;
             if (_shovel) _shovel->resetPosition();
@@ -318,18 +341,21 @@ void GameWorld::setupUserInteraction()
             if (selectedPacket)
             {
                 bool planted = this->tryPlantAtPosition(pos, selectedPacket);
-                
+
                 if (planted)
                 {
                     CCLOG("Plant placed!");
                     // Deduct sun
                     _sunCount -= selectedPacket->getSunCost();
                     updateSunDisplay();
+                    int audioId = cocos2d::AudioEngine::play2d("planting.mp3", false);
                     // Start cooldown
                     selectedPacket->startCooldown();
                 }
                 else
                 {
+                    // Play buzzer sound for invalid planting
+                    cocos2d::AudioEngine::play2d("buzzer.mp3", false);
                     CCLOG("Cannot plant!");
                 }
             }
@@ -434,6 +460,7 @@ void GameWorld::update(float delta)
 
     // Update Suns (Movement and lifetime)
     updateSuns(delta);
+    maybePlayZombieGroan(delta);
 
     // Cleanup
     removeDeadPlants();
@@ -571,6 +598,7 @@ void GameWorld::updateBullets(float delta)
                                 // Hit!
                                 zombie->takeDamage(bullet->getDamage());
                                 bullet->deactivate();
+                                cocos2d::AudioEngine::play2d("bullet_hit.mp3", false);
                                 break; // Bullet hits one zombie and disappears
                             }
                         }
@@ -720,6 +748,38 @@ void GameWorld::spawnSunFromSky()
         this->addChild(sun, SUN_LAYER);
         _suns.push_back(sun);
         CCLOG("Sun spawned from sky, target column: %d", targetCol);
+    }
+}
+
+void GameWorld::maybePlayZombieGroan(float delta)
+{
+    bool hasZombie = false;
+    for (int row = 0; row < MAX_ROW && !hasZombie; ++row)
+    {
+        for (auto zombie : _zombiesInRow[row])
+        {
+            if (zombie && !zombie->isDead())
+            {
+                hasZombie = true;
+                break;
+            }
+        }
+    }
+
+    if (!hasZombie)
+    {
+        _zombieGroanTimer = 1.0f;
+        return;
+    }
+
+    _zombieGroanTimer -= delta;
+    if (_zombieGroanTimer <= 0.0f)
+    {
+        if (CCRANDOM_0_1() < 0.05f)  // Reduced to 5% chance
+        {
+            cocos2d::AudioEngine::play2d("zombie_groan.mp3", false);
+        }
+        _zombieGroanTimer = 10.0f;  // Fixed 10 second interval
     }
 }
 

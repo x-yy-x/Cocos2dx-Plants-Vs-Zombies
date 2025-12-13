@@ -1,6 +1,7 @@
 
 #include "Zombie.h"
 #include "Plant.h"
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
@@ -29,6 +30,7 @@ Zombie::Zombie()
     , _targetPlant(nullptr)
     , _speed(MOVE_SPEED)
     , _normalSpeed(MOVE_SPEED)
+    , _groanAudioId(cocos2d::AudioEngine::INVALID_AUDIO_ID)
 {
     CCLOG("Zombie created.");
 }
@@ -36,6 +38,10 @@ Zombie::Zombie()
 // Destructor
 Zombie::~Zombie()
 {
+    if (_groanAudioId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_groanAudioId);
+    }
     CC_SAFE_RELEASE(_walkAction);
     CC_SAFE_RELEASE(_eatAction);
     CCLOG("Zombie destroyed.");
@@ -171,12 +177,14 @@ void Zombie::update(float delta)
             if (_targetPlant && !_targetPlant->isDead())
             {
                 _targetPlant->takeDamage((int)ATTACK_DAMAGE);
+                cocos2d::AudioEngine::play2d("zombie_eating.mp3", false);
                 CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
                 _accumulatedTime = 0.0f;
 
                 // Check if plant died
                 if (_targetPlant->isDead())
                 {
+                    cocos2d::AudioEngine::play2d("zombie_gulp.mp3", false);
                     onPlantDied();
                 }
             }
@@ -328,6 +336,11 @@ void Zombie::startEating(Plant* plant)
     _speed = 0;  // Stop moving
     setState(ZombieState::EATING);
     CCLOG("Zombie start eating plant!");
+
+    if (_groanAudioId == cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        _groanAudioId = cocos2d::AudioEngine::play2d("zombie_groan.mp3", true);
+    }
 }
 
 // Called when plant dies
@@ -338,4 +351,11 @@ void Zombie::onPlantDied()
     _targetPlant = nullptr;
     setState(ZombieState::WALKING);
     CCLOG("Zombie resume walking");
+
+    if (_groanAudioId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_groanAudioId);
+        _groanAudioId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+    }
+    cocos2d::AudioEngine::play2d("zombie_groan.mp3", false);
 }

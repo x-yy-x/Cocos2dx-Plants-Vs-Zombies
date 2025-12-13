@@ -127,6 +127,9 @@ private:
      */
     void spawnSunFromSky();
 
+    void maybePlayZombieGroan(float delta);
+
+
     // Grid storage system - stores Plant pointers directly
     Plant* _plantGrid[MAX_ROW][MAX_COL];
     
@@ -157,6 +160,8 @@ private:
     int _tickCount;                  // Total tick count (1 tick = 1/30 second)
     int _nextWaveTickCount;          // Tick count when next wave should spawn
     bool _gameStarted;               // Whether game has started
+
+    float _zombieGroanTimer;
 
     // Sun spawning system
     float _sunSpawnTimer;            // Timer for sun spawning (every 5 seconds)
