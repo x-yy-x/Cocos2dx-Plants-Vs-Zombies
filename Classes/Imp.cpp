@@ -204,12 +204,14 @@ void Imp::update(float delta)
             if (_targetPlant && !_targetPlant->isDead())
             {
                 _targetPlant->takeDamage((int)ATTACK_DAMAGE);
+                cocos2d::AudioEngine::play2d("zombie_eating.mp3", false);
                 CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
                 _accumulatedTime = 0.0f;
 
                 // Check if plant died
                 if (_targetPlant->isDead())
                 {
+                    cocos2d::AudioEngine::play2d("zombie_gulp.mp3", false);
                     onPlantDied();
                 }
             }

@@ -20,6 +20,7 @@
 #include "FlagZombie.h"
 #include "Imp.h"
 #include "Gargantuar.h"
+#include "GameMenu.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -57,6 +58,18 @@ GameWorld::~GameWorld()
     {
         cocos2d::AudioEngine::stop(_backgroundMusicId);
     }
+
+    // Clean up pause menu resources
+    if (_pauseMenuLayer)
+    {
+        _pauseMenuLayer = nullptr;
+        _pauseMenu = nullptr;
+        _volumeLabel = nullptr;
+    }
+
+    // Reset game state
+    _isPaused = false;
+    _isSpeedMode = false;
 }
 
 // Print useful error message instead of segfaulting when files are not there.
@@ -182,6 +195,52 @@ bool GameWorld::init()
         this->addChild(_shovel, SEEDPACKET_LAYER + 1);
     }
 
+    // Create pause button
+    _pauseButton = MenuItemImage::create(
+        "btn_Menu.png",  // Normal state
+        "btn_Menu2.png", // Selected state
+        [this](Ref* sender) {
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+            showPauseMenu(sender);
+        }
+    );
+
+    if (_pauseButton)
+    {
+        _pauseButton->setPosition(Vec2(visibleSize.width - 100, visibleSize.height - 40));
+        _pauseButton->setScale(0.8f);
+
+        auto pauseMenu = Menu::create(_pauseButton, nullptr);
+        pauseMenu->setPosition(Vec2::ZERO);
+        this->addChild(pauseMenu, UI_LAYER);
+    }
+
+    // Create speed mode toggle button (below pause button)
+    auto speedOnItem = MenuItemFont::create("2x Speed", CC_CALLBACK_1(GameWorld::toggleSpeedMode, this));
+    auto speedOffItem = MenuItemFont::create("Normal Speed", CC_CALLBACK_1(GameWorld::toggleSpeedMode, this));
+    _speedToggleButton = MenuItemToggle::createWithCallback(
+        [this](Ref* sender) {
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+            toggleSpeedMode(sender);
+        },
+        speedOffItem,
+        speedOnItem,
+        nullptr
+    );
+    auto speedButtonBack = Sprite::create("button.png");
+	speedButtonBack->setPosition(Vec2(visibleSize.width - 100, visibleSize.height - 85));
+    speedButtonBack->setScale(1.3f,0.85f);
+	this->addChild(speedButtonBack, UI_LAYER - 1);
+    if (_speedToggleButton)
+    {
+        _speedToggleButton->setPosition(Vec2(visibleSize.width - 100, visibleSize.height - 80));
+        _speedToggleButton->setScale(0.8f);
+
+        auto speedMenu = Menu::create(_speedToggleButton, nullptr);
+        speedMenu->setPosition(Vec2::ZERO);
+        this->addChild(speedMenu, UI_LAYER);
+    }
+
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
@@ -217,6 +276,9 @@ void GameWorld::setupUserInteraction()
     unifiedListener->setSwallowTouches(true); 
 
     unifiedListener->onTouchBegan = [this](Touch* touch, Event* event) {
+        // Don't process touches when game is paused
+        if (_isPaused) return false;
+
         Vec2 pos = this->convertToNodeSpace(touch->getLocation());
 
         // Check if touched any sun (highest priority)
@@ -424,7 +486,7 @@ bool GameWorld::tryRemovePlantAtPosition(const Vec2& globalPos)
 
 void GameWorld::update(float delta)
 {
-    if (!_gameStarted)
+    if (!_gameStarted || _isPaused)
         return;
 
     _tickCount++;
@@ -788,10 +850,217 @@ void GameWorld::menuCloseCallback(Ref* pSender)
     Director::getInstance()->end();
 }
 
-void GameWorld::addZombie(Zombie* z) 
+void GameWorld::toggleSpeedMode(Ref* sender)
+{
+    _isSpeedMode = !_isSpeedMode;
+    // Only apply time scale when not paused
+    if (!_isPaused)
+    {
+        float timeScale = _isSpeedMode ? _speedScale : 1.0f;
+        Director::getInstance()->getScheduler()->setTimeScale(timeScale);
+    }
+
+    CCLOG("Speed mode %s, time scale: %.1f", _isSpeedMode ? "ON" : "OFF", _isSpeedMode ? _speedScale : 1.0f);
+}
+
+void GameWorld::showPauseMenu(Ref* sender)
+{
+    if (_isPaused) return; // Already paused
+
+    _isPaused = true;
+
+    // Pause the entire scene to stop all game updates
+    Director::getInstance()->pause();
+
+    // Create pause menu layer
+    _pauseMenuLayer = Layer::create();
+    _pauseMenuLayer->setPosition(Vec2::ZERO);
+    this->addChild(_pauseMenuLayer, UI_LAYER + 10);
+
+    // Create menu background image
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    auto background = Sprite::create("Menu.png");
+    if (background)
+    {
+        background->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+        // Scale to fit screen while maintaining aspect ratio
+        float scaleX = visibleSize.width * 0.8f / background->getContentSize().width;
+        float scaleY = visibleSize.height * 0.8f / background->getContentSize().height;
+        background->setScale(MIN(scaleX, scaleY));
+        _pauseMenuLayer->addChild(background, 0);
+    }
+    else
+    {
+        // Fallback to semi-transparent background if image fails to load
+        auto fallbackBackground = LayerColor::create(Color4B(0, 0, 0, 128));
+        _pauseMenuLayer->addChild(fallbackBackground, 0);
+    }
+
+    // Create pause menu items
+    auto resumeItem = MenuItemFont::create("Resume", [this](Ref* sender) {
+        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+        resumeGame(sender);
+    });
+    auto restartItem = MenuItemFont::create("Restart", [this](Ref* sender) {
+        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+        restartGame(sender);
+    });
+    auto menuItem = MenuItemFont::create("Main Menu", [this](Ref* sender) {
+        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+        returnToMenu(sender);
+    });
+
+    // Volume controls with validity checking
+    auto volumeUpItem = MenuItemFont::create("Volume +", [this](Ref* sender) {
+        if (_musicVolume >= 1.0f) {
+            cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+        } else {
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+            increaseMusicVolume(sender);
+        }
+    });
+    auto volumeDownItem = MenuItemFont::create("Volume -", [this](Ref* sender) {
+        if (_musicVolume <= 0.0f) {
+            cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+        } else {
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+            decreaseMusicVolume(sender);
+        }
+    });
+
+    // Create volume display label
+    _volumeLabel = Label::createWithSystemFont(StringUtils::format("Volume: %.0f%%", _musicVolume * 100), "Arial", 24);
+    _volumeLabel->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 - 100));
+    _volumeLabel->setColor(Color3B::WHITE);
+    _pauseMenuLayer->addChild(_volumeLabel);
+
+    // Position menu items relative to screen center (they will appear on the menu background)
+    resumeItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 120));
+    restartItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 60));
+    menuItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+    volumeUpItem->setPosition(Vec2(visibleSize.width / 2 - 60, visibleSize.height / 2 - 60));
+    volumeDownItem->setPosition(Vec2(visibleSize.width / 2 + 60, visibleSize.height / 2 - 60));
+
+    // Scale items
+    resumeItem->setScale(0.8f);
+    restartItem->setScale(0.8f);
+    menuItem->setScale(0.8f);
+    volumeUpItem->setScale(0.7f);
+    volumeDownItem->setScale(0.7f);
+
+    // Create menu
+    _pauseMenu = Menu::create(resumeItem, restartItem, menuItem, volumeUpItem, volumeDownItem, nullptr);
+    _pauseMenu->setPosition(Vec2::ZERO);
+    _pauseMenuLayer->addChild(_pauseMenu);
+
+    CCLOG("Game paused");
+}
+
+void GameWorld::resumeGame(Ref* sender)
+{
+    if (!_isPaused) return;
+
+    _isPaused = false;
+
+    // Resume the entire scene
+    Director::getInstance()->resume();
+
+    // Restore speed mode time scale if speed mode is active
+    if (_isSpeedMode)
+    {
+        Director::getInstance()->getScheduler()->setTimeScale(_speedScale);
+    }
+
+    // Remove pause menu
+    if (_pauseMenuLayer)
+    {
+        this->removeChild(_pauseMenuLayer);
+        _pauseMenuLayer = nullptr;
+        _pauseMenu = nullptr;
+    }
+
+    CCLOG("Game resumed");
+}
+
+void GameWorld::restartGame(Ref* sender)
+{
+    // Stop current background music
+    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_backgroundMusicId);
+        _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+    }
+
+    // Ensure game is not paused when restarting
+    if (_isPaused)
+    {
+        Director::getInstance()->resume();
+        _isPaused = false;
+    }
+
+    // Reset time scale to normal
+    Director::getInstance()->getScheduler()->setTimeScale(1.0f);
+    _isSpeedMode = false;
+
+    // Create new game scene with smooth transition
+    auto newScene = GameWorld::createScene(_isNightMode);
+    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, newScene));
+}
+
+void GameWorld::returnToMenu(Ref* sender)
+{
+    // Stop current background music
+    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_backgroundMusicId);
+        _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+    }
+
+    // Ensure game is not paused when returning to menu
+    if (_isPaused)
+    {
+        Director::getInstance()->resume();
+        _isPaused = false;
+    }
+
+    // Reset time scale to normal
+    Director::getInstance()->getScheduler()->setTimeScale(1.0f);
+    _isSpeedMode = false;
+
+    // Stop all audio to ensure clean state
+    cocos2d::AudioEngine::stopAll();
+
+    // Return to main menu with smooth transition
+    auto scene = GameMenu::createScene();
+    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
+}
+
+void GameWorld::increaseMusicVolume(Ref* sender)
+{
+    _musicVolume = MIN(_musicVolume + 0.1f, 1.0f);
+    cocos2d::AudioEngine::setVolume(_backgroundMusicId, _musicVolume);
+    if (_volumeLabel)
+    {
+        _volumeLabel->setString(StringUtils::format("Volume: %.0f%%", _musicVolume * 100));
+    }
+    CCLOG("Background music volume increased to: %.1f", _musicVolume);
+}
+
+void GameWorld::decreaseMusicVolume(Ref* sender)
+{
+    _musicVolume = MAX(_musicVolume - 0.1f, 0.0f);
+    cocos2d::AudioEngine::setVolume(_backgroundMusicId, _musicVolume);
+    if (_volumeLabel)
+    {
+        _volumeLabel->setString(StringUtils::format("Volume: %.0f%%", _musicVolume * 100));
+    }
+    CCLOG("Background music volume decreased to: %.1f", _musicVolume);
+}
+
+void GameWorld::addZombie(Zombie* z)
 {
    float y = z->getPositionY();
-   int row = (y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height;
+   int row = static_cast<int>((y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height);
    _zombiesInRow[row].push_back(z);
    this->addChild(z, ENEMY_LAYER);
 }

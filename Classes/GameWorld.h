@@ -29,6 +29,60 @@ public:
     void menuCloseCallback(cocos2d::Ref* pSender);
 
     /**
+     * @brief Toggle speed mode on/off
+     * @param sender The menu item that triggered this callback
+     */
+    void toggleSpeedMode(cocos2d::Ref* sender);
+
+    /**
+     * @brief Show pause menu
+     * @param sender The menu item that triggered this callback
+     */
+    void showPauseMenu(cocos2d::Ref* sender);
+
+    /**
+     * @brief Resume game from pause
+     * @param sender The menu item that triggered this callback
+     */
+    void resumeGame(cocos2d::Ref* sender);
+
+    /**
+     * @brief Restart current game
+     * @param sender The menu item that triggered this callback
+     */
+    void restartGame(cocos2d::Ref* sender);
+
+    /**
+     * @brief Return to main menu
+     * @param sender The menu item that triggered this callback
+     */
+    void returnToMenu(cocos2d::Ref* sender);
+
+    /**
+     * @brief Increase background music volume
+     * @param sender The menu item that triggered this callback
+     */
+    void increaseMusicVolume(cocos2d::Ref* sender);
+
+    /**
+     * @brief Decrease background music volume
+     * @param sender The menu item that triggered this callback
+     */
+    void decreaseMusicVolume(cocos2d::Ref* sender);
+
+    /**
+     * @brief Increase background music volume
+     * @param sender The menu item that triggered this callback
+     */
+    void increaseVolume(cocos2d::Ref* sender);
+
+    /**
+     * @brief Decrease background music volume
+     * @param sender The menu item that triggered this callback
+     */
+    void decreaseVolume(cocos2d::Ref* sender);
+
+    /**
      * @brief Update function called every frame
      * @param delta Time delta
      */
@@ -167,6 +221,19 @@ private:
     float _sunSpawnTimer;            // Timer for sun spawning (every 5 seconds)
     int _backgroundMusicId{-1};
     bool _isNightMode{ false };
+
+    // Speed mode system
+    bool _isSpeedMode{ false };
+    float _speedScale{ 2.0f };       // Speed multiplier when in speed mode
+    cocos2d::MenuItemToggle* _speedToggleButton; // Speed mode toggle button
+
+    // Pause system
+    bool _isPaused{ false };
+    cocos2d::MenuItemImage* _pauseButton;
+    cocos2d::Layer* _pauseMenuLayer;
+    cocos2d::Menu* _pauseMenu;
+    cocos2d::Label* _volumeLabel;
+    float _musicVolume{ 1.0f };
 };
 
 // Wave spawning parameters (reduced difficulty)

@@ -108,7 +108,7 @@ bool GameMenu::init()
     // --- D. �򻯰�ť�����б� ---
     std::vector<ButtonConfig> configs = {
         { "1. day mode",         dayModeCallback },
-        { "2. nigth mode",       nightModeCallback },
+        { "2. night mode",       nightModeCallback },
         { "3. shop",             nullptr },
         { "4. exit",             exitCallback }
     };
@@ -174,7 +174,11 @@ bool GameMenu::init()
         currentY -= VERTICAL_PADDING;
     }
 
-    // Play menu music
+    // Stop any existing music and play menu music
+    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_backgroundMusicId);
+    }
     _backgroundMusicId = cocos2d::AudioEngine::play2d("title.mp3", true);
 
     return true;
