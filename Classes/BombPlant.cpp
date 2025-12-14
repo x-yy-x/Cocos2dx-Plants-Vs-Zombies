@@ -15,8 +15,12 @@ std::vector<Zombie*> BombPlant::getZombiesInRange(std::vector<Zombie*> allZombie
 
     for (int row = minRow; row <= maxRow; ++row)
     {
-        for (auto zombie : allZombiesInRow[row])
+        // CRITICAL FIX: Use iterator to avoid invalidation during iteration
+        auto& zombiesInThisRow = allZombiesInRow[row];
+        for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end(); ++it)
         {
+            Zombie* zombie = *it;
+            // Check pointer validity and skip dead/dying zombies
             if (zombie && !zombie->isDead())
             {
                 // Calculate zombie's grid position

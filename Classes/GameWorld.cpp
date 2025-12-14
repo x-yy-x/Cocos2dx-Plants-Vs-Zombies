@@ -28,6 +28,7 @@
 #include <cmath>
 #include <cstdlib>
 #include "audio/include/AudioEngine.h"
+#include "base/ccUtils.h"
 
 // CCRANDOM
 #include "base/ccRandom.h"
@@ -650,9 +651,13 @@ void GameWorld::updateBullets(float delta)
             // Check if bullet is within valid row bounds
             if (row >= 0 && row < MAX_ROW)
             {
-                // Iterate zombies in this row
-                for (auto zombie : _zombiesInRow[row])
+                // CRITICAL FIX: Use iterator to avoid invalidation during iteration
+                // Iterate zombies in this row using iterator (safe for concurrent modification)
+                auto& zombiesInThisRow = _zombiesInRow[row];
+                for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end(); ++it)
                 {
+                    Zombie* zombie = *it;
+                    // Check pointer validity and skip dead/dying zombies
                     if (zombie && !zombie->isDead())
                     {
                         // Optimization: Simple x-axis check first before full bounding box
@@ -691,8 +696,12 @@ void GameWorld::updateZombies(float delta)
             }
         }
 
-        for (auto zombie : _zombiesInRow[row])
+        // CRITICAL FIX: Use iterator to avoid invalidation during iteration
+        auto& zombiesInThisRow = _zombiesInRow[row];
+        for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end(); ++it)
         {
+            Zombie* zombie = *it;
+            // Check pointer validity and skip dead/dying zombies
             if (zombie && !zombie->isDead())
             {
                 zombie->encounterPlant(plantsInRow);
@@ -725,9 +734,27 @@ void GameWorld::removeDeadZombies()
         auto it = zombiesInThisRow.begin();
         while (it != zombiesInThisRow.end())
         {
-            if ((*it) && (*it)->isDead())
+            Zombie* zombie = *it;
+            
+            // CRITICAL FIX: Only remove truly dead zombies (death animation finished)
+            // isTrulyDead() returns true only when _isDead == true && _isDying == false
+            if (zombie && zombie->isTrulyDead())
             {
+                // Safe removal sequence to prevent dangling pointers and double deletion:
+                // 1. Get pointer before erasing (iterator will be invalidated after erase)
+                Zombie* deadZombie = zombie;
+                
+                // 2. Remove from container FIRST (prevents phantom collision in other systems)
+                // This ensures no other code can access this zombie pointer
                 it = zombiesInThisRow.erase(it);
+                
+                // 3. Remove from scene (zombie has already finished death animation)
+                // Double-check pointer is still valid and has correct parent
+                if (deadZombie && deadZombie->getParent() == this)
+                {
+                    // removeChild will handle cleanup and release
+                    this->removeChild(deadZombie, true); // true = cleanup
+                }
             }
             else
             {
@@ -825,8 +852,12 @@ void GameWorld::maybePlayZombieGroan(float delta)
     bool hasZombie = false;
     for (int row = 0; row < MAX_ROW && !hasZombie; ++row)
     {
-        for (auto zombie : _zombiesInRow[row])
+        // CRITICAL FIX: Use iterator to avoid invalidation during iteration
+        auto& zombiesInThisRow = _zombiesInRow[row];
+        for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end() && !hasZombie; ++it)
         {
+            Zombie* zombie = *it;
+            // Check pointer validity and skip dead/dying zombies
             if (zombie && !zombie->isDead())
             {
                 hasZombie = true;

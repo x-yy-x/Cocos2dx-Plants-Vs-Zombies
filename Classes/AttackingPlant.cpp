@@ -7,8 +7,11 @@ bool AttackingPlant::isZombieInRange(const std::vector<Zombie*>& zombiesInRow)
 {
     float plantX = this->getPositionX();
     
-    for (auto zombie : zombiesInRow)
+    // CRITICAL FIX: Use iterator to avoid invalidation during iteration
+    for (auto it = zombiesInRow.begin(); it != zombiesInRow.end(); ++it)
     {
+        Zombie* zombie = *it;
+        // Check pointer validity and skip dead/dying zombies
         if (zombie && !zombie->isDead() && zombie->getPositionX() > plantX)
         {
             return true;
@@ -27,8 +30,12 @@ bool AttackingPlant::isZombieInRangeMultiRow(std::vector<Zombie*> allZombiesInRo
     {
         if (row < 0 || row >= MAX_ROW) continue;
         
-        for (auto zombie : allZombiesInRow[row])
+        // CRITICAL FIX: Use iterator to avoid invalidation during iteration
+        auto& zombiesInThisRow = allZombiesInRow[row];
+        for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end(); ++it)
         {
+            Zombie* zombie = *it;
+            // Check pointer validity and skip dead/dying zombies
             if (zombie && !zombie->isDead() && zombie->getPositionX() > plantX)
             {
                 return true;

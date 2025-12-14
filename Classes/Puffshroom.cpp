@@ -268,8 +268,12 @@ std::vector<Bullet*> Puffshroom::checkAndAttack(std::vector<Zombie*> allZombiesI
     float maxRange = plantX + (CELLSIZE.width * DETECTION_RANGE); // 3 grid cells ahead
 
     bool zombieDetected = false;
-    for (auto zombie : allZombiesInRow[plantRow])
+    // CRITICAL FIX: Use iterator to avoid invalidation during iteration
+    auto& zombiesInThisRow = allZombiesInRow[plantRow];
+    for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end(); ++it)
     {
+        Zombie* zombie = *it;
+        // Check pointer validity and skip dead/dying zombies
         if (zombie && !zombie->isDead())
         {
             float zombieX = zombie->getPositionX();

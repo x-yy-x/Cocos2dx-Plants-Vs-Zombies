@@ -131,6 +131,8 @@ void CherryBomb::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, 
     std::vector<Zombie*> zombiesInRange = getZombiesInRange(allZombiesInRow, plantRow, plantCol);
 
     // Deal damage to all zombies in range
+    // Note: zombiesInRange is a local copy, so range-for is safe here
+    // But we still check isDead() to skip dying zombies
     for (auto zombie : zombiesInRange)
     {
         if (zombie && !zombie->isDead())

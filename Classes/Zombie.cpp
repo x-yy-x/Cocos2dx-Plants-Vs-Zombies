@@ -18,6 +18,7 @@ const float Zombie::ATTACK_RANGE = 50.0f;     // Attack range
 // Protected constructor
 Zombie::Zombie()
     : _currentState(ZombieState::WALKING)
+    , _isDying(false)
     , _isDead(false)
     , _maxHealth(200)
     , _currentHealth(200)
@@ -149,7 +150,7 @@ void Zombie::initEatAnimation()
 // Update every frame
 void Zombie::update(float delta)
 {
-    if (_isDead)
+    if (_isDead || _isDying)
     {
         return;
     }
@@ -216,16 +217,16 @@ void Zombie::setState(ZombieState newState)
     }
 }
 
-// Check if dead
+// Check if dead (including dying state - should be skipped in game logic)
 bool Zombie::isDead() const
 {
-    return _isDead;
+    return _isDead || _isDying;
 }
 
 // Take damage
 void Zombie::takeDamage(int damage)
 {
-    if (_isDead)
+    if (_isDead || _isDying)
     {
         return;
     }
@@ -236,17 +237,27 @@ void Zombie::takeDamage(int damage)
     if (_currentHealth <= 0)
     {
         _currentHealth = 0;
-        _isDead = true;
-        setState(ZombieState::DYING);
-        CCLOG("Zombie is dead.");
         
-        // Stop all actions and remove from scene after a delay
+        // Mark as dying (playing death animation)
+        _isDying = true;
+        
+        // CRITICAL: Clear target plant pointer to prevent dangling pointer access
+        _targetPlant = nullptr;
+        _isEating = false;
+        
+        setState(ZombieState::DYING);
+        CCLOG("Zombie is dying.");
+        
+        // Stop all actions
         this->stopAllActions();
         
-        // IMPORTANT: Ensure we don't have lingering pointers or actions
+        // Play fade out animation, then mark as dead
         auto fadeOut = FadeOut::create(0.5f);
-        auto remove = RemoveSelf::create();
-        auto sequence = Sequence::create(fadeOut, remove, nullptr);
+        auto markDead = CallFunc::create([this]() {
+            _isDead = true;
+            CCLOG("Zombie death animation finished, marked as dead.");
+        });
+        auto sequence = Sequence::create(fadeOut, markDead, nullptr);
         this->runAction(sequence);
     }
 }
@@ -302,7 +313,7 @@ void Zombie::encounterPlant(const std::vector<Plant*>& plants)
 // Check collision with plants
 void Zombie::checkCollision(const std::vector<Plant*>& plants)
 {
-    if (_isEating) return;
+    if (_isEating || _isDead || _isDying) return;
 
     for (auto plant : plants)
     {
@@ -337,10 +348,6 @@ void Zombie::startEating(Plant* plant)
     setState(ZombieState::EATING);
     CCLOG("Zombie start eating plant!");
 
-    if (_groanAudioId == cocos2d::AudioEngine::INVALID_AUDIO_ID)
-    {
-        _groanAudioId = cocos2d::AudioEngine::play2d("zombie_groan.mp3", true);
-    }
 }
 
 // Called when plant dies
@@ -351,11 +358,4 @@ void Zombie::onPlantDied()
     _targetPlant = nullptr;
     setState(ZombieState::WALKING);
     CCLOG("Zombie resume walking");
-
-    if (_groanAudioId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
-    {
-        cocos2d::AudioEngine::stop(_groanAudioId);
-        _groanAudioId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
-    }
-    cocos2d::AudioEngine::play2d("zombie_groan.mp3", false);
 }

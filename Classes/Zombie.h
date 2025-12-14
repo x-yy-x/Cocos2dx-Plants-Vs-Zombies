@@ -61,10 +61,22 @@ public:
     void setState(ZombieState newState);
 
     /**
-     * @brief Check if zombie is dead.
-     * @return true if dead, false if alive
+     * @brief Check if zombie is dead (including dying state - should be skipped in game logic).
+     * @return true if dead or dying, false if alive
      */
     bool isDead() const;
+    
+    /**
+     * @brief Check if zombie is dying (playing death animation).
+     * @return true if dying, false otherwise
+     */
+    bool isDying() const { return _isDying; }
+    
+    /**
+     * @brief Check if zombie is truly dead (ready for removal, death animation finished).
+     * @return true if truly dead (not dying), false otherwise
+     */
+    bool isTrulyDead() const { return _isDead && !_isDying; }
 
     /**
      * @brief Apply damage to zombie and reduce health.
@@ -136,7 +148,8 @@ protected:
     // Member variables
     // ----------------------------------------------------
     ZombieState _currentState;       // Current state
-    bool _isDead;                    // Is dead flag
+    bool _isDying;                   // Is dying (playing death animation)
+    bool _isDead;                    // Is dead flag (ready for removal)
     int _maxHealth;                  // Maximum health
     int _currentHealth;              // Current health
     float _attackInterval;           // Attack interval

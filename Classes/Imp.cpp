@@ -176,7 +176,7 @@ void Imp::initFlyAnimation()
 // Update every frame
 void Imp::update(float delta)
 {
-    if (_isDead)
+    if (_isDead || _isDying)
     {
         return;
     }
@@ -252,7 +252,7 @@ bool Imp::isDead() const
 // Take damage
 void Imp::takeDamage(int damage)
 {
-    if (_isDead)
+    if (_isDead || _isDying)
     {
         return;
     }
@@ -263,17 +263,27 @@ void Imp::takeDamage(int damage)
     if (_currentHealth <= 0)
     {
         _currentHealth = 0;
-        _isDead = true;
-        setState(ZombieState::DYING);
-        CCLOG("Zombie is dead.");
         
-        // Stop all actions and remove from scene after a delay
+        // Mark as dying (playing death animation)
+        _isDying = true;
+        
+        // CRITICAL: Clear target plant pointer to prevent dangling pointer access
+        _targetPlant = nullptr;
+        _isEating = false;
+        
+        setState(ZombieState::DYING);
+        CCLOG("Zombie is dying.");
+        
+        // Stop all actions
         this->stopAllActions();
         
-        // IMPORTANT: Ensure we don't have lingering pointers or actions
+        // Play fade out animation, then mark as dead
         auto fadeOut = FadeOut::create(0.5f);
-        auto remove = RemoveSelf::create();
-        auto sequence = Sequence::create(fadeOut, remove, nullptr);
+        auto markDead = CallFunc::create([this]() {
+            _isDead = true;
+            CCLOG("Zombie death animation finished, marked as dead.");
+        });
+        auto sequence = Sequence::create(fadeOut, markDead, nullptr);
         this->runAction(sequence);
     }
 }
