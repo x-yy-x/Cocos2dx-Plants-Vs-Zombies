@@ -26,6 +26,15 @@ public:
     static Sun* createFromSunflower(const cocos2d::Vec2& pos);
 
     /**
+     * @brief Create a custom sun with specific size and value at plant position
+     * @param pos Plant position
+     * @param scale Scale factor for sun size
+     * @param value Sun value (points awarded)
+     * @return Sun instance
+     */
+    static Sun* createCustomSun(const cocos2d::Vec2& pos, float scale, int value);
+
+    /**
      * @brief Create a sun dropped from sky
      * @param targetGridCol Target grid column to fall to
      * @param startY Starting Y position (top of screen)
@@ -81,4 +90,6 @@ protected:
     bool _isFalling;          // Is falling from sky
     float _lifeTime;          // Time elapsed since creation
     cocos2d::Vec2 _targetPos; // Target position for falling suns
+    float _sunScale;          // Scale factor for sun size
+    int _sunValue;            // Sun points awarded (customizable)
 };

@@ -24,10 +24,10 @@ public:
 
     virtual bool init() override;
     virtual ~GameWorld();
-
+    
     // A selector callback
     void menuCloseCallback(cocos2d::Ref* pSender);
-
+    
     /**
      * @brief Toggle speed mode on/off
      * @param sender The menu item that triggered this callback
@@ -90,6 +90,7 @@ public:
 
     void addZombie(Zombie* z);
 
+	bool isNightMode() const { return _isNightMode; }
 
 private:
     /**

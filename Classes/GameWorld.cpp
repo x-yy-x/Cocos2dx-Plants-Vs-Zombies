@@ -8,6 +8,7 @@
 #include "Repeater.h"
 #include "ThreePeater.h"
 #include "Sunflower.h"
+#include "Sunshroom.h"
 #include "Wallnut.h"
 #include "CherryBomb.h"
 #include "Zombie.h"
@@ -134,15 +135,17 @@ bool GameWorld::init()
 
     // Create seed packets using template method (no need for separate subclasses!)
     auto sunflowerPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50);
+    auto sunshroomPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25);
     auto peashooterPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100);
     auto repeaterPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200);
     auto threepeaterPacket = SeedPacket::create<ThreePeater>("seedpacket_threepeater(1).png", 3.0f, 325);
     auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50);
     auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150);
 
-    if (sunflowerPacket && peashooterPacket && repeaterPacket && threepeaterPacket && wallnutPacket && cherryBombPacket)
+    if (sunflowerPacket && sunshroomPacket && peashooterPacket && repeaterPacket && threepeaterPacket && wallnutPacket && cherryBombPacket)
     {
         _seedPackets.push_back(sunflowerPacket);
+        _seedPackets.push_back(sunshroomPacket);
         _seedPackets.push_back(peashooterPacket);
         _seedPackets.push_back(repeaterPacket);
         _seedPackets.push_back(threepeaterPacket);
@@ -347,7 +350,7 @@ void GameWorld::setupUserInteraction()
         }
 
         return true;
-    };
+        };
 
     unifiedListener->onTouchMoved = [this](Touch* touch, Event* event) {
         Vec2 pos = touch->getLocation();
@@ -413,7 +416,7 @@ void GameWorld::setupUserInteraction()
                     int audioId = cocos2d::AudioEngine::play2d("planting.mp3", false);
                     // Start cooldown
                     selectedPacket->startCooldown();
-                }
+        }
                 else
                 {
                     // Play buzzer sound for invalid planting
@@ -480,7 +483,7 @@ bool GameWorld::tryRemovePlantAtPosition(const Vec2& globalPos)
 
     this->removeChild(plantToRemove);
     _plantGrid[row][col] = nullptr;
-    
+
     return true;
 }
 
@@ -588,7 +591,7 @@ void GameWorld::updatePlants(float delta)
                     {
                         this->addChild(sun, SUN_LAYER);
                         _suns.push_back(sun);
-                        CCLOG("Sun-producing plant produced sun at position (%.2f, %.2f)", 
+                        CCLOG("Sun-producing plant produced sun at position (%.2f, %.2f)",
                               sun->getPositionX(), sun->getPositionY());
                     }
                     break;

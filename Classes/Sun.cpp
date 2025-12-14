@@ -16,6 +16,8 @@ Sun::Sun()
     , _isFalling(false)
     , _lifeTime(0.0f)
     , _targetPos(Vec2::ZERO)
+    , _sunScale(1.0f)
+    , _sunValue(SUN_VALUE)
 {
     CCLOG("Sun created.");
 }
@@ -41,6 +43,9 @@ bool Sun::init()
         return false;
     }
 
+    // Apply custom scale
+    this->setScale(_sunScale);
+
     _isCollected = false;
     _lifeTime = 0.0f;
 
@@ -61,6 +66,21 @@ Sun* Sun::createFromSunflower(const Vec2& pos)
     {
         sun->setPosition(pos);
         sun->_isFalling = false;
+    }
+    return sun;
+}
+
+// Create custom sun with specific size and value
+Sun* Sun::createCustomSun(const Vec2& pos, float scale, int value)
+{
+    Sun* sun = Sun::create();
+    if (sun)
+    {
+        sun->setPosition(pos);
+        sun->_isFalling = false;
+        sun->_sunScale = scale;
+        sun->_sunValue = value;
+        sun->setScale(scale);  // Apply scale immediately
     }
     return sun;
 }
@@ -135,8 +155,8 @@ int Sun::collect()
     auto sequence = Sequence::create(fadeOut, remove, nullptr);
     this->runAction(sequence);
 
-    CCLOG("Sun collected!");
-    return SUN_VALUE;
+    CCLOG("Sun collected! Value: %d", _sunValue);
+    return _sunValue;
 }
 
 // Check if should be removed
