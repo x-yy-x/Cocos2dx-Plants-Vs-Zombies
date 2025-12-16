@@ -5,6 +5,7 @@
 #include "GameObject.h"
 #include "GameDefs.h"
 #include "Zombie.h"
+#include "SpikeWeed.h"
 #include <vector>
 
 // Forward declaration

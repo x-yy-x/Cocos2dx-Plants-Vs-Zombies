@@ -160,7 +160,7 @@ void FlagZombie::update(float delta)
         if (newX < -100)
         {
             // Zombie reached the house - game over
-            CCLOG("Zombie reached the house!");
+            //CCLOG("Zombie reached the house!");
         }
     }
     else
@@ -310,6 +310,9 @@ void FlagZombie::checkCollision(const std::vector<Plant*>& plants)
     {
         if (plant && !plant->isDead())
         {
+            auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
+            if (spikeweed)
+                continue;
             // Create a slightly offset collision box for the zombie
             // This allows the zombie to eat the plant when it's slightly overlapping
             // Adjust COLLISION_OFFSET_X to control how close the zombie needs to be

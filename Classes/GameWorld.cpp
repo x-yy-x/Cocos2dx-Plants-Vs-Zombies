@@ -24,6 +24,8 @@
 #include "Imp.h"
 #include "Gargantuar.h"
 #include "GameMenu.h"
+#include "Zomboni.h"
+#include "SpikeWeed.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -145,6 +147,7 @@ bool GameWorld::init()
     auto puffshroomPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0);
     auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50);
     auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150);
+    auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100);
 
     if (sunflowerPacket && sunshroomPacket && peashooterPacket && repeaterPacket && threepeaterPacket && puffshroomPacket && wallnutPacket && cherryBombPacket)
     {
@@ -156,6 +159,7 @@ bool GameWorld::init()
         _seedPackets.push_back(puffshroomPacket);
         _seedPackets.push_back(wallnutPacket);
         _seedPackets.push_back(cherryBombPacket);
+        _seedPackets.push_back(spikeWeedPacket);
 
         // Set positions for seed packets (more compact spacing)
         float baseX = 187.0f;
@@ -252,7 +256,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = Gargantuar::createZombie();       
+        auto debugZombie = Zomboni::createZombie();
         if (debugZombie)
         {
             int row = 2;
@@ -1100,5 +1104,4 @@ void GameWorld::addZombie(Zombie* z)
    float y = z->getPositionY();
    int row = static_cast<int>((y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height);
    _zombiesInRow[row].push_back(z);
-   this->addChild(z, ENEMY_LAYER);
 }

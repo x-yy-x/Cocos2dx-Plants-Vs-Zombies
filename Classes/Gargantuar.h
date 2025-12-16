@@ -151,7 +151,8 @@ protected:
     // Animation actions
     cocos2d::RepeatForever* _walkAction;
     cocos2d::Animate* _smashAction;
-    cocos2d::Animate* _throwAction;
+    cocos2d::Animate* _prethrowAction;
+    cocos2d::Animate* _postthrowAction;
     // Eating state
     bool _isSmashing;                  // Is currently eating
     bool _isThrowing;

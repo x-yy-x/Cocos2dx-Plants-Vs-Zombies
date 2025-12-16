@@ -5,6 +5,7 @@
 #include "GameObject.h"
 #include "GameDefs.h"
 #include "Zombie.h"
+#include "SpikeWeed.h"
 #include <vector>
 
 // Forward declaration
@@ -154,7 +155,7 @@ protected:
     // Eating state
     bool _isEating;                  // Is currently eating
     Plant* _targetPlant;             // Target plant being eaten
-    float _speed;                    // Current movement speed
+    cocos2d::Vec2 _speed;                    // Current movement speed
     float _normalSpeed;              // Normal walking speed
     bool _hasBeenThrown;
 };

@@ -7,7 +7,6 @@ USING_NS_CC;
 // ----------------------------------------------------
 // Static constant definitions
 // ----------------------------------------------------
-const std::string Imp::IMAGE_FILENAME = "flag_zombie_walk_spritesheet.png";
 const cocos2d::Rect Imp::INITIAL_PIC_RECT = Rect::ZERO;
 const cocos2d::Size Imp::OBJECT_SIZE = Size(125.0f, 173.8f);
 const float Imp::MOVE_SPEED = 40.0f;       // Move 20 pixels per second
@@ -28,9 +27,9 @@ Imp::Imp()
     , _flyAction(nullptr)
     , _isEating(false)
     , _targetPlant(nullptr)
-    , _speed(MOVE_SPEED)
+    , _speed(Vec2(MOVE_SPEED,0))
     , _normalSpeed(MOVE_SPEED)
-    ,_hasBeenThrown(false)
+    , _hasBeenThrown(false)
 {
     CCLOG("Zombie created.");
 }
@@ -40,6 +39,7 @@ Imp::~Imp()
 {
     CC_SAFE_RELEASE(_walkAction);
     CC_SAFE_RELEASE(_eatAction);
+    CC_SAFE_RELEASE(_flyAction);
     CCLOG("Zombie destroyed.");
 }
 
@@ -94,7 +94,7 @@ void Imp::initWalkAnimation()
             float y = row * frameHeight;
 
             auto frame = SpriteFrame::create(
-                "lmp_walk_spritesheet.png",
+                "imp_walk_spritesheet.png",
                 Rect(x, y, frameWidth, frameHeight)
             );
             frames.pushBack(frame);
@@ -128,7 +128,7 @@ void Imp::initEatAnimation()
             float y = row * frameHeight;
 
             auto frame = SpriteFrame::create(
-                "lmp_eat_spritesheet.png",
+                "imp_eat_spritesheet.png",
                 Rect(x, y, frameWidth, frameHeight)
             );
 
@@ -145,8 +145,8 @@ void Imp::initEatAnimation()
 
 void Imp::initFlyAnimation()
 {
-    const float frameWidth = 100;
-    const float frameHeight = 138;
+    const float frameWidth = 145;
+    const float frameHeight = 200;
 
     Vector<SpriteFrame*> frames;
 
@@ -168,7 +168,7 @@ void Imp::initFlyAnimation()
         }
     }
 
-    auto animation = Animation::createWithSpriteFrames(frames, 0.08f);
+    auto animation = Animation::createWithSpriteFrames(frames, 0.06f);
     this->_flyAction = Animate::create(animation);
     _flyAction->retain();
 }
@@ -186,11 +186,11 @@ void Imp::update(float delta)
     // If zombie is not eating, continue walking left
     if (!_isEating)
     {
-        float newX = this->getPositionX() - _speed * delta;
-        this->setPositionX(newX);
+        Vec2 newPos = this->getPosition() - _speed * delta;
+        this->setPosition(newPos);
 
         // Check if zombie reached the left edge (game over condition)
-        if (newX < -100)
+        if (newPos.x < -100)
         {
             // Zombie reached the house - game over
             CCLOG("Zombie reached the house!");
@@ -325,16 +325,14 @@ void Imp::setAnimationForState(ZombieState state)
     case ZombieState::FLYING:
         CCLOG("set state flying");
         this->stopAllActions();
-        this->setScale(1.45f);
-        this->_speed = 70.0f;
+        this->_speed = Vec2(120.0f,45.0f);
         this->runAction(Sequence::create( _flyAction, 
             CallFunc::create([this]() {
-            this->_speed = _normalSpeed;
+            this->_speed = Vec2(_normalSpeed,0);
             this->setState(ZombieState::WALKING);
-            this->setScale(1.0f);
             }), 
-            MoveBy::create(0.0001f, Vec2(0, -40)), nullptr));
-        
+            MoveBy::create(0.0001f, Vec2(-20, -30)), nullptr));
+        break;
     case ZombieState::DYING:
         CCLOG("Setting imp DYING animation.");
         break;
@@ -358,6 +356,9 @@ void Imp::checkCollision(const std::vector<Plant*>& plants)
     {
         if (plant && !plant->isDead())
         {
+            auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
+            if (spikeweed)
+                continue;
             // Create a slightly offset collision box for the zombie
             // This allows the zombie to eat the plant when it's slightly overlapping
             // Adjust COLLISION_OFFSET_X to control how close the zombie needs to be
@@ -383,7 +384,7 @@ void Imp::startEating(Plant* plant)
 {
     _isEating = true;
     _targetPlant = plant;
-    _speed = 0;  // Stop moving
+    _speed = Vec2(0,0);  // Stop moving
     setState(ZombieState::EATING);
     CCLOG("Zombie start eating plant!");
 }
@@ -392,7 +393,7 @@ void Imp::startEating(Plant* plant)
 void Imp::onPlantDied()
 {
     _isEating = false;
-    _speed = _normalSpeed;
+    _speed = Vec2(_normalSpeed,0);
     _targetPlant = nullptr;
     setState(ZombieState::WALKING);
     CCLOG("Zombie resume walking");

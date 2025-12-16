@@ -208,8 +208,6 @@ void PoleVaulter::initJumpingAnimation()
     }
 
     auto animation = Animation::createWithSpriteFrames(frames, 0.03f);
-    auto animate = Animate::create(animation);
-
     this->_jumpAction = Animate::create(animation);
     _jumpAction->retain();
 }
@@ -413,6 +411,9 @@ void PoleVaulter::checkCollision(const std::vector<Plant*>& plants)
     {
         if (plant && !plant->isDead())
         {
+            auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
+            if (spikeweed)
+                continue;
             // Create a slightly offset collision box for the zombie
             // This allows the zombie to eat the plant when it's slightly overlapping
             // Adjust COLLISION_OFFSET_X to control how close the zombie needs to be

@@ -27,7 +27,8 @@ Gargantuar::Gargantuar()
     , _zombiePos(Vec2::ZERO)
     , _walkAction(nullptr)
     , _smashAction(nullptr)
-    , _throwAction(nullptr)
+    , _prethrowAction(nullptr)
+    , _postthrowAction(nullptr)
     , _isSmashing(false)
     , _isThrowing(false)
     , _targetPlant(nullptr)
@@ -152,12 +153,15 @@ void Gargantuar::initThrowAnimation()
     const float frameWidth = 469.0f;
     const float frameHeight = 400.0f;
 
-    Vector<SpriteFrame*> frames;
+    Vector<SpriteFrame*> framesforpre;
+    Vector<SpriteFrame*> framesforpost;
 
+    int count = 0;
     for (int row = 0; row < 4; row++)
     {
         for (int col = 0; col < 10; col++)
         {
+            ++count;
             if (row == 3 && col == 8)
                 break;
 
@@ -169,15 +173,20 @@ void Gargantuar::initThrowAnimation()
                 Rect(x, y, frameWidth, frameHeight)
             );
 
-            frames.pushBack(frame);
+            if (count <= 31)
+                framesforpre.pushBack(frame);
+            else
+                framesforpost.pushBack(frame);
         }
     }
 
-    auto animation = Animation::createWithSpriteFrames(frames, 0.08f);
-    auto animate = Animate::create(animation);
+    auto preanimation = Animation::createWithSpriteFrames(framesforpre, 0.08f);
+    this->_prethrowAction = Animate::create(preanimation);
+    _prethrowAction->retain();
 
-    this->_throwAction = Animate::create(animation);
-    _throwAction->retain();
+    auto postanimation = Animation::createWithSpriteFrames(framesforpost, 0.08f);
+    this->_postthrowAction = Animate::create(postanimation);
+    _postthrowAction->retain();
 }
 
 // Update every frame
@@ -191,7 +200,7 @@ void Gargantuar::update(float delta)
     // If zombie is not eating, continue walking left
     if (!_isSmashing&&!_isThrowing)
     {
-        if (_currentHealth <= 1500 && _currentHealth > 0&&_hasthrown==false) {
+        if (_currentHealth <= 1500 && _currentHealth > 0 && _hasthrown == false && this->getPositionX() >= 500) {
             this->_speed = 0;
             this->_isThrowing = true;
             setState(ZombieState::THROWING);
@@ -212,11 +221,11 @@ void Gargantuar::update(float delta)
         // If eating, deal damage periodically
         if (_accumulatedTime >= _attackInterval)
         {
+            _accumulatedTime = 0.0f;
             if (_targetPlant && !_targetPlant->isDead())
             {
                 _targetPlant->takeDamage((int)ATTACK_DAMAGE);
                 CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
-                _accumulatedTime = 0.0f;
 
                 // Check if plant died
                 if (_targetPlant->isDead())
@@ -228,7 +237,6 @@ void Gargantuar::update(float delta)
             {
                 // Target plant is null or already dead
                 onPlantDied();
-                _accumulatedTime = 0.0f;
             }
         }
     }
@@ -323,23 +331,31 @@ void Gargantuar::setAnimationForState(ZombieState state)
             ));
             break;
         case ZombieState::THROWING:
+        {
             CCLOG("setting throwing animation");
             this->stopAllActions();
+            _speed = 0;
             this->runAction(
                 Sequence::create(
                     MoveBy::create(0, Vec2(-46, 35)),
-                    _throwAction,
+                    _prethrowAction,
+                    CallFunc::create([this]() {
+                        this->throwImp();
+                        }),
+                   _postthrowAction,
                     CallFunc::create([this]() {
                         this->_hasthrown = true;
                         this->_isThrowing = false;
                         this->_speed = _normalSpeed;
-                        this->throwImp();
                         this->setState(ZombieState::WALKING);
                         }),
+
                     MoveBy::create(0, Vec2(46, -35)),
                     nullptr
                 )
             );
+            break;
+        }
         case ZombieState::DYING:
             CCLOG("Setting gargantuar DYING animation.");
             break;
@@ -405,18 +421,10 @@ void Gargantuar::throwImp()
     CCLOG("imp created");
     auto imp = Imp::createZombie();
     imp->setState(Imp::ZombieState::FLYING);
-    if (imp)
-    {
-        CCLOG("imp!=null");
-        auto pos = this->getPosition();
-        imp->setPosition(pos + Vec2(-200, 0));
-        CCLOG("imp pos%f,%f", imp->getPositionX(), imp->getPositionY());
-        auto gameWorld = dynamic_cast<GameWorld*>(Director::getInstance()->getRunningScene());
-        if (gameWorld)
-        {
-            CCLOG("gameworld!=null");
-            gameWorld->addZombie(imp);
-        }
-    }
+    auto pos = this->getPosition();
+    imp->setPosition(pos + Vec2(-250, 35));
+    auto gameWorld = dynamic_cast<GameWorld*>(Director::getInstance()->getRunningScene());
+    gameWorld->addChild(imp, 3); 
+    gameWorld->addZombie(imp);    
 }
 
