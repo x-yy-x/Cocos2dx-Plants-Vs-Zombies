@@ -75,7 +75,7 @@ GameWorld::~GameWorld()
 
     // Reset game state
     _isPaused = false;
-    _isSpeedMode = false;
+    _speedLevel = 0;
 }
 
 // Print useful error message instead of segfaulting when files are not there.
@@ -137,6 +137,31 @@ bool GameWorld::init()
         return false;
     }
     this->addChild(backGround, BACKGROUND_LAYER);
+
+    auto progressBG = Sprite::create("FlagMeterEmpty.png");
+    if (progressBG) {
+        progressBG->setPosition(Vec2(visibleSize.width - 150, 40));
+        this->addChild(progressBG, UI_LAYER);
+
+        _progressBar = ui::LoadingBar::create("FlagMeterFull.png");
+
+        _progressBar->setDirection(ui::LoadingBar::Direction::RIGHT);
+
+        _progressBar->setPercent(0);
+
+        _progressBar->setPosition(progressBG->getPosition());
+        this->addChild(_progressBar, UI_LAYER + 1);
+
+      
+        auto flagIcon = Sprite::create("FlagMeterParts2.png");
+        if (flagIcon) {
+            flagIcon->setPosition(Vec2(progressBG->getPositionX() - progressBG->getContentSize().width / 2 + 4, progressBG->getPositionY() + 5));
+            this->addChild(flagIcon, UI_LAYER + 2);
+        }
+    }
+    
+
+    _elapsedTime = 0.0f;
 
     // Create seed packets using template method (no need for separate subclasses!)
     auto sunflowerPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50);
@@ -228,15 +253,17 @@ bool GameWorld::init()
     }
 
     // Create speed mode toggle button (below pause button)
-    auto speedOnItem = MenuItemFont::create("2x Speed", CC_CALLBACK_1(GameWorld::toggleSpeedMode, this));
-    auto speedOffItem = MenuItemFont::create("Normal Speed", CC_CALLBACK_1(GameWorld::toggleSpeedMode, this));
+    auto speedNormalItem = MenuItemFont::create("Normal Speed", CC_CALLBACK_1(GameWorld::toggleSpeedMode, this));
+    auto speed2xItem = MenuItemFont::create("2x Speed", CC_CALLBACK_1(GameWorld::toggleSpeedMode, this));
+    auto speed3xItem = MenuItemFont::create("3x Speed", CC_CALLBACK_1(GameWorld::toggleSpeedMode, this));
     _speedToggleButton = MenuItemToggle::createWithCallback(
         [this](Ref* sender) {
             cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
             toggleSpeedMode(sender);
         },
-        speedOffItem,
-        speedOnItem,
+        speedNormalItem,
+        speed2xItem,
+        speed3xItem,
         nullptr
     );
     auto speedButtonBack = Sprite::create("button.png");
@@ -498,9 +525,19 @@ bool GameWorld::tryRemovePlantAtPosition(const Vec2& globalPos)
 
 void GameWorld::update(float delta)
 {
-    if (!_gameStarted || _isPaused)
+    if (!_gameStarted || _isPaused || _isGameOver)
         return;
 
+
+    _elapsedTime += delta;
+
+    float progressPercent = (_elapsedTime / TOTAL_GAME_TIME) * 100.0f;
+
+    if (progressPercent > 100.0f) progressPercent = 100.0f;
+
+    if (_progressBar) {
+        _progressBar->setPercent(progressPercent);
+    }
     _tickCount++;
 
     if (_tickCount >= _nextWaveTickCount)
@@ -511,6 +548,7 @@ void GameWorld::update(float delta)
         int interval = std::max(MIN_WAVE_INTERVAL, 900 - 30 * _currentWave);
         _nextWaveTickCount = _tickCount + interval;
     }
+    
 
     if (!_isNightMode)
     {
@@ -708,6 +746,15 @@ void GameWorld::updateZombies(float delta)
             // Check pointer validity and skip dead/dying zombies
             if (zombie && !zombie->isDead())
             {
+                // Check if zombie reached the left edge of screen
+                float zombieX = zombie->getPositionX();
+                if (zombieX <= 0 && !_isGameOver)
+                {
+                    // Game over!
+                    showGameOver();
+                    return;
+                }
+                
                 zombie->encounterPlant(plantsInRow);
             }
         }
@@ -894,15 +941,28 @@ void GameWorld::menuCloseCallback(Ref* pSender)
 
 void GameWorld::toggleSpeedMode(Ref* sender)
 {
-    _isSpeedMode = !_isSpeedMode;
+    // Cycle through speed levels: 0 (normal) -> 1 (2x) -> 2 (3x) -> 0 (normal)
+    _speedLevel = (_speedLevel + 1) % 3;
+    
+    // Sync button state with speed level
+    if (_speedToggleButton)
+    {
+        _speedToggleButton->setSelectedIndex(_speedLevel);
+    }
+    
     // Only apply time scale when not paused
     if (!_isPaused)
     {
-        float timeScale = _isSpeedMode ? _speedScale : 1.0f;
+        float timeScale = 1.0f;
+        if (_speedLevel == 1)
+            timeScale = 2.0f;
+        else if (_speedLevel == 2)
+            timeScale = 3.0f;
+        
         Director::getInstance()->getScheduler()->setTimeScale(timeScale);
     }
 
-    CCLOG("Speed mode %s, time scale: %.1f", _isSpeedMode ? "ON" : "OFF", _isSpeedMode ? _speedScale : 1.0f);
+    CCLOG("Speed level: %d, time scale: %.1f", _speedLevel, _speedLevel == 0 ? 1.0f : (_speedLevel == 1 ? 2.0f : 3.0f));
 }
 
 void GameWorld::showPauseMenu(Ref* sender)
@@ -1008,9 +1068,10 @@ void GameWorld::resumeGame(Ref* sender)
     Director::getInstance()->resume();
 
     // Restore speed mode time scale if speed mode is active
-    if (_isSpeedMode)
+    if (_speedLevel > 0)
     {
-        Director::getInstance()->getScheduler()->setTimeScale(_speedScale);
+        float timeScale = _speedLevel == 1 ? 2.0f : 3.0f;
+        Director::getInstance()->getScheduler()->setTimeScale(timeScale);
     }
 
     // Remove pause menu
@@ -1042,7 +1103,7 @@ void GameWorld::restartGame(Ref* sender)
 
     // Reset time scale to normal
     Director::getInstance()->getScheduler()->setTimeScale(1.0f);
-    _isSpeedMode = false;
+    _speedLevel = 0;
 
     // Create new game scene with smooth transition
     auto newScene = GameWorld::createScene(_isNightMode);
@@ -1067,7 +1128,7 @@ void GameWorld::returnToMenu(Ref* sender)
 
     // Reset time scale to normal
     Director::getInstance()->getScheduler()->setTimeScale(1.0f);
-    _isSpeedMode = false;
+    _speedLevel = 0;
 
     // Stop all audio to ensure clean state
     cocos2d::AudioEngine::stopAll();
@@ -1104,4 +1165,85 @@ void GameWorld::addZombie(Zombie* z)
    float y = z->getPositionY();
    int row = static_cast<int>((y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height);
    _zombiesInRow[row].push_back(z);
+}
+
+void GameWorld::showGameOver()
+{
+    if (_isGameOver) return; // Already showing game over
+
+    _isGameOver = true;
+
+    // Stop background music
+    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_backgroundMusicId);
+        _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+    }
+
+    // Create game over layer
+    auto gameOverLayer = Layer::create();
+    gameOverLayer->setPosition(Vec2::ZERO);
+    this->addChild(gameOverLayer, UI_LAYER + 20);
+
+    // Create game over image
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    auto gameOverSprite = Sprite::create("gameOver.png");
+    
+    if (gameOverSprite)
+    {
+        // Set initial position at center
+        gameOverSprite->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+        
+        // Set initial scale to 0 (invisible)
+        gameOverSprite->setScale(0.0f);
+        
+        // Calculate scale to fill screen while maintaining aspect ratio
+        float scaleX = visibleSize.width / gameOverSprite->getContentSize().width;
+        float scaleY = visibleSize.height / gameOverSprite->getContentSize().height;
+        float targetScale = MAX(scaleX, scaleY);
+        
+        // Add to layer
+        gameOverLayer->addChild(gameOverSprite, WIN_LOSE_LAYER);
+        
+        // Create scale animation (slowly enlarge from center)
+        auto scaleAction = ScaleTo::create(1.0f, targetScale);
+        
+        // After animation completes, wait 3 seconds then return to menu
+        auto delayAction = DelayTime::create(3.0f);
+        auto callbackAction = CallFunc::create([this]() {
+            // Stop all audio
+            cocos2d::AudioEngine::stopAll();
+            
+            // Reset time scale to normal
+            Director::getInstance()->getScheduler()->setTimeScale(1.0f);
+            _speedLevel = 0;
+            
+            // Return to main menu with smooth transition
+            auto scene = GameMenu::createScene();
+            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
+        });
+        
+        // Run sequence: scale animation -> delay -> return to menu
+        auto sequence = Sequence::create(scaleAction, delayAction, callbackAction, nullptr);
+        gameOverSprite->runAction(sequence);
+        
+        CCLOG("Game Over! Showing game over screen...");
+    }
+    else
+    {
+        // Fallback if image fails to load
+        problemLoading("'gameOver.png'");
+        
+        // Still return to menu after delay
+        auto delayAction = DelayTime::create(3.0f);
+        auto callbackAction = CallFunc::create([this]() {
+            cocos2d::AudioEngine::stopAll();
+            Director::getInstance()->getScheduler()->setTimeScale(1.0f);
+            _speedLevel = 0;
+            auto scene = GameMenu::createScene();
+            Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
+        });
+        auto sequence = Sequence::create(delayAction, callbackAction, nullptr);
+        gameOverLayer->runAction(sequence);
+    }
 }

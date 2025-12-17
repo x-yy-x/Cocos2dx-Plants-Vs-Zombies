@@ -2,6 +2,7 @@
 #define __GAMEWORLD_H__
 
 #include "GameDefs.h"
+#include "ui/CocosGUI.h"
 #include "cocos2d.h"
 #include <vector>
 
@@ -57,6 +58,11 @@ public:
      * @param sender The menu item that triggered this callback
      */
     void returnToMenu(cocos2d::Ref* sender);
+
+    /**
+     * @brief Show game over screen when zombie reaches left edge
+     */
+    void showGameOver();
 
     /**
      * @brief Increase background music volume
@@ -200,6 +206,13 @@ private:
     Shovel* _shovel;
     cocos2d::Sprite* _shovelBack;
     std::vector<SeedPacket*> _seedPackets;
+
+    // --- 进度条相关 ---
+    cocos2d::ui::LoadingBar* _progressBar;
+    cocos2d::Sprite* _progressBarFull;
+    float _elapsedTime = 0.0f;
+
+    const float TOTAL_GAME_TIME = 300.0f;
     
     // Sun system
     int _sunCount;
@@ -224,7 +237,7 @@ private:
     bool _isNightMode{ false };
 
     // Speed mode system
-    bool _isSpeedMode{ false };
+    int _speedLevel{ 0 };           // Speed level: 0=normal, 1=2x, 2=3x
     float _speedScale{ 2.0f };       // Speed multiplier when in speed mode
     cocos2d::MenuItemToggle* _speedToggleButton; // Speed mode toggle button
 
@@ -235,6 +248,9 @@ private:
     cocos2d::Menu* _pauseMenu;
     cocos2d::Label* _volumeLabel;
     float _musicVolume{ 1.0f };
+
+    // Game over system
+    bool _isGameOver{ false };
 };
 
 // Wave spawning parameters (reduced difficulty)

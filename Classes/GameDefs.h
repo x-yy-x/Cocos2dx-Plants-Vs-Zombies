@@ -19,6 +19,7 @@ const int ENEMY_LAYER = 3;
 const int SUN_LAYER = 4;
 const int SEEDPACKET_LAYER = 5;
 const int UI_LAYER = 10;  // For labels and other UI elements
+const int WIN_LOSE_LAYER = 11;
 
 /**
  * @brief Plant type enumeration for distinguishing plant categories
