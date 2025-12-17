@@ -26,6 +26,7 @@
 #include "GameMenu.h"
 #include "Zomboni.h"
 #include "SpikeWeed.h"
+#include "Jalapeno.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -148,8 +149,12 @@ bool GameWorld::init()
     auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50);
     auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150);
     auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100);
+    auto jalapenoPacket= SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100);
 
-    if (sunflowerPacket && sunshroomPacket && peashooterPacket && repeaterPacket && threepeaterPacket && puffshroomPacket && wallnutPacket && cherryBombPacket)
+    if (sunflowerPacket && sunshroomPacket && peashooterPacket && 
+        repeaterPacket && threepeaterPacket && puffshroomPacket && 
+        wallnutPacket && cherryBombPacket && spikeWeedPacket && 
+        jalapenoPacket)
     {
         _seedPackets.push_back(sunflowerPacket);
         _seedPackets.push_back(sunshroomPacket);
@@ -160,6 +165,7 @@ bool GameWorld::init()
         _seedPackets.push_back(wallnutPacket);
         _seedPackets.push_back(cherryBombPacket);
         _seedPackets.push_back(spikeWeedPacket);
+        _seedPackets.push_back(jalapenoPacket);
 
         // Set positions for seed packets (more compact spacing)
         float baseX = 187.0f;
