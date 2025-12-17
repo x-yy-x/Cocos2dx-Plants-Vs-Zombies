@@ -206,9 +206,9 @@ void Jalapeno::playExplosionAnimation()
             auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
             auto animate = Animate::create(animation);
 
-            this->setScaleX(1.28);
+            explosionSprite->setScaleX(1.28);
             auto sequence = Sequence::create(
-                MoveTo::create(0.01f, targetpos),
+                MoveTo::create(0.0001f, targetpos),
                 animate,
                 FadeOut::create(0.5f),
                 RemoveSelf::create(),
