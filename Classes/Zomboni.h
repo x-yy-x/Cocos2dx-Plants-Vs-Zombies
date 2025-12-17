@@ -6,6 +6,7 @@
 #include "GameDefs.h"
 #include "Zombie.h"
 #include "SpikeWeed.h"
+#include "IceTile.h"
 #include <vector>
 
 // Forward declaration

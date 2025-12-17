@@ -1,6 +1,7 @@
 
 #include "Zomboni.h"
 #include "Plant.h"
+#include "GameWorld.h"
 
 USING_NS_CC;
 
@@ -288,22 +289,23 @@ void Zomboni::checkCollision(const std::vector<Plant*>& plants)
 
 void Zomboni::spawnIce()
 {    
-    float iceHeight = 90.0f; // 根据你的图片实际高度
+    // 计算裁剪区域（从右往左）
     float rectX = ICE_LENGTH - (_iceIndex + 1) * ICE_STEP;
+    Rect iceRect(rectX, 0, ICE_STEP, 90.0f); // 90 = 冰图片高度
 
-    Rect iceRect(rectX, 0, ICE_STEP, iceHeight);
+    // 创建冰 sprite
+    auto ice = IceTile::create(this->getPosition(), _iceIndex);
+    if (!ice) return;
 
-    auto ice = Sprite::create("ice.png", iceRect);
-    ice->setScale(1.1f);
-    // 冰的位置：在冰车后面、地面上
-    Vec2 icePos = this->getPosition();
 
-    ice->setPosition(icePos + Vec2(0, -30));
+    // 交给 GameWorld 管理（⚠ 不要自己留指针）
+    auto gameWorld = dynamic_cast<GameWorld*>(this->getParent());
+    if (gameWorld)
+    {
+        gameWorld->addIceTile(ice);
+    }
 
-    // 放到场景 / 地板层
-    this->getParent()->addChild(ice, 1);
-
-    // 更新 index（循环）
+    // index 循环
     _iceIndex = (_iceIndex + 1) % ICE_COUNT;
 }
 

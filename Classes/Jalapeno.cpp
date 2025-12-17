@@ -1,6 +1,7 @@
-#include "Jalapeno.h"
+Ôªø#include "Jalapeno.h"
 #include "Zombie.h"
 #include "Sun.h"
+#include "GameWorld.h";
 #include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
@@ -145,6 +146,11 @@ void Jalapeno::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, in
 
     // Play explosion animation
     playExplosionAnimation();
+
+    auto gameWorld = dynamic_cast<GameWorld*>(this->getParent());
+    if (!gameWorld) return;
+
+    gameWorld->removeIceInRow(plantRow);
 }
 
 // ------------------------------------------------------------------------
@@ -152,40 +158,62 @@ void Jalapeno::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, in
 // ------------------------------------------------------------------------
 void Jalapeno::playExplosionAnimation()
 {
-    // Stop current animation
     this->stopAllActions();
 
-    const float frameWidth = 950;
-    const float frameHeight = 165;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 2; row++)
+    auto explosionSprite = Sprite::create("fire_spritesheet.png");
+    if (explosionSprite)
     {
-        for (int col = 0; col < 4; col++)
+        explosionSprite->setPosition(this->getPosition());
+        if (this->getParent())
         {
+            this->getParent()->addChild(explosionSprite, this->getLocalZOrder() + 1);
+        }
 
-            float x = col * frameWidth;
-            float y = row * frameHeight;
+        const float frameWidth = 950;
+        const float frameHeight = 165;
+        Vector<SpriteFrame*> frames;
+        for (int row = 0; row < 2; row++)
+        {
+            for (int col = 0; col < 4; col++)
+            {
+                float x = col * frameWidth;
+                float y = row * frameHeight;
+                auto frame = SpriteFrame::create(
+                    "fire_spritesheet.png",
+                    Rect(x, y, frameWidth, frameHeight)
+                );
+                if (frame) frames.pushBack(frame);
+            }
+        }
+        if (!frames.empty())
+        {
+            auto targetpos = Vec2(650, this->getPositionY());
 
-            auto frame = SpriteFrame::create(
-                "fire_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
+            auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
+            auto animate = Animate::create(animation);
+
+            this->setScaleX(1.28);
+            auto sequence = Sequence::create(
+                MoveTo::create(0.01f, targetpos),
+                animate,
+                FadeOut::create(0.5f),
+                RemoveSelf::create(),
+                nullptr
             );
 
-            frames.pushBack(frame);
+            explosionSprite->runAction(sequence);
         }
+        else
+        {
+            explosionSprite->runAction(RemoveSelf::create());
+        }
+        this->_isDead = true;
+    }
+    else
+    {
+        this->_isDead = true;
     }
 
-    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
-    auto animate = Animate::create(animation);
-
-    this->setScaleX(1.28);
-    auto targetpos = Vec2(650, this->getPositionY());
-    this->runAction(Sequence::create(MoveTo::create(0.001f,targetpos), animate, RemoveSelf::create(), nullptr));
     CCLOG("Jalapeno explosion animation played!");
-
-    //“Ù–ßªπ√ªº”
-    //cocos2d::AudioEngine::play2d("cherrybomb.mp3", false);
 }
 

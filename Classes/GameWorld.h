@@ -15,6 +15,7 @@ class Sun;
 class SunProducingPlant;
 class AttackingPlant;
 class BombPlant;
+class IceTile;
 
 class GameWorld : public cocos2d::Scene
 {
@@ -91,6 +92,10 @@ public:
     void addZombie(Zombie* z);
 
 	bool isNightMode() const { return _isNightMode; }
+
+    void addIceTile(IceTile* ice);
+
+    void removeIceInRow(int row);
 
 private:
     /**
@@ -184,7 +189,13 @@ private:
 
     void maybePlayZombieGroan(float delta);
 
+    void updateIceTiles(float delta);
+    
+    void removeExpiredIceTiles();
 
+    bool hasIceAt(int row,int col);
+
+  
     // Grid storage system - stores Plant pointers directly
     Plant* _plantGrid[MAX_ROW][MAX_COL];
     
@@ -209,6 +220,7 @@ private:
     std::vector<Zombie*> _zombiesInRow[MAX_ROW];
     std::vector<Bullet*> _bullets;
     std::vector<Sun*> _suns;
+    std::vector<IceTile*> _iceTiles;
 
     // Wave spawning system
     int _currentWave;                // Current wave number (starts at 0)

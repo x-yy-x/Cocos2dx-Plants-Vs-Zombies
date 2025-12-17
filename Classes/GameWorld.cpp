@@ -27,6 +27,7 @@
 #include "Zomboni.h"
 #include "SpikeWeed.h"
 #include "Jalapeno.h"
+#include "IceTile.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -463,6 +464,12 @@ bool GameWorld::tryPlantAtPosition(const Vec2& globalPos, SeedPacket* seedPacket
 
     if (_plantGrid[row][col] != nullptr) return false;
 
+    if (hasIceAt(row,col))
+    {
+        CCLOG("cannot plant on ice!");
+        return false;
+    }
+
     // Use seed packet to create plant
     Plant* plant = seedPacket->plantAt(globalPos);
     if (plant)
@@ -542,11 +549,15 @@ void GameWorld::update(float delta)
     updateSuns(delta);
     maybePlayZombieGroan(delta);
 
+    //Update IceTile
+    updateIceTiles(delta);
+
     // Cleanup
     removeDeadPlants();
     removeDeadZombies();
     removeInactiveBullets();
     removeExpiredSuns();
+    removeExpiredIceTiles();
 }
 
 void GameWorld::spawnZombieWave(int waveNumber)
@@ -1110,4 +1121,64 @@ void GameWorld::addZombie(Zombie* z)
    float y = z->getPositionY();
    int row = static_cast<int>((y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height);
    _zombiesInRow[row].push_back(z);
+}
+void GameWorld::addIceTile(IceTile* ice)
+{
+    this->addChild(ice, ICE_LAYER);
+    _iceTiles.push_back(ice);
+}
+
+void GameWorld::updateIceTiles(float delta)
+{
+    for (auto ice : _iceTiles)
+    {
+        ice->update(delta);
+    }
+}
+
+void GameWorld::removeExpiredIceTiles()
+{
+    _iceTiles.erase(
+        std::remove_if(_iceTiles.begin(), _iceTiles.end(),
+            [](IceTile* ice)
+            {
+                if (!ice) return true;
+
+                if (ice->isExpired())
+                {
+                    ice->removeFromParent();
+                    return true;   // 从 vector 删除
+                }
+                return false;
+            }),
+        _iceTiles.end()
+    );
+}
+
+bool GameWorld::hasIceAt(int row,int col)
+{
+    for (auto ice : _iceTiles)
+    {
+        if (!ice) continue;
+        if (ice->isExpired()) continue;
+        
+        int iceRow, iceCol;
+        if (!getGridCoordinates(ice->getPosition(), iceRow, iceCol))
+            continue;
+
+        if (iceRow== row && iceCol==col)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void GameWorld::removeIceInRow(int row)
+{
+    for (auto& ice : _iceTiles) {
+        if (ice && ice->getRow() == row) {
+            ice->markAsExpired();
+        }
+    }
 }
