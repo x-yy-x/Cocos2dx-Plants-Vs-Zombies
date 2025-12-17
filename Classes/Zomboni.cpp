@@ -287,7 +287,7 @@ void Zomboni::checkCollision(const std::vector<Plant*>& plants)
 }
 
 void Zomboni::spawnIce()
-{
+{    
     float iceHeight = 90.0f; // 根据你的图片实际高度
     float rectX = ICE_LENGTH - (_iceIndex + 1) * ICE_STEP;
 
@@ -298,7 +298,7 @@ void Zomboni::spawnIce()
     // 冰的位置：在冰车后面、地面上
     Vec2 icePos = this->getPosition();
 
-    ice->setPosition(icePos+Vec2(0,-30));
+    ice->setPosition(icePos + Vec2(0, -30));
 
     // 放到场景 / 地板层
     this->getParent()->addChild(ice, 1);
