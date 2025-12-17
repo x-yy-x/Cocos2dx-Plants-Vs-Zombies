@@ -34,17 +34,19 @@ bool Jalapeno::init()
 {
     if (!BombPlant::init())
     {
+        CCLOG("BombPlant::init() failed!");
         return false;
     }
 
     if (!Sprite::initWithFile(IMAGE_FILENAME, INITIAL_PIC_RECT))
     {
+        CCLOG("Sprite::initWithFile failed! Check if %s exists.", IMAGE_FILENAME.c_str());
         return false;
     }
 
     _maxHealth = 300;
     _currentHealth = 300;
-    _cooldownInterval = 0.0f;  // No cooldown needed
+    _cooldownInterval = 0.0f;
     _accumulatedTime = 0.0f;
     _idleAnimationDuration = 0.0f;
 
@@ -53,6 +55,7 @@ bool Jalapeno::init()
 
     return true;
 }
+
 
 // ------------------------------------------------------------------------
 // 2. Static planting function
@@ -78,7 +81,6 @@ void Jalapeno::setAnimation()
     {
         for (int col = 0; col < 4; col++)
         {
-
             float x = col * frameWidth;
             float y = row * frameHeight;
 
@@ -86,12 +88,24 @@ void Jalapeno::setAnimation()
                 "jalapeno_spritesheet.png",
                 Rect(x, y, frameWidth, frameHeight)
             );
-
+            if (frame == nullptr) {
+                CCLOG("SpriteFrame::create failed for jalapeno_spritesheet.png at (%.1f, %.1f)", x, y);
+                continue;
+            }
             frames.pushBack(frame);
         }
     }
 
+    if (frames.empty()) {
+        CCLOG("No valid frames for Jalapeno idle animation!");
+        return;
+    }
+
     auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
+    if (!animation) {
+        CCLOG("Animation::createWithSpriteFrames failed!");
+        return;
+    }
     auto animate = Animate::create(animation);
 
     this->runAction(animate);
@@ -216,4 +230,3 @@ void Jalapeno::playExplosionAnimation()
 
     CCLOG("Jalapeno explosion animation played!");
 }
-
