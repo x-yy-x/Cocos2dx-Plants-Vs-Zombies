@@ -301,6 +301,8 @@ std::vector<Bullet*> Puffshroom::checkAndAttack(std::vector<Zombie*> allZombiesI
         Puff* puff = Puff::create(spawnPos);
         if (puff)
         {
+            // 参数：文件路径, 是否循环, 音量 (0.0 到 1.0)
+            cocos2d::AudioEngine::play2d("puff.mp3", false, 1.0f);
             bullets.push_back(puff);
             CCLOG("Puffshroom fired a puff at %f, %f", spawnPos.x, spawnPos.y);
         }

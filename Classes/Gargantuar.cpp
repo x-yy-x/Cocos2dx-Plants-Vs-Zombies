@@ -421,6 +421,7 @@ void Gargantuar::throwImp()
     CCLOG("imp created");
     auto imp = Imp::createZombie();
     imp->setState(Imp::ZombieState::FLYING);
+    cocos2d::AudioEngine::play2d("imp-pvz.mp3", false, 1.0f);
     auto pos = this->getPosition();
     imp->setPosition(pos + Vec2(-250, 35));
     auto gameWorld = dynamic_cast<GameWorld*>(Director::getInstance()->getRunningScene());

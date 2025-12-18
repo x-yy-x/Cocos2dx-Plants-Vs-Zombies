@@ -173,7 +173,7 @@ void Jalapeno::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, in
 void Jalapeno::playExplosionAnimation()
 {
     this->stopAllActions();
-
+    cocos2d::AudioEngine::play2d("Jalapeno.mp3", false, 1.0f);
     auto explosionSprite = Sprite::create("fire_spritesheet.png");
     if (explosionSprite)
     {

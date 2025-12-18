@@ -301,7 +301,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = Gargantuar::createZombie();
+        auto debugZombie = Zomboni::createZombie();
         if (debugZombie)
         {
             int row = 2;
@@ -1073,6 +1073,7 @@ void GameWorld::spawnFinalWave()
     // 提示图（字幕显示4秒）
     auto visibleSize = Director::getInstance()->getVisibleSize();
     auto banner = Sprite::create("LargeWave.png");
+    AudioEngine::play2d("plants-vs-zombies-wave.mp3");
     if (banner) {
         banner->setPosition(Vec2(visibleSize.width/2, visibleSize.height/2));
         banner->setOpacity(0);
@@ -1100,8 +1101,17 @@ void GameWorld::spawnFinalWave()
     int zambo5 = applyNightFactor(1, true);
     int normal5 = applyNightFactor(randRange(2,3), false);
 
+    // 旗帜僵尸
+    auto z = FlagZombie::createZombie();
+    const float ZOMBIE_Y_OFFSET = 0.7f;
+    float y = GRID_ORIGIN.y + 3 * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
+    float x = visibleSize.width + 10;
+    z->setPosition(Vec2(x, y));
+    this->addChild(z, ENEMY_LAYER);
+    _zombiesInRow[3].push_back(z);
     // 子批：0s巨人、1.2s普通+撑杆、2.4s冰车+普通、3.6s普通+撑杆、4.8s冰车+普通（都整体延后4秒）
     spawnSubBatch(0, 0, 0, gCount, baseDelay + 0.0f);
+    AudioEngine::play2d("zombies.mp3");
     spawnSubBatch(normal2, pole2, 0, 0, baseDelay + 1.2f);
     spawnSubBatch(normal3, 0, zambo3, 0, baseDelay + 2.4f);
     spawnSubBatch(normal4, pole4, 0, 0, baseDelay + 3.6f);
@@ -1150,13 +1160,18 @@ void GameWorld::showGameOver()
         float targetScale = MAX(scaleX, scaleY);
         
         // Add to layer
+        cocos2d::AudioEngine::stopAll();
         gameOverLayer->addChild(gameOverSprite, WIN_LOSE_LAYER);
-        
+        AudioEngine::play2d("lose-music-pvz1.mp3");
+
+        AudioEngine::play2d("pvz-crazy-dave-nooooooooooo.mp3");
+
+
         // Create scale animation (slowly enlarge from center)
         auto scaleAction = ScaleTo::create(1.0f, targetScale);
         
         // After animation completes, wait 3 seconds then return to menu
-        auto delayAction = DelayTime::create(3.0f);
+        auto delayAction = DelayTime::create(8.0f);
         auto callbackAction = CallFunc::create([this]() {
             // Stop all audio
             cocos2d::AudioEngine::stopAll();
@@ -1200,7 +1215,8 @@ void GameWorld::showWinTrophy()
     _winShown = true;
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
-
+    cocos2d::AudioEngine::stopAll();
+    AudioEngine::play2d("pvz-victory.mp3");
     _trophySprite = Sprite::create("trophy.png");
     if (!_trophySprite)
         return;

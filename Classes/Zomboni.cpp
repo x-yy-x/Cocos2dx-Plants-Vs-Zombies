@@ -2,6 +2,7 @@
 #include "Zomboni.h"
 #include "Plant.h"
 #include "GameWorld.h"
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
@@ -185,7 +186,7 @@ void Zomboni::takeDamage(int damage)
     {
         return;
     }
-
+    cocos2d::AudioEngine::play2d("hittingiron.mp3", false, 1.0f);
     _currentHealth -= damage;
     // CCLOG("Zombie took %d damage, remaining health: %d", damage, _currentHealth); // Reduced logging
 
