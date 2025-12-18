@@ -1,5 +1,10 @@
 #pragma once
 #include "cocos2d.h"
+#include "GameDefs.h"
+#include <vector>
+
+class SeedPacket;
+class SelectCard;
 
 class SelectCardsScene : public cocos2d::Scene
 {
@@ -19,6 +24,13 @@ private:
     float _zShowStartX;
     float _zShowStartY;
     float _zShowGapY;
+    
+    // Card selection
+    std::vector<SelectCard*> _allSelectCards;
+    std::vector<SelectCard*> _selectedCards;  // Store SelectCard* instead of SeedPacket*
+    std::vector<PlantName> _selectedPlantNames;  // Store PlantName instead of SeedPacket* for safety
+    cocos2d::Node* _selectedCardsContainer;
+    std::vector<cocos2d::Sprite*> _displaySprites;  // Store display sprites in seedBank for click handling
 
 public:
     static SelectCardsScene* createScene(bool isNightMode);
@@ -37,4 +49,7 @@ protected:
     void runIntroMove();
     void showSelectBG();
     void spawnZombieShowcase();
+    void createSelectCards();
+    void onCardSelected(SelectCard* card);
+    void updateSelectedCardsDisplay();
 };

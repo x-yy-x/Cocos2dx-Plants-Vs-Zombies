@@ -24,6 +24,7 @@
 #include "Imp.h"
 #include "Gargantuar.h"
 #include "GameMenu.h"
+#include "SelectCardsScene.h"
 #include "Zomboni.h"
 #include "SpikeWeed.h"
 #include "Jalapeno.h"
@@ -40,12 +41,13 @@
 
 USING_NS_CC;
 
-GameWorld* GameWorld::create(bool isNightMode)
+GameWorld* GameWorld::create(bool isNightMode, const std::vector<PlantName>& plantNames)
 {
     GameWorld* instance = new (std::nothrow) GameWorld();
     if (instance)
     {
         instance->_isNightMode = isNightMode;
+        instance->_initialPlantNames = plantNames;
         if (instance->init())
         {
             instance->autorelease();
@@ -56,9 +58,9 @@ GameWorld* GameWorld::create(bool isNightMode)
     return nullptr;
 }
 
-Scene* GameWorld::createScene(bool isNightMode)
+Scene* GameWorld::createScene(bool isNightMode, const std::vector<PlantName>& plantNames)
 {
-    return GameWorld::create(isNightMode);
+    return GameWorld::create(isNightMode, plantNames);
 }
 
 GameWorld::~GameWorld()
@@ -174,45 +176,110 @@ bool GameWorld::init()
 
     _elapsedTime = 0.0f;
 
-    // Create seed packets using template method (no need for separate subclasses!)
-    auto sunflowerPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50,PlantName::SUNFLOWER);
-    auto sunshroomPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM);
-    auto peashooterPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER);
-    auto repeaterPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER);
-    auto threepeaterPacket = SeedPacket::create<ThreePeater>("Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER);
-    auto puffshroomPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0, PlantName::PUFFSHROOM);
-    auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50, PlantName::WALLNUT);
-    auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150, PlantName::CHERRYBOMB);
-    auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED);
-    auto jalapenoPacket= SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO);
-    auto twinsunflower = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
-
-    if (sunflowerPacket && sunshroomPacket && peashooterPacket && 
-        repeaterPacket && threepeaterPacket && puffshroomPacket && 
-        wallnutPacket && cherryBombPacket && spikeWeedPacket && 
-        jalapenoPacket && twinsunflower)
+    // Use plant names from SelectCardsScene if provided, otherwise create default ones
+    if (!_initialPlantNames.empty())
     {
-        _seedPackets.push_back(sunflowerPacket);
-        _seedPackets.push_back(sunshroomPacket);
-        _seedPackets.push_back(peashooterPacket);
-        _seedPackets.push_back(repeaterPacket);
-        _seedPackets.push_back(threepeaterPacket);
-        _seedPackets.push_back(puffshroomPacket);
-        _seedPackets.push_back(wallnutPacket);
-        _seedPackets.push_back(cherryBombPacket);
-        _seedPackets.push_back(spikeWeedPacket);
-        _seedPackets.push_back(jalapenoPacket);
-        _seedPackets.push_back(twinsunflower);
-
+        // Create seed packets based on selected plant names
         // Set positions for seed packets (more compact spacing)
         float baseX = 187.0f;
         float baseY = 667.0f;
-        float spacing = 65.0f;  // Reduced spacing for more compact layout
+        float spacing = 65.0f;
 
-        for (size_t i = 0; i < _seedPackets.size(); ++i)
+        for (size_t i = 0; i < _initialPlantNames.size(); ++i)
         {
-            _seedPackets[i]->setPosition(Vec2(baseX + i * spacing, baseY));
-            this->addChild(_seedPackets[i], SEEDPACKET_LAYER);
+            PlantName plantName = _initialPlantNames[i];
+            
+            // Create a new SeedPacket instance based on plant name
+            SeedPacket* newPacket = nullptr;
+            
+            // Create seed packet based on plant name
+            switch (plantName) {
+                case PlantName::SUNFLOWER:
+                    newPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50, PlantName::SUNFLOWER);
+                    break;
+                case PlantName::SUNSHROOM:
+                    newPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM);
+                    break;
+                case PlantName::PEASHOOTER:
+                    newPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER);
+                    break;
+                case PlantName::REPEATER:
+                    newPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER);
+                    break;
+                case PlantName::THREEPEATER:
+                    newPacket = SeedPacket::create<ThreePeater>("Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER);
+                    break;
+                case PlantName::PUFFSHROOM:
+                    newPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0, PlantName::PUFFSHROOM);
+                    break;
+                case PlantName::WALLNUT:
+                    newPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50, PlantName::WALLNUT);
+                    break;
+                case PlantName::CHERRYBOMB:
+                    newPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150, PlantName::CHERRYBOMB);
+                    break;
+                case PlantName::SPIKEWEED:
+                    newPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED);
+                    break;
+                case PlantName::JALAPENO:
+                    newPacket = SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO);
+                    break;
+                case PlantName::TWINSUNFLOWER:
+                    newPacket = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
+                    break;
+                default:
+                    break;
+            }
+            
+            if (newPacket) {
+                newPacket->setPosition(Vec2(baseX + i * spacing, baseY));
+                this->addChild(newPacket, SEEDPACKET_LAYER);
+                _seedPackets.push_back(newPacket);
+            }
+        }
+    }
+    else
+    {
+        // Create default seed packets using template method (no need for separate subclasses!)
+        auto sunflowerPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50,PlantName::SUNFLOWER);
+        auto sunshroomPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM);
+        auto peashooterPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER);
+        auto repeaterPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER);
+        auto threepeaterPacket = SeedPacket::create<ThreePeater>("Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER);
+        auto puffshroomPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0, PlantName::PUFFSHROOM);
+        auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50, PlantName::WALLNUT);
+        auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150, PlantName::CHERRYBOMB);
+        auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED);
+        auto jalapenoPacket= SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO);
+        auto twinsunflower = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
+
+        if (sunflowerPacket && sunshroomPacket && peashooterPacket && 
+            repeaterPacket && threepeaterPacket && puffshroomPacket && 
+            wallnutPacket && cherryBombPacket && spikeWeedPacket && 
+            jalapenoPacket && twinsunflower)
+        {
+            _seedPackets.push_back(sunflowerPacket);
+            _seedPackets.push_back(sunshroomPacket);
+            _seedPackets.push_back(peashooterPacket);
+            _seedPackets.push_back(repeaterPacket);
+            _seedPackets.push_back(threepeaterPacket);
+            _seedPackets.push_back(puffshroomPacket);
+            _seedPackets.push_back(wallnutPacket);
+            _seedPackets.push_back(cherryBombPacket);
+            _seedPackets.push_back(spikeWeedPacket);
+            _seedPackets.push_back(jalapenoPacket);
+            _seedPackets.push_back(twinsunflower);
+
+            // Set positions for seed packets (more compact spacing)
+            float baseX = 187.0f;
+            float baseY = 667.0f;
+            float spacing = 65.0f;  // Reduced spacing for more compact layout
+
+            for (size_t i = 0; i < _seedPackets.size(); ++i)
+            {
+                _seedPackets[i]->setPosition(Vec2(baseX + i * spacing, baseY));
+                this->addChild(_seedPackets[i], SEEDPACKET_LAYER);
+            }
         }
     }
 
@@ -1381,7 +1448,8 @@ void GameWorld::restartGame(Ref* sender)
     Director::getInstance()->getScheduler()->setTimeScale(1.0f);
     _speedLevel = 0;
 
-    auto newScene = GameWorld::createScene(_isNightMode);
+    // Restart from card selection scene
+    auto newScene = SelectCardsScene::createScene(_isNightMode);
     Director::getInstance()->replaceScene(TransitionFade::create(0.5f, newScene));
 }
 

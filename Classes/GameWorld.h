@@ -21,8 +21,8 @@ class IceTile;
 class GameWorld : public cocos2d::Scene
 {
 public:
-    static cocos2d::Scene* createScene(bool isNightMode = false);
-    static GameWorld* create(bool isNightMode = false);
+    static cocos2d::Scene* createScene(bool isNightMode = false, const std::vector<PlantName>& plantNames = std::vector<PlantName>());
+    static GameWorld* create(bool isNightMode = false, const std::vector<PlantName>& plantNames = std::vector<PlantName>());
 
     virtual bool init() override;
     virtual ~GameWorld();
@@ -227,6 +227,7 @@ private:
     Shovel* _shovel;
     cocos2d::Sprite* _shovelBack;
     std::vector<SeedPacket*> _seedPackets;
+    std::vector<PlantName> _initialPlantNames;  // PlantNames passed from SelectCardsScene
 
     // Flag meter moving icon (right end follows progress)
     cocos2d::Sprite* _flagIconRight{ nullptr };

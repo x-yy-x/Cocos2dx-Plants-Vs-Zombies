@@ -75,6 +75,11 @@ public:
     virtual bool init() override;
 
     /**
+     * @brief Called when node enters the scene
+     */
+    virtual void onEnter() override;
+
+    /**
      * @brief Update function for cooldown animation
      * @param delta Time delta
      */

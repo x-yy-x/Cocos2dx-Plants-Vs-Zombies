@@ -46,11 +46,19 @@ bool SeedPacket::init()
     _isOnCooldown = false;
     _accumulatedTime = 0.0f;
 
-    // Enable update for cooldown animation
-    this->scheduleUpdate();
+    // Don't schedule update here - it will be scheduled in onEnter()
+    // scheduleUpdate() requires the node to be in the scene tree (_running = true)
 
     CCLOG("SeedPacket initialized with image: %s", _seedPacketImage.c_str());
     return true;
+}
+
+// onEnter - schedule update when node enters the scene
+void SeedPacket::onEnter()
+{
+    Sprite::onEnter();
+    // Enable update for cooldown animation (now safe because node is in scene tree)
+    this->scheduleUpdate();
 }
 
 // Update function
