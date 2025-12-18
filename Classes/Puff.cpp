@@ -10,7 +10,7 @@ const cocos2d::Rect Puff::INITIAL_PIC_RECT = Rect::ZERO;
 // TODO: Adjust default speed here
 const float Puff::DEFAULT_SPEED = 300.0f;
 // TODO: Adjust default damage here
-const int Puff::DEFAULT_DAMAGE = 10;
+const int Puff::DEFAULT_DAMAGE = 20;
 // Maximum lifetime: enough to travel about 3 grid cells (3 * 130 = 390 pixels)
 // At speed 300, time = distance/speed = 390/300 = 1.3 seconds
 const float Puff::MAX_LIFETIME = 1.3f;
