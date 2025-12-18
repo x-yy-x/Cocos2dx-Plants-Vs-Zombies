@@ -104,6 +104,16 @@ public:
     void removeIceInRow(int row);
 
 private:
+    /** 脚本式分阶段批次生成（方案D） */
+    void spawnTimedBatch(float normalizedTime);
+    void spawnFinalWave();
+    void spawnSubBatch(int normalCnt, int poleCnt, int zamboniCnt, int gargantuarCnt, float delaySec);
+    int randRange(int a, int b);
+    int applyNightFactor(int baseCount, bool allowZero = false);
+
+    // 胜利流程
+    void showWinTrophy();
+
     /**
      * @brief Setup user interaction (touch events for planting and shoveling)
      */
@@ -218,7 +228,9 @@ private:
     cocos2d::Sprite* _shovelBack;
     std::vector<SeedPacket*> _seedPackets;
 
-    // --- ��������� ---
+    // Flag meter moving icon (right end follows progress)
+    cocos2d::Sprite* _flagIconRight{ nullptr };
+    // --- 进度条 ---
     cocos2d::ui::LoadingBar* _progressBar;
     cocos2d::Sprite* _progressBarFull;
     float _elapsedTime = 0.0f;
@@ -235,11 +247,16 @@ private:
     std::vector<Sun*> _suns;
     std::vector<IceTile*> _iceTiles;
 
-    // Wave spawning system
-    int _currentWave;                // Current wave number (starts at 0)
-    int _tickCount;                  // Total tick count (1 tick = 1/30 second)
-    int _nextWaveTickCount;          // Tick count when next wave should spawn
+    // Timed batch spawning (方案D)
+    int _currentWave;                // (legacy, unused by 方案D but kept)
+    float _nextBatchTimeSec;         // 下一次脚本批次触发时间（秒）
+    bool _finalWaveTriggered{ false }; // 是否已触发最终大波
     bool _gameStarted;               // Whether game has started
+
+    // Win flow
+    bool _finalWaveSpawningDone{ false };
+    bool _winShown{ false };
+    cocos2d::Sprite* _trophySprite{ nullptr };
 
     float _zombieGroanTimer;
 
@@ -260,13 +277,12 @@ private:
     cocos2d::Menu* _pauseMenu;
     cocos2d::Label* _volumeLabel;
     float _musicVolume{ 1.0f };
-
     // Game over system
     bool _isGameOver{ false };
 };
 
 // Wave spawning parameters (reduced difficulty)
-const int FIRST_WAVE_TICK = 1800;    // First wave spawns at 1800 ticks (60 seconds)
-const int MIN_WAVE_INTERVAL = 300;   // Minimum interval between waves (10 seconds)
+const float FIRST_WAVE_TIME = 60.0f;    // First wave spawns at 60 seconds
+const float MIN_WAVE_INTERVAL = 10.0f;   // Minimum interval between waves (10 seconds)
 
 #endif // __GAMEWORLD_H__

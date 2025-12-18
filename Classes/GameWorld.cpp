@@ -118,10 +118,10 @@ bool GameWorld::init()
     _sunCount = 10000; // Initial sun count
     _sunCountLabel = nullptr;
 
-    // Initialize wave spawning system
-    _currentWave = 0;
-    _tickCount = 0;
-    _nextWaveTickCount = FIRST_WAVE_TICK;
+    // Initialize timed batch spawning (方案D)
+    _currentWave = 0; // legacy
+    _nextBatchTimeSec = 8.0f; // 首批在8秒左右
+    _finalWaveTriggered = false;
     _gameStarted = true;
 
     // Initialize sun spawning system
@@ -154,11 +154,19 @@ bool GameWorld::init()
         _progressBar->setPosition(progressBG->getPosition());
         this->addChild(_progressBar, UI_LAYER + 1);
 
+        // Add flag icon at the left end of the progress bar (FlagMeterParts1.png)
+        auto flagIconLeft = Sprite::create("FlagMeterParts2.png");
+        if (flagIconLeft) {
+            flagIconLeft->setPosition(Vec2(progressBG->getPositionX() - progressBG->getContentSize().width / 2 + 4, progressBG->getPositionY() + 5));
+            this->addChild(flagIconLeft, UI_LAYER + 2);
+        }
       
-        auto flagIcon = Sprite::create("FlagMeterParts2.png");
-        if (flagIcon) {
-            flagIcon->setPosition(Vec2(progressBG->getPositionX() - progressBG->getContentSize().width / 2 + 4, progressBG->getPositionY() + 5));
-            this->addChild(flagIcon, UI_LAYER + 2);
+        // Add flag icon at the right end of the progress bar (FlagMeterParts1.png) - moves with progress
+        _flagIconRight = Sprite::create("FlagMeterParts1.png");
+        if (_flagIconRight) {
+            // Initial position at left end (0% progress)
+            _flagIconRight->setPosition(Vec2(progressBG->getPositionX() - progressBG->getContentSize().width / 2 + 4, progressBG->getPositionY() + 5));
+            this->addChild(_flagIconRight, UI_LAYER + 2);
         }
     }
     
@@ -274,7 +282,7 @@ bool GameWorld::init()
         nullptr
     );
     auto speedButtonBack = Sprite::create("button.png");
-	speedButtonBack->setPosition(Vec2(visibleSize.width - 100, visibleSize.height - 85));
+    speedButtonBack->setPosition(Vec2(visibleSize.width - 100, visibleSize.height - 85));
     speedButtonBack->setScale(1.3f,0.85f);
 	this->addChild(speedButtonBack, UI_LAYER - 1);
     if (_speedToggleButton)
@@ -312,7 +320,7 @@ bool GameWorld::init()
 
     const char* track = _isNightMode ? "night_scene.mp3" : "day_scene.mp3";
     _backgroundMusicId = cocos2d::AudioEngine::play2d(track, true);
-
+    
     return true;
 }
 
@@ -541,25 +549,40 @@ void GameWorld::update(float delta)
     if (!_gameStarted || _isPaused || _isGameOver)
         return;
 
-
+    // Update unified time base
     _elapsedTime += delta;
 
+    // Update progress bar based on elapsed time
     float progressPercent = (_elapsedTime / TOTAL_GAME_TIME) * 100.0f;
-
     if (progressPercent > 100.0f) progressPercent = 100.0f;
 
     if (_progressBar) {
         _progressBar->setPercent(progressPercent);
+        
+        // Update flag icon position to follow progress bar growth
+        if (_flagIconRight) {
+            float progressBarWidth = _progressBar->getContentSize().width;
+            float currentProgress = progressPercent / 100.0f; // Convert to 0.0 - 1.0
+            float progressBarLeftX = _progressBar->getPositionX() + progressBarWidth / 2;
+            float flagX = progressBarLeftX - progressBarWidth * currentProgress;
+            _flagIconRight->setPosition(Vec2(flagX, _progressBar->getPositionY() + 5));
+        }
     }
-    _tickCount++;
 
-    if (_tickCount >= _nextWaveTickCount)
+
+    // 方案D：按时间脚本触发批次
+    float t = _elapsedTime / TOTAL_GAME_TIME;
+    if (t > 1.0f) t = 1.0f;
+
+    if (!_finalWaveTriggered && t >= 0.999f)
     {
-        _currentWave++;
-        spawnZombieWave(_currentWave);
-
-        int interval = std::max(MIN_WAVE_INTERVAL, 900 - 30 * _currentWave);
-        _nextWaveTickCount = _tickCount + interval;
+        _finalWaveTriggered = true;
+        spawnFinalWave();
+        _nextBatchTimeSec = 1e9f; // 停止常规批次
+    }
+    else if (!_finalWaveTriggered && _elapsedTime >= _nextBatchTimeSec)
+    {
+        spawnTimedBatch(t);
     }
     
 
@@ -596,6 +619,24 @@ void GameWorld::update(float delta)
     removeInactiveBullets();
     removeExpiredSuns();
     removeExpiredIceTiles();
+
+    // 胜利判定：最终波已触发并且所有子批已排程完成，且场上无“存活中的”僵尸
+    // 不要求容器为空，允许仍存在已死亡/正在死亡动画中的僵尸对象
+    if (!_winShown && _finalWaveTriggered && _finalWaveSpawningDone)
+    {
+        bool anyAlive = false;
+        for (int r = 0; r < MAX_ROW && !anyAlive; ++r)
+        {
+            for (auto* z : _zombiesInRow[r])
+            {
+                if (z && !z->isDead()) { anyAlive = true; break; }
+            }
+        }
+        if (!anyAlive)
+        {
+            showWinTrophy();
+        }
+    }
 }
 
 void GameWorld::spawnZombieWave(int waveNumber)
@@ -873,375 +914,190 @@ void GameWorld::updateSuns(float delta)
     }
 }
 
-void GameWorld::removeExpiredSuns()
+int GameWorld::randRange(int a, int b)
 {
-    _suns.erase(
-        std::remove_if(
-            _suns.begin(),
-            _suns.end(),
-            [&](Sun* sun)
-            {
-                if (!sun) return true;  // �Ƴ���Чָ��
+    if (b < a) std::swap(a,b);
+    return a + (rand() % (b - a + 1));
+}
 
-                if (sun->shouldRemove())
-                {
-                    sun->removeFromParent();
-                    return true; // �� vector ɾ��
+int GameWorld::applyNightFactor(int baseCount, bool allowZero)
+{
+    if (!_isNightMode) return baseCount;
+    if (baseCount <= 0) return 0;
+    float scaled = baseCount * 0.75f; // 夜间整体减少
+    int c = (int)std::round(scaled);
+    if (!allowZero) c = std::max(1, c);
+    return std::max(0, c);
+}
+
+void GameWorld::spawnSubBatch(int normalCnt, int poleCnt, int zamboniCnt, int gargantuarCnt, float delaySec)
+{
+    this->runAction(Sequence::create(
+        DelayTime::create(delaySec),
+        CallFunc::create([=]() {
+            auto visibleSize = Director::getInstance()->getVisibleSize();
+            auto spawnAtRow = [&](cocos2d::Node* z, int row){
+                const float ZOMBIE_Y_OFFSET = 0.7f;
+                float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
+                float x = visibleSize.width + 10;
+                z->setPosition(Vec2(x, y));
+                this->addChild(z, ENEMY_LAYER);
+                _zombiesInRow[row].push_back(static_cast<Zombie*>(z));
+            };
+
+            for (int i = 0; i < normalCnt; ++i) {
+                if (auto z = Zombie::createZombie()) {
+                    int row = rand() % MAX_ROW;
+                    spawnAtRow(z, row);
                 }
-                return false;
             }
-        ),
-        _suns.end()
-    );
-}
-
-void GameWorld::spawnSunFromSky()
-{
-    auto visibleSize = Director::getInstance()->getVisibleSize();
-    
-    // Random grid column
-    int targetCol = rand() % MAX_COL;
-    
-    // Start position: above seed packets (around y = 700)
-    float startY = 700.0f;
-    
-    // Create sun from sky
-    Sun* sun = Sun::createFromSky(targetCol, startY);
-    if (sun)
-    {
-        this->addChild(sun, SUN_LAYER);
-        _suns.push_back(sun);
-        CCLOG("Sun spawned from sky, target column: %d", targetCol);
-    }
-}
-
-void GameWorld::maybePlayZombieGroan(float delta)
-{
-    bool hasZombie = false;
-    for (int row = 0; row < MAX_ROW && !hasZombie; ++row)
-    {
-        // CRITICAL FIX: Use iterator to avoid invalidation during iteration
-        auto& zombiesInThisRow = _zombiesInRow[row];
-        for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end() && !hasZombie; ++it)
-        {
-            Zombie* zombie = *it;
-            // Check pointer validity and skip dead/dying zombies
-            if (zombie && !zombie->isDead())
-            {
-                hasZombie = true;
-                break;
-            }
-        }
-    }
-
-    if (!hasZombie)
-    {
-        _zombieGroanTimer = 1.0f;
-        return;
-    }
-
-    _zombieGroanTimer -= delta;
-    if (_zombieGroanTimer <= 0.0f)
-    {
-        if (CCRANDOM_0_1() < 0.05f)  // Reduced to 5% chance
-        {
-            cocos2d::AudioEngine::play2d("zombie_groan.mp3", false);
-        }
-        _zombieGroanTimer = 10.0f;  // Fixed 10 second interval
-    }
-}
-
-void GameWorld::menuCloseCallback(Ref* pSender)
-{
-    Director::getInstance()->end();
-}
-
-void GameWorld::toggleSpeedMode(Ref* sender)
-{
-    // Cycle through speed levels: 0 (normal) -> 1 (2x) -> 2 (3x) -> 0 (normal)
-    _speedLevel = (_speedLevel + 1) % 3;
-    
-    // Sync button state with speed level
-    if (_speedToggleButton)
-    {
-        _speedToggleButton->setSelectedIndex(_speedLevel);
-    }
-    
-    // Only apply time scale when not paused
-    if (!_isPaused)
-    {
-        float timeScale = 1.0f;
-        if (_speedLevel == 1)
-            timeScale = 2.0f;
-        else if (_speedLevel == 2)
-            timeScale = 3.0f;
-        
-        Director::getInstance()->getScheduler()->setTimeScale(timeScale);
-    }
-
-    CCLOG("Speed level: %d, time scale: %.1f", _speedLevel, _speedLevel == 0 ? 1.0f : (_speedLevel == 1 ? 2.0f : 3.0f));
-}
-
-void GameWorld::showPauseMenu(Ref* sender)
-{
-    if (_isPaused) return; // Already paused
-
-    _isPaused = true;
-
-    // Pause the entire scene to stop all game updates
-    Director::getInstance()->pause();
-
-    // Create pause menu layer
-    _pauseMenuLayer = Layer::create();
-    _pauseMenuLayer->setPosition(Vec2::ZERO);
-    this->addChild(_pauseMenuLayer, UI_LAYER + 10);
-
-    // Create menu background image
-    auto visibleSize = Director::getInstance()->getVisibleSize();
-    auto background = Sprite::create("Menu.png");
-    if (background)
-    {
-        background->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
-        // Scale to fit screen while maintaining aspect ratio
-        float scaleX = visibleSize.width * 0.8f / background->getContentSize().width;
-        float scaleY = visibleSize.height * 0.8f / background->getContentSize().height;
-        background->setScale(MIN(scaleX, scaleY));
-        _pauseMenuLayer->addChild(background, 0);
-    }
-    else
-    {
-        // Fallback to semi-transparent background if image fails to load
-        auto fallbackBackground = LayerColor::create(Color4B(0, 0, 0, 128));
-        _pauseMenuLayer->addChild(fallbackBackground, 0);
-    }
-
-    // Create pause menu items
-    auto resumeItem = MenuItemFont::create("Resume", [this](Ref* sender) {
-        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
-        resumeGame(sender);
-    });
-    auto restartItem = MenuItemFont::create("Restart", [this](Ref* sender) {
-        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
-        restartGame(sender);
-    });
-    auto menuItem = MenuItemFont::create("Main Menu", [this](Ref* sender) {
-        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
-        returnToMenu(sender);
-    });
-
-    // Volume controls with validity checking
-    auto volumeUpItem = MenuItemFont::create("Volume +", [this](Ref* sender) {
-        if (_musicVolume >= 1.0f) {
-            cocos2d::AudioEngine::play2d("buzzer.mp3", false);
-        } else {
-            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
-            increaseMusicVolume(sender);
-        }
-    });
-    auto volumeDownItem = MenuItemFont::create("Volume -", [this](Ref* sender) {
-        if (_musicVolume <= 0.0f) {
-            cocos2d::AudioEngine::play2d("buzzer.mp3", false);
-        } else {
-            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
-            decreaseMusicVolume(sender);
-        }
-    });
-
-    // Create volume display label
-    _volumeLabel = Label::createWithSystemFont(StringUtils::format("Volume: %.0f%%", _musicVolume * 100), "Arial", 24);
-    _volumeLabel->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 - 100));
-    _volumeLabel->setColor(Color3B::WHITE);
-    _pauseMenuLayer->addChild(_volumeLabel);
-
-    // Position menu items relative to screen center (they will appear on the menu background)
-    resumeItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 120));
-    restartItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 60));
-    menuItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
-    volumeUpItem->setPosition(Vec2(visibleSize.width / 2 - 60, visibleSize.height / 2 - 60));
-    volumeDownItem->setPosition(Vec2(visibleSize.width / 2 + 60, visibleSize.height / 2 - 60));
-
-    // Scale items
-    resumeItem->setScale(0.8f);
-    restartItem->setScale(0.8f);
-    menuItem->setScale(0.8f);
-    volumeUpItem->setScale(0.7f);
-    volumeDownItem->setScale(0.7f);
-
-    // Create menu
-    _pauseMenu = Menu::create(resumeItem, restartItem, menuItem, volumeUpItem, volumeDownItem, nullptr);
-    _pauseMenu->setPosition(Vec2::ZERO);
-    _pauseMenuLayer->addChild(_pauseMenu);
-
-    CCLOG("Game paused");
-}
-
-void GameWorld::resumeGame(Ref* sender)
-{
-    if (!_isPaused) return;
-
-    _isPaused = false;
-
-    // Resume the entire scene
-    Director::getInstance()->resume();
-
-    // Restore speed mode time scale if speed mode is active
-    if (_speedLevel > 0)
-    {
-        float timeScale = _speedLevel == 1 ? 2.0f : 3.0f;
-        Director::getInstance()->getScheduler()->setTimeScale(timeScale);
-    }
-
-    // Remove pause menu
-    if (_pauseMenuLayer)
-    {
-        this->removeChild(_pauseMenuLayer);
-        _pauseMenuLayer = nullptr;
-        _pauseMenu = nullptr;
-    }
-
-    CCLOG("Game resumed");
-}
-
-void GameWorld::restartGame(Ref* sender)
-{
-    // Stop current background music
-    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
-    {
-        cocos2d::AudioEngine::stop(_backgroundMusicId);
-        _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
-    }
-
-    // Ensure game is not paused when restarting
-    if (_isPaused)
-    {
-        Director::getInstance()->resume();
-        _isPaused = false;
-    }
-
-    // Reset time scale to normal
-    Director::getInstance()->getScheduler()->setTimeScale(1.0f);
-    _speedLevel = 0;
-
-    // Create new game scene with smooth transition
-    auto newScene = GameWorld::createScene(_isNightMode);
-    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, newScene));
-}
-
-void GameWorld::returnToMenu(Ref* sender)
-{
-    // Stop current background music
-    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
-    {
-        cocos2d::AudioEngine::stop(_backgroundMusicId);
-        _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
-    }
-
-    // Ensure game is not paused when returning to menu
-    if (_isPaused)
-    {
-        Director::getInstance()->resume();
-        _isPaused = false;
-    }
-
-    // Reset time scale to normal
-    Director::getInstance()->getScheduler()->setTimeScale(1.0f);
-    _speedLevel = 0;
-
-    // Stop all audio to ensure clean state
-    cocos2d::AudioEngine::stopAll();
-
-    // Return to main menu with smooth transition
-    auto scene = GameMenu::createScene();
-    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
-}
-
-void GameWorld::increaseMusicVolume(Ref* sender)
-{
-    _musicVolume = MIN(_musicVolume + 0.1f, 1.0f);
-    cocos2d::AudioEngine::setVolume(_backgroundMusicId, _musicVolume);
-    if (_volumeLabel)
-    {
-        _volumeLabel->setString(StringUtils::format("Volume: %.0f%%", _musicVolume * 100));
-    }
-    CCLOG("Background music volume increased to: %.1f", _musicVolume);
-}
-
-void GameWorld::decreaseMusicVolume(Ref* sender)
-{
-    _musicVolume = MAX(_musicVolume - 0.1f, 0.0f);
-    cocos2d::AudioEngine::setVolume(_backgroundMusicId, _musicVolume);
-    if (_volumeLabel)
-    {
-        _volumeLabel->setString(StringUtils::format("Volume: %.0f%%", _musicVolume * 100));
-    }
-    CCLOG("Background music volume decreased to: %.1f", _musicVolume);
-}
-
-void GameWorld::addZombie(Zombie* z)
-{
-   float y = z->getPositionY();
-   int row = static_cast<int>((y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height);
-   _zombiesInRow[row].push_back(z);
-}
-void GameWorld::addIceTile(IceTile* ice)
-{
-    this->addChild(ice, ICE_LAYER);
-    _iceTiles.push_back(ice);
-}
-
-void GameWorld::updateIceTiles(float delta)
-{
-    for (auto ice : _iceTiles)
-    {
-        ice->update(delta);
-    }
-}
-
-void GameWorld::removeExpiredIceTiles()
-{
-    _iceTiles.erase(
-        std::remove_if(_iceTiles.begin(), _iceTiles.end(),
-            [](IceTile* ice)
-            {
-                if (!ice) return true;
-
-                if (ice->isExpired())
-                {
-                    ice->removeFromParent();
-                    return true;   // 从 vector 删除
+            for (int i = 0; i < poleCnt; ++i) {
+                if (auto z = PoleVaulter::createZombie()) {
+                    int row = rand() % MAX_ROW;
+                    spawnAtRow(z, row);
                 }
-                return false;
-            }),
-        _iceTiles.end()
-    );
+            }
+            for (int i = 0; i < zamboniCnt; ++i) {
+                if (auto z = Zomboni::createZombie()) {
+                    int row = rand() % MAX_ROW;
+                    spawnAtRow(z, row);
+                }
+            }
+            for (int i = 0; i < gargantuarCnt; ++i) {
+                if (auto z = Gargantuar::createZombie()) {
+                    int row = rand() % MAX_ROW;
+                    spawnAtRow(z, row);
+                }
+            }
+        }),
+        nullptr));
 }
 
-bool GameWorld::hasIceAt(int row,int col)
+void GameWorld::spawnTimedBatch(float normalizedTime)
 {
-    for (auto ice : _iceTiles)
-    {
-        if (!ice) continue;
-        if (ice->isExpired()) continue;
-        
-        int iceRow, iceCol;
-        if (!getGridCoordinates(ice->getPosition(), iceRow, iceCol))
-            continue;
+    // 阶段划分
+    bool p0 = normalizedTime <= 0.25f;
+    bool p1 = (normalizedTime > 0.25f && normalizedTime <= 0.60f);
+    bool p2 = (normalizedTime > 0.60f && normalizedTime < 0.999f);
 
-        if (iceRow== row && iceCol==col)
-        {
-            return true;
-        }
+    // 阶段参数
+    int normalMin=1, normalMax=2;
+    float poleProb = 0.0f;
+    float zamboniProb = 0.0f;
+    float gargantuarProb = 0.0f;
+    float intervalSec = 10.0f;
+    int subBatches = randRange(3,4);
+    float subDelay = 0.9f;
+
+    if (p0) {
+        normalMin = 1; normalMax = 2;
+        poleProb = 0.0f;
+        zamboniProb = 0.0f;
+        gargantuarProb = 0.0f;
+        intervalSec = 10.0f;
+    } else if (p1) {
+        normalMin = 3; normalMax = 5;
+        poleProb = 0.25f;
+        zamboniProb = 0.15f;      // 提前开放冰车，略提高概率
+        gargantuarProb = 0.03f;   // 小概率出现巨人
+        intervalSec = 10.0f;
+    } else if (p2) {
+        normalMin = 3; normalMax = 5;
+        poleProb = 0.25f;
+        zamboniProb = 0.30f;      // 明显提高冰车概率（仍少于撑杆总量）
+        gargantuarProb = 0.08f;   // 略提高巨人概率
+        intervalSec = 12.0f;
     }
-    return false;
+
+    // 夜间调整概率
+    float probScale = _isNightMode ? 0.8f : 1.0f;
+    poleProb *= probScale;
+    zamboniProb *= probScale;
+    gargantuarProb *= probScale;
+
+    // 生成这一批的数量
+    int normalCnt = randRange(normalMin, normalMax);
+    normalCnt = applyNightFactor(normalCnt, false);
+
+    int poleCnt = 0;
+    if (CCRANDOM_0_1() < poleProb) poleCnt = 1;
+
+    int zamboniCnt = 0;
+    if (CCRANDOM_0_1() < zamboniProb) zamboniCnt = 1;
+
+    int gargantuarCnt = 0;
+    if (CCRANDOM_0_1() < gargantuarProb) gargantuarCnt = 1; // 常规阶段最多1个巨人
+
+    // 分发到子批
+    int nRemain = normalCnt, pRemain = poleCnt, zRemain = zamboniCnt, gRemain = gargantuarCnt;
+    float startDelay = 0.0f;
+
+    auto takePortion = [](int& remain, int slotsLeft){
+        if (remain <= 0) return 0;
+        int base = remain / slotsLeft;
+        int extra = remain % slotsLeft;
+        int take = base + (extra > 0 ? 1 : 0);
+        remain -= take;
+        return take;
+    };
+
+    for (int i = 0; i < subBatches; ++i) {
+        int slotsLeft = subBatches - i;
+        int nThis = takePortion(nRemain, slotsLeft);
+        int pThis = takePortion(pRemain, slotsLeft);
+        int zThis = takePortion(zRemain, slotsLeft);
+        int gThis = takePortion(gRemain, slotsLeft);
+        spawnSubBatch(nThis, pThis, zThis, gThis, startDelay + i * subDelay);
+    }
+
+    // 下一批时间
+    _nextBatchTimeSec = _elapsedTime + intervalSec;
 }
 
-void GameWorld::removeIceInRow(int row)
+void GameWorld::spawnFinalWave()
 {
-    for (auto& ice : _iceTiles) {
-        if (ice && ice->getRow() == row) {
-            ice->markAsExpired();
-        }
+    // 提示图（字幕显示4秒）
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    auto banner = Sprite::create("LargeWave.png");
+    if (banner) {
+        banner->setPosition(Vec2(visibleSize.width/2, visibleSize.height/2));
+        banner->setOpacity(0);
+        this->addChild(banner, UI_LAYER + 5);
+        banner->runAction(Sequence::create(
+            FadeIn::create(0.2f), DelayTime::create(4.0f), FadeOut::create(0.3f),
+            CallFunc::create([banner](){ banner->removeFromParent(); }), nullptr));
     }
+
+    float baseDelay = 4.0f; // 字幕播放4秒后再开始生成
+
+    // 夜间数量调整
+    int gCount = applyNightFactor(2, false); // 两个巨人（夜间保持至少1）
+
+    // 几个子批的配置
+    int normal2 = applyNightFactor(randRange(3,5), false);
+    int pole2 = (CCRANDOM_0_1() < (_isNightMode ? 0.18f : 0.28f)) ? 1 : 0;
+
+    int zambo3 = applyNightFactor(1, true); // 可能为0（夜间减少）
+    int normal3 = applyNightFactor(randRange(2,3), false);
+
+    int normal4 = applyNightFactor(randRange(3,4), false);
+    int pole4 = (CCRANDOM_0_1() < (_isNightMode ? 0.16f : 0.24f)) ? 1 : 0;
+
+    int zambo5 = applyNightFactor(1, true);
+    int normal5 = applyNightFactor(randRange(2,3), false);
+
+    // 子批：0s巨人、1.2s普通+撑杆、2.4s冰车+普通、3.6s普通+撑杆、4.8s冰车+普通（都整体延后4秒）
+    spawnSubBatch(0, 0, 0, gCount, baseDelay + 0.0f);
+    spawnSubBatch(normal2, pole2, 0, 0, baseDelay + 1.2f);
+    spawnSubBatch(normal3, 0, zambo3, 0, baseDelay + 2.4f);
+    spawnSubBatch(normal4, pole4, 0, 0, baseDelay + 3.6f);
+    spawnSubBatch(normal5, 0, zambo5, 0, baseDelay + 4.8f);
+
+    // 在最后一批计划完毕后，标记最终波已全部释放完成（再稍微延迟一点点，确保排程添加完成）
+    this->runAction(Sequence::create(
+        DelayTime::create(baseDelay + 5.0f),
+        CallFunc::create([this](){ _finalWaveSpawningDone = true; }),
+        nullptr));
 }
 
 void GameWorld::showGameOver()
@@ -1322,5 +1178,359 @@ void GameWorld::showGameOver()
         });
         auto sequence = Sequence::create(delayAction, callbackAction, nullptr);
         gameOverLayer->runAction(sequence);
+    }
+}
+
+void GameWorld::showWinTrophy()
+{
+    _winShown = true;
+
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+
+    _trophySprite = Sprite::create("trophy.png");
+    if (!_trophySprite)
+        return;
+
+    _trophySprite->setPosition(Vec2(visibleSize.width * 0.5f, visibleSize.height * 0.5f));
+    _trophySprite->setScale(1.0f);
+    this->addChild(_trophySprite, UI_LAYER + 30);
+
+    // 放大到适中尺寸
+    float targetScale = 0.7f;
+    _trophySprite->runAction(ScaleTo::create(0.6f, targetScale));
+
+    // 独立的点击监听，确保可点击
+    auto listener = EventListenerTouchOneByOne::create();
+    listener->setSwallowTouches(true);
+
+    listener->onTouchBegan = [this](Touch* touch, Event* event){
+        if (!_trophySprite) return false;
+        Vec2 p = _trophySprite->getParent()->convertToNodeSpace(touch->getLocation());
+        return _trophySprite->getBoundingBox().containsPoint(p);
+    };
+    listener->onTouchEnded = [this](Touch* touch, Event* event){
+        // 点击奖杯后回到主菜单
+        returnToMenu(nullptr);
+    };
+
+    _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, _trophySprite);
+}
+
+void GameWorld::toggleSpeedMode(Ref* sender)
+{
+    _speedLevel = (_speedLevel + 1) % 3;
+
+    if (_speedToggleButton)
+    {
+        _speedToggleButton->setSelectedIndex(_speedLevel);
+    }
+
+    if (!_isPaused)
+    {
+        float timeScale = 1.0f;
+        if (_speedLevel == 1) timeScale = 2.0f;
+        else if (_speedLevel == 2) timeScale = 3.0f;
+        Director::getInstance()->getScheduler()->setTimeScale(timeScale);
+    }
+}
+
+void GameWorld::showPauseMenu(Ref* sender)
+{
+    if (_isPaused) return;
+
+    _isPaused = true;
+    Director::getInstance()->pause();
+
+    _pauseMenuLayer = Layer::create();
+    _pauseMenuLayer->setPosition(Vec2::ZERO);
+    this->addChild(_pauseMenuLayer, UI_LAYER + 10);
+
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    auto background = Sprite::create("Menu.png");
+    if (background)
+    {
+        background->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+        float scaleX = visibleSize.width * 0.8f / background->getContentSize().width;
+        float scaleY = visibleSize.height * 0.8f / background->getContentSize().height;
+        background->setScale(MIN(scaleX, scaleY));
+        _pauseMenuLayer->addChild(background, 0);
+    }
+    else
+    {
+        auto fallbackBackground = LayerColor::create(Color4B(0, 0, 0, 128));
+        _pauseMenuLayer->addChild(fallbackBackground, 0);
+    }
+
+    auto resumeItem = MenuItemFont::create("Resume", [this](Ref* sender) {
+        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+        resumeGame(sender);
+    });
+    auto restartItem = MenuItemFont::create("Restart", [this](Ref* sender) {
+        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+        restartGame(sender);
+    });
+    auto menuItem = MenuItemFont::create("Main Menu", [this](Ref* sender) {
+        cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+        returnToMenu(sender);
+    });
+
+    auto volumeUpItem = MenuItemFont::create("Volume +", [this](Ref* sender) {
+        if (_musicVolume >= 1.0f) {
+            cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+        } else {
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+            increaseMusicVolume(sender);
+        }
+    });
+    auto volumeDownItem = MenuItemFont::create("Volume -", [this](Ref* sender) {
+        if (_musicVolume <= 0.0f) {
+            cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+        } else {
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+            decreaseMusicVolume(sender);
+        }
+    });
+
+    _volumeLabel = Label::createWithSystemFont(StringUtils::format("Volume: %.0f%%", _musicVolume * 100), "Arial", 24);
+    _volumeLabel->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 - 100));
+    _volumeLabel->setColor(Color3B::WHITE);
+    _pauseMenuLayer->addChild(_volumeLabel);
+
+    resumeItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 120));
+    restartItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2 + 60));
+    menuItem->setPosition(Vec2(visibleSize.width / 2, visibleSize.height / 2));
+    volumeUpItem->setPosition(Vec2(visibleSize.width / 2 - 60, visibleSize.height / 2 - 60));
+    volumeDownItem->setPosition(Vec2(visibleSize.width / 2 + 60, visibleSize.height / 2 - 60));
+
+    resumeItem->setScale(0.8f);
+    restartItem->setScale(0.8f);
+    menuItem->setScale(0.8f);
+    volumeUpItem->setScale(0.7f);
+    volumeDownItem->setScale(0.7f);
+
+    _pauseMenu = Menu::create(resumeItem, restartItem, menuItem, volumeUpItem, volumeDownItem, nullptr);
+    _pauseMenu->setPosition(Vec2::ZERO);
+    _pauseMenuLayer->addChild(_pauseMenu);
+}
+
+void GameWorld::resumeGame(Ref* sender)
+{
+    if (!_isPaused) return;
+
+    _isPaused = false;
+    Director::getInstance()->resume();
+
+    if (_speedLevel > 0)
+    {
+        float timeScale = _speedLevel == 1 ? 2.0f : 3.0f;
+        Director::getInstance()->getScheduler()->setTimeScale(timeScale);
+    }
+
+    if (_pauseMenuLayer)
+    {
+        this->removeChild(_pauseMenuLayer);
+        _pauseMenuLayer = nullptr;
+        _pauseMenu = nullptr;
+    }
+}
+
+void GameWorld::restartGame(Ref* sender)
+{
+    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_backgroundMusicId);
+        _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+    }
+
+    if (_isPaused)
+    {
+        Director::getInstance()->resume();
+        _isPaused = false;
+    }
+
+    Director::getInstance()->getScheduler()->setTimeScale(1.0f);
+    _speedLevel = 0;
+
+    auto newScene = GameWorld::createScene(_isNightMode);
+    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, newScene));
+}
+
+void GameWorld::returnToMenu(Ref* sender)
+{
+    if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
+    {
+        cocos2d::AudioEngine::stop(_backgroundMusicId);
+        _backgroundMusicId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+    }
+
+    if (_isPaused)
+    {
+        Director::getInstance()->resume();
+        _isPaused = false;
+    }
+
+    Director::getInstance()->getScheduler()->setTimeScale(1.0f);
+    _speedLevel = 0;
+
+    cocos2d::AudioEngine::stopAll();
+
+    auto scene = GameMenu::createScene();
+    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, scene));
+}
+
+void GameWorld::increaseMusicVolume(Ref* sender)
+{
+    _musicVolume = MIN(_musicVolume + 0.1f, 1.0f);
+    cocos2d::AudioEngine::setVolume(_backgroundMusicId, _musicVolume);
+    if (_volumeLabel)
+    {
+        _volumeLabel->setString(StringUtils::format("Volume: %.0f%%", _musicVolume * 100));
+    }
+}
+
+void GameWorld::decreaseMusicVolume(Ref* sender)
+{
+    _musicVolume = MAX(_musicVolume - 0.1f, 0.0f);
+    cocos2d::AudioEngine::setVolume(_backgroundMusicId, _musicVolume);
+    if (_volumeLabel)
+    {
+        _volumeLabel->setString(StringUtils::format("Volume: %.0f%%", _musicVolume * 100));
+    }
+}
+
+void GameWorld::spawnSunFromSky()
+{
+    auto visibleSize = Director::getInstance()->getVisibleSize();
+    int targetCol = rand() % MAX_COL;
+    float startY = 700.0f;
+    Sun* sun = Sun::createFromSky(targetCol, startY);
+    if (sun)
+    {
+        this->addChild(sun, SUN_LAYER);
+        _suns.push_back(sun);
+    }
+}
+
+void GameWorld::maybePlayZombieGroan(float delta)
+{
+    bool hasZombie = false;
+    for (int row = 0; row < MAX_ROW && !hasZombie; ++row)
+    {
+        auto& zombiesInThisRow = _zombiesInRow[row];
+        for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end() && !hasZombie; ++it)
+        {
+            Zombie* zombie = *it;
+            if (zombie && !zombie->isDead())
+            {
+                hasZombie = true;
+                break;
+            }
+        }
+    }
+
+    if (!hasZombie)
+    {
+        _zombieGroanTimer = 1.0f;
+        return;
+    }
+
+    _zombieGroanTimer -= delta;
+    if (_zombieGroanTimer <= 0.0f)
+    {
+        if (CCRANDOM_0_1() < 0.05f)
+        {
+            cocos2d::AudioEngine::play2d("zombie_groan.mp3", false);
+        }
+        _zombieGroanTimer = 10.0f;
+    }
+}
+
+void GameWorld::removeExpiredSuns()
+{
+    _suns.erase(
+        std::remove_if(
+            _suns.begin(),
+            _suns.end(),
+            [&](Sun* sun)
+            {
+                if (!sun) return true;
+
+                if (sun->shouldRemove())
+                {
+                    sun->removeFromParent();
+                    return true;
+                }
+                return false;
+            }
+        ),
+        _suns.end()
+    );
+}
+
+void GameWorld::addZombie(Zombie* z)
+{
+   float y = z->getPositionY();
+   int row = static_cast<int>((y - CELLSIZE.height * 0.7f - GRID_ORIGIN.y) / CELLSIZE.height);
+   _zombiesInRow[row].push_back(z);
+}
+
+void GameWorld::addIceTile(IceTile* ice)
+{
+    this->addChild(ice, ICE_LAYER);
+    _iceTiles.push_back(ice);
+}
+
+void GameWorld::updateIceTiles(float delta)
+{
+    for (auto ice : _iceTiles)
+    {
+        ice->update(delta);
+    }
+}
+
+void GameWorld::removeExpiredIceTiles()
+{
+    _iceTiles.erase(
+        std::remove_if(_iceTiles.begin(), _iceTiles.end(),
+            [](IceTile* ice)
+            {
+                if (!ice) return true;
+
+                if (ice->isExpired())
+                {
+                    ice->removeFromParent();
+                    return true;
+                }
+                return false;
+            }),
+        _iceTiles.end()
+    );
+}
+
+bool GameWorld::hasIceAt(int row,int col)
+{
+    for (auto ice : _iceTiles)
+    {
+        if (!ice) continue;
+        if (ice->isExpired()) continue;
+        
+        int iceRow, iceCol;
+        if (!getGridCoordinates(ice->getPosition(), iceRow, iceCol))
+            continue;
+
+        if (iceRow== row && iceCol==col)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void GameWorld::removeIceInRow(int row)
+{
+    for (auto& ice : _iceTiles) {
+        if (ice && ice->getRow() == row) {
+            ice->markAsExpired();
+        }
     }
 }
