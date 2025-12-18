@@ -44,7 +44,7 @@ public:
      * @brief Produce sun if cooldown is finished (override from SunProducingPlant)
      * @return Sun* Returns Sun instance if ready, nullptr otherwise
      */
-    virtual Sun* produceSun() override;
+    virtual std::vector<Sun*> produceSun() override;
 
     /**
      * @brief Check if it's daytime (sleeping state)

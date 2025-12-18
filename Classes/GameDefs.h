@@ -31,3 +31,18 @@ enum class PlantCategory
     ATTACKING,       // Attacking plants (PeaShooter, Wallnut)
     BOMB             // Bomb plants (CherryBomb)
 };
+
+enum class PlantName
+{
+    CHERRYBOMB,
+    JALAPENO,
+    PEASHOOTER,
+    PUFFSHROOM,
+    REPEATER,
+    SPIKEWEED,
+    SUNFLOWER,
+    SUNSHROOM,
+    THREEPEATER,
+    TWINSUNFLOWER,
+    WALLNUT
+};

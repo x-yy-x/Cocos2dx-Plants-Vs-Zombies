@@ -27,17 +27,18 @@ public:
      * @return Pointer to created seed packet, or nullptr if failed
      */
     template<typename PlantType>
-    static SeedPacket* create(const std::string& imageFile, float cooldownTime, int sunCost)
+    static SeedPacket* create(const std::string& imageFile, float cooldownTime, int sunCost,PlantName plantName)
     {
         // Internal template class for specific plant type
         class SeedPacketImpl : public SeedPacket
         {
         public:
-            SeedPacketImpl(const std::string& imageFile, float cooldownTime, int sunCost)
+            SeedPacketImpl(const std::string& imageFile, float cooldownTime, int sunCost, PlantName plantName)
             {
                 _seedPacketImage = imageFile;
                 _cooldownTime = cooldownTime;
                 _sunCost = sunCost;
+                _plantName = plantName;
                 _isOnCooldown = false;
                 _accumulatedTime = 0.0f;
             }
@@ -58,7 +59,7 @@ public:
             }
         };
 
-        auto packet = new (std::nothrow) SeedPacketImpl(imageFile, cooldownTime, sunCost);
+        auto packet = new (std::nothrow) SeedPacketImpl(imageFile, cooldownTime, sunCost,plantName);
         if (packet && packet->init())
         {
             packet->autorelease();
@@ -109,6 +110,8 @@ public:
      */
     virtual Plant* createPreviewPlant() = 0;
 
+    PlantName getPlantName();
+
 protected:
     // Protected constructor
     SeedPacket();
@@ -128,7 +131,7 @@ protected:
     float _accumulatedTime;      // Time accumulated since cooldown started
     int _sunCost;                // Sun cost to plant
     bool _isOnCooldown;          // Is currently cooling down
-
+    PlantName _plantName;
     // Image filename (to be set by subclasses)
     std::string _seedPacketImage;
 };

@@ -2,12 +2,14 @@
 
 #include "cocos2d.h"
 #include "SunProducingPlant.h"
+#include "UpgradedPlant.h"
 #include "GameDefs.h"
+#include "Sunflower.h"
 
 // Forward declaration
 class Sun;
 
-class Sunflower : public SunProducingPlant
+class TwinSunflower : public SunProducingPlant, public UpgradedPlant
 {
 public:
     /**
@@ -16,14 +18,14 @@ public:
     virtual bool init() override;
 
     // Implement the auto-generated static PeaShooter* create() function
-    CREATE_FUNC(Sunflower);
+    CREATE_FUNC(TwinSunflower);
 
     /**
      * @brief Static planting function for PeaShooter.
      * @param globalPos Touch position in global coordinates
      * @return PeaShooter* Returns PeaShooter instance on success, nullptr on failure
      */
-    static Sunflower* plantAtPosition(const cocos2d::Vec2& globalPos);
+    static TwinSunflower* plantAtPosition(const cocos2d::Vec2& globalPos);
 
     /**
      * @brief Override update function
@@ -37,6 +39,9 @@ public:
      */
     virtual std::vector<Sun*> produceSun() override;
 
+    virtual bool canUpgrade(Plant* basePlant) const override;
+
+    virtual TwinSunflower* upgrade(Plant* basePlant) override;
 
 protected:
     // ----------------------------------------------------
@@ -54,5 +59,5 @@ protected:
     virtual void setAnimation() override;
 
     // Protected constructor
-    Sunflower();
+    TwinSunflower();
 };

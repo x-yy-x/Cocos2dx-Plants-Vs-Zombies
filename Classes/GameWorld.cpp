@@ -28,6 +28,7 @@
 #include "SpikeWeed.h"
 #include "Jalapeno.h"
 #include "IceTile.h"
+#include "TwinSunflower.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -166,21 +167,22 @@ bool GameWorld::init()
     _elapsedTime = 0.0f;
 
     // Create seed packets using template method (no need for separate subclasses!)
-    auto sunflowerPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50);
-    auto sunshroomPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25);
-    auto peashooterPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100);
-    auto repeaterPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200);
-    auto threepeaterPacket = SeedPacket::create<ThreePeater>("Threepeater_Seed_Packet_PC.png", 3.0f, 325);
-    auto puffshroomPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0);
-    auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50);
-    auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150);
-    auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100);
-    auto jalapenoPacket= SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100);
+    auto sunflowerPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50,PlantName::SUNFLOWER);
+    auto sunshroomPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM);
+    auto peashooterPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER);
+    auto repeaterPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER);
+    auto threepeaterPacket = SeedPacket::create<ThreePeater>("Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER);
+    auto puffshroomPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0, PlantName::PUFFSHROOM);
+    auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50, PlantName::WALLNUT);
+    auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150, PlantName::CHERRYBOMB);
+    auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED);
+    auto jalapenoPacket= SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO);
+    auto twinsunflower = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
 
     if (sunflowerPacket && sunshroomPacket && peashooterPacket && 
         repeaterPacket && threepeaterPacket && puffshroomPacket && 
         wallnutPacket && cherryBombPacket && spikeWeedPacket && 
-        jalapenoPacket)
+        jalapenoPacket && twinsunflower)
     {
         _seedPackets.push_back(sunflowerPacket);
         _seedPackets.push_back(sunshroomPacket);
@@ -192,6 +194,7 @@ bool GameWorld::init()
         _seedPackets.push_back(cherryBombPacket);
         _seedPackets.push_back(spikeWeedPacket);
         _seedPackets.push_back(jalapenoPacket);
+        _seedPackets.push_back(twinsunflower);
 
         // Set positions for seed packets (more compact spacing)
         float baseX = 187.0f;
@@ -290,7 +293,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = Zomboni::createZombie();
+        auto debugZombie = Gargantuar::createZombie();
         if (debugZombie)
         {
             int row = 2;
@@ -489,15 +492,25 @@ bool GameWorld::tryPlantAtPosition(const Vec2& globalPos, SeedPacket* seedPacket
     
     if (!getGridCoordinates(globalPos, row, col)) return false;
 
-    if (_plantGrid[row][col] != nullptr) return false;
-
     if (hasIceAt(row,col))
     {
         CCLOG("cannot plant on ice!");
         return false;
     }
 
+    if (seedPacket->getPlantName() == PlantName::TWINSUNFLOWER) {
+        if (dynamic_cast<Sunflower*>(_plantGrid[row][col]) == nullptr)
+            return false;
+    }
+
+    else if (_plantGrid[row][col] != nullptr) return false;
+
     // Use seed packet to create plant
+    if (_plantGrid[row][col]) {
+        Plant* plant = _plantGrid[row][col];
+        this->removeChild(plant);
+        _plantGrid[row][col] = nullptr;
+    }
     Plant* plant = seedPacket->plantAt(globalPos);
     if (plant)
     {
@@ -649,14 +662,15 @@ void GameWorld::updatePlants(float delta)
                 case PlantCategory::SUN_PRODUCING:
                 {
                     // Sun-producing plants (e.g., Sunflower)
-                    SunProducingPlant* sunPlant = static_cast<SunProducingPlant*>(plant);
-                    Sun* sun = sunPlant->produceSun();
-                    if (sun)
-                    {
-                        this->addChild(sun, SUN_LAYER);
-                        _suns.push_back(sun);
-                        CCLOG("Sun-producing plant produced sun at position (%.2f, %.2f)",
-                              sun->getPositionX(), sun->getPositionY());
+                    SunProducingPlant* sunPlant = dynamic_cast<SunProducingPlant*>(plant);
+                    for (auto& sun : sunPlant->produceSun()) {
+                        if (sun)
+                        {
+                            this->addChild(sun, SUN_LAYER);
+                            _suns.push_back(sun);
+                            CCLOG("Sun-producing plant produced sun at position (%.2f, %.2f)",
+                                sun->getPositionX(), sun->getPositionY());
+                        }                       
                     }
                     break;
                 }
@@ -665,7 +679,7 @@ void GameWorld::updatePlants(float delta)
                 {
                     // Attacking plants (e.g., PeaShooter, Repeater, ThreePeater, Wallnut)
                     // Pass all zombies to plant, let plant decide which rows to check
-                    AttackingPlant* attackPlant = static_cast<AttackingPlant*>(plant);
+                    AttackingPlant* attackPlant = dynamic_cast<AttackingPlant*>(plant);
                     
                     std::vector<Bullet*> newBullets = attackPlant->checkAndAttack(_zombiesInRow, row);
                     
@@ -684,7 +698,7 @@ void GameWorld::updatePlants(float delta)
                 case PlantCategory::BOMB:
                 {
                     // Bomb plants (e.g., CherryBomb)
-                    BombPlant* bombPlant = static_cast<BombPlant*>(plant);
+                    BombPlant* bombPlant = dynamic_cast<BombPlant*>(plant);
                     bombPlant->explode(_zombiesInRow, row, col);
                     break;
                 }

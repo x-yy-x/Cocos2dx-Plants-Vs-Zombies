@@ -115,3 +115,8 @@ void SeedPacket::updateCooldownEffect()
 
     this->setColor(Color3B(value, value, value));
 }
+
+PlantName SeedPacket::getPlantName()
+{
+    return this->_plantName;
+}

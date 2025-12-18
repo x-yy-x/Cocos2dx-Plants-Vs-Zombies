@@ -265,13 +265,13 @@ void Sunshroom::update(float delta)
 // ------------------------------------------------------------------------
 // 5. Produce sun
 // ------------------------------------------------------------------------
-Sun* Sunshroom::produceSun()
+std::vector<Sun*> Sunshroom::produceSun()
 {
     // Only produce sun at night, sleep during day
     if (isDaytime())
     {
         // During daytime, Sunshroom sleeps and doesn't produce sun
-        return nullptr;
+        return {};
     }
 
     // Check if cooldown is finished (same logic as Sunflower)
@@ -302,10 +302,10 @@ Sun* Sunshroom::produceSun()
             CCLOG("Sunshroom (growing) produced a small sun! Value: %d", SMALL_SUN_VALUE);
         }
 
-        return sun;
+        return { sun };
     }
 
-    return nullptr;
+    return {};
 }
 
 // ------------------------------------------------------------------------

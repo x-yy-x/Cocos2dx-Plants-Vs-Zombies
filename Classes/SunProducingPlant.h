@@ -8,7 +8,7 @@ class Sun;
 /**
  * @brief Abstract base class for sun-producing plants
  */
-class SunProducingPlant : public Plant
+class SunProducingPlant : virtual public Plant
 {
 public:
     /**
@@ -20,7 +20,7 @@ public:
      * @brief Try to produce sun if cooldown is finished
      * @return Sun* Returns Sun instance if ready, nullptr otherwise
      */
-    virtual Sun* produceSun() = 0;
+    virtual std::vector<Sun*> produceSun() = 0;
 
 protected:
     SunProducingPlant() : Plant() {}
