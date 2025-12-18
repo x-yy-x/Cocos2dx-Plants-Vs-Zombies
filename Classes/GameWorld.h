@@ -277,8 +277,9 @@ private:
     cocos2d::Menu* _pauseMenu;
     cocos2d::Label* _volumeLabel;
     float _musicVolume{ 1.0f };
-    // Game over system
+    // Game control system
     bool _isGameOver{ false };
+	bool _gameStarted{ false };
 };
 
 // Wave spawning parameters (reduced difficulty)

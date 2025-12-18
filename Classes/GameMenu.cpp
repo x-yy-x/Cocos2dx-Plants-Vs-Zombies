@@ -5,6 +5,7 @@
 
 #include "GameMenu.h"
 #include "GameWorld.h" 
+#include "SelectCardsScene.h"
 #include "cocos2d.h"
 #include "ui/UIButton.h" 
 #include "audio/include/AudioEngine.h"
@@ -94,11 +95,11 @@ bool GameMenu::init()
 
     // --- C. ���� Lambda ����ʽ���ڻص� ---
     auto dayModeCallback = [](Ref* sender) {
-        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameWorld::createScene(false)));
+        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, SelectCardsScene::createScene(false)));
     };
 
     auto nightModeCallback = [](Ref* sender) {
-        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameWorld::createScene(true)));
+        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, SelectCardsScene::createScene(true)));
     };
 
     auto exitCallback = [this](Ref* sender) {

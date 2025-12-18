@@ -4,6 +4,15 @@
 
 USING_NS_CC;
 
+Sprite* FlagZombie::createShowcaseSprite(const Vec2& pos)
+{
+    const float frameWidth = 208.0f;
+    const float frameHeight = 180.0f;
+    auto sp = Sprite::create("flag_zombie_walk_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
+    if (sp) sp->setPosition(pos);
+    return sp;
+}
+
 // ----------------------------------------------------
 // Static constant definitions
 // ----------------------------------------------------

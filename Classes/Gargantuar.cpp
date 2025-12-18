@@ -6,6 +6,15 @@
 
 USING_NS_CC;
 
+Sprite* Gargantuar::createShowcaseSprite(const Vec2& pos)
+{
+    const float frameWidth = 280.0f;
+    const float frameHeight = 292.0f;
+    auto sp = Sprite::create("gargantuar_walk_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
+    if (sp) sp->setPosition(pos);
+    return sp;
+}
+
 // ----------------------------------------------------
 // Static constant definitions
 // ----------------------------------------------------

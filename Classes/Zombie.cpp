@@ -80,6 +80,17 @@ Zombie* Zombie::createZombie()
     return nullptr;
 }
 
+Sprite* Zombie::createShowcaseSprite(const Vec2& pos)
+{
+    // 使用行走序列第一帧作为静态展示
+    float frameWidth = 125.0f;
+    float frameHeight = 173.8f;
+    auto sp = Sprite::create("zombie_walk_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
+    sp->setScale(1.11f);
+    if (sp) sp->setPosition(pos);
+    return sp;
+}
+
 // Initialize walking animation
 void Zombie::initWalkAnimation()
 {

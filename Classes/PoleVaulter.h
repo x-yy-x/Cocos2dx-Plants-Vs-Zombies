@@ -45,6 +45,9 @@ public:
      */
     static PoleVaulter* createZombie();
 
+    // 选卡展示静态图
+    virtual cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos) override;
+
     /**
      * @brief Update function called every frame for movement, attack, death, etc.
      * @param delta Time delta

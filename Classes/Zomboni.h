@@ -44,6 +44,9 @@ public:
      */
     static Zomboni* createZombie();
 
+    // é€‰å¡å±•ç¤ºé™æ€å›¾
+    virtual cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos) override;
+
     /**
      * @brief Update function called every frame for movement, attack, death, etc.
      * @param delta Time delta
@@ -123,8 +126,8 @@ protected:
     int _maxHealth;                  // Maximum health
     int _currentHealth;              // Current health
     cocos2d::Vec2 _zombiePos;        // Zombie position
-    float _iceAccumulate;   // ÀÛ»ıÒÆ¶¯¾àÀë
-    int   _iceIndex;           // µ±Ç°ÓÃµÚ¼¸¶Î±ù
+    float _iceAccumulate;   // ï¿½Û»ï¿½ï¿½Æ¶ï¿½ï¿½ï¿½ï¿½ï¿½
+    int   _iceIndex;           // ï¿½ï¿½Ç°ï¿½ÃµÚ¼ï¿½ï¿½Î±ï¿½
     
     // Animation actions
     cocos2d::RepeatForever* _driveAction;
