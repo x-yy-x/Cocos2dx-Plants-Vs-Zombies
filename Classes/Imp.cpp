@@ -24,12 +24,13 @@ Imp::Imp()
     , _zombiePos(Vec2::ZERO)
     , _walkAction(nullptr)
     , _eatAction(nullptr)
-    , _flyAction(nullptr)
+    , _flyAnimate(nullptr)
     , _isEating(false)
     , _targetPlant(nullptr)
-    , _speed(Vec2(MOVE_SPEED,0))
+    , _speed(Vec2(MOVE_SPEED, 0))
     , _normalSpeed(MOVE_SPEED)
     , _hasBeenThrown(false)
+    , _isFlying(false)
 {
     CCLOG("Zombie created.");
 }
@@ -39,7 +40,7 @@ Imp::~Imp()
 {
     CC_SAFE_RELEASE(_walkAction);
     CC_SAFE_RELEASE(_eatAction);
-    CC_SAFE_RELEASE(_flyAction);
+    CC_SAFE_RELEASE(_flyAnimate);
     CCLOG("Zombie destroyed.");
 }
 
@@ -168,9 +169,9 @@ void Imp::initFlyAnimation()
         }
     }
 
-    auto animation = Animation::createWithSpriteFrames(frames, 0.06f);
-    this->_flyAction = Animate::create(animation);
-    _flyAction->retain();
+    auto animate = Animation::createWithSpriteFrames(frames, 0.06f);
+    _flyAnimate = Animate::create(animate);
+    _flyAnimate->retain();
 }
 
 // Update every frame
@@ -196,7 +197,7 @@ void Imp::update(float delta)
             CCLOG("Zombie reached the house!");
         }
     }
-    else
+    else if(_isEating)
     {
         // If eating, deal damage periodically
         if (_accumulatedTime >= _attackInterval)
@@ -302,37 +303,33 @@ void Imp::setAnimationForState(ZombieState state)
     {
     case ZombieState::WALKING:
         CCLOG("Setting imp WALKING animation.");
-        if (_eatAction)
-        {
-            this->stopAction(_eatAction);
-        }
-        if (_walkAction)
-        {
-            this->runAction(_walkAction);
-        }
+        this->stopAllActions();
+        this->runAction(_walkAction);
         break;
     case ZombieState::EATING:
         CCLOG("Setting EATING animation.");
-        if (_walkAction)
-        {
-            this->stopAction(_walkAction);
-        }
-        if (_eatAction)
-        {
-            this->runAction(_eatAction);
-        }
+        this->stopAllActions();
+        this->runAction(_eatAction);
         break;
     case ZombieState::FLYING:
+    {
         CCLOG("set state flying");
-        this->stopAllActions();
-        this->_speed = Vec2(120.0f,45.0f);
-        this->runAction(Sequence::create( _flyAction, 
+        this->_isFlying = true;
+        this->stopAction(_walkAction);
+        this->runAction(Sequence::create(
             CallFunc::create([this]() {
-            this->_speed = Vec2(_normalSpeed,0);
-            this->setState(ZombieState::WALKING);
-            }), 
-            MoveBy::create(0.0001f, Vec2(-20, -30)), nullptr));
+                this->_speed = Vec2(120.0f, 45.0f);
+                }), 
+            _flyAnimate,          
+            MoveBy::create(0.0001f, Vec2(-20, -30)),
+            CallFunc::create([this]() {
+                this->_isFlying = false;
+                this->_speed = Vec2(_normalSpeed, 0);
+                this->setState(ZombieState::WALKING);
+                }),
+            nullptr));
         break;
+    }
     case ZombieState::DYING:
         CCLOG("Setting imp DYING animation.");
         break;
@@ -350,7 +347,7 @@ void Imp::encounterPlant(const std::vector<Plant*>& plants)
 // Check collision with plants
 void Imp::checkCollision(const std::vector<Plant*>& plants)
 {
-    if (_isEating) return;
+    if (_isEating||_isFlying) return;
 
     for (auto plant : plants)
     {

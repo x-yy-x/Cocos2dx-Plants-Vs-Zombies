@@ -336,11 +336,18 @@ void Gargantuar::setAnimationForState(ZombieState state)
             CCLOG("Setting EATING animation.");
             this->stopAction(_walkAction);       
             this->runAction(Sequence::create(
-                MoveBy::create(0, Vec2(-20, 55)), _smashAction, MoveBy::create(0, Vec2(20, -55)), nullptr
+                MoveBy::create(0, Vec2(-20, 55)), 
+                _smashAction, 
+                MoveBy::create(0, Vec2(20, -55)), 
+                CallFunc::create([this]() {
+                    this->_isSmashing = false;
+                    this->_speed = _normalSpeed;
+                    setState(ZombieState::WALKING);
+                    }),
+                nullptr
             ));
             break;
-        case ZombieState::THROWING:
-        {
+        case ZombieState::THROWING:        
             CCLOG("setting throwing animation");
             this->stopAllActions();
             _speed = 0;
@@ -352,19 +359,17 @@ void Gargantuar::setAnimationForState(ZombieState state)
                         this->throwImp();
                         }),
                    _postthrowAction,
+                    MoveBy::create(0, Vec2(46, -35)),
                     CallFunc::create([this]() {
                         this->_hasthrown = true;
                         this->_isThrowing = false;
                         this->_speed = _normalSpeed;
                         this->setState(ZombieState::WALKING);
                         }),
-
-                    MoveBy::create(0, Vec2(46, -35)),
                     nullptr
                 )
             );
             break;
-        }
         case ZombieState::DYING:
             CCLOG("Setting gargantuar DYING animation.");
             break;
@@ -428,13 +433,13 @@ void Gargantuar::onPlantDied()
 void Gargantuar::throwImp()
 {
     CCLOG("imp created");
-    auto imp = Imp::createZombie();
+    auto imp = Imp::createZombie();   
     imp->setState(Imp::ZombieState::FLYING);
     cocos2d::AudioEngine::play2d("imp-pvz.mp3", false, 1.0f);
     auto pos = this->getPosition();
     imp->setPosition(pos + Vec2(-250, 35));
     auto gameWorld = dynamic_cast<GameWorld*>(Director::getInstance()->getRunningScene());
-    gameWorld->addChild(imp, 3); 
-    gameWorld->addZombie(imp);    
+    gameWorld->addChild(imp, ENEMY_LAYER);
+    gameWorld->addZombie(imp);
 }
 

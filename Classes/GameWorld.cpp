@@ -381,7 +381,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = Zomboni::createZombie();
+        auto debugZombie = Gargantuar::createZombie();
         if (debugZombie)
         {
             int row = 2;
