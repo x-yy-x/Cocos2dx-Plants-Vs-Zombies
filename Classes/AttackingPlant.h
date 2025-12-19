@@ -10,7 +10,7 @@ class Bullet;
 /**
  * @brief Abstract base class for attacking plants
  */
-class AttackingPlant : public Plant
+class AttackingPlant : virtual public Plant
 {
 public:
     /**

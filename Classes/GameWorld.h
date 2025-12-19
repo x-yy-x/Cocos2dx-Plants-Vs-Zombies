@@ -252,7 +252,7 @@ private:
     int _currentWave;                // (legacy, unused by 方案D but kept)
     float _nextBatchTimeSec;         // 下一次脚本批次触发时间（秒）
     bool _finalWaveTriggered{ false }; // 是否已触发最终大波
-    bool _gameStarted;               // Whether game has started
+    //bool _gameStarted;               // Whether game has started
 
     // Win flow
     bool _finalWaveSpawningDone{ false };
