@@ -32,6 +32,11 @@ private:
     cocos2d::Node* _selectedCardsContainer;
     std::vector<cocos2d::Sprite*> _displaySprites;  // Store display sprites in seedBank for click handling
 
+    // Audio & transition state (no gameplay changes)
+    int _selectBgmId = -1;
+    int _readySfxId = -1;
+    bool _isTransitioning = false;
+
 public:
     static SelectCardsScene* createScene(bool isNightMode);
     static SelectCardsScene* create(bool isNightMode);
@@ -52,4 +57,8 @@ protected:
     void createSelectCards();
     void onCardSelected(SelectCard* card);
     void updateSelectedCardsDisplay();
+
+    // Ready-Set-Plant sequence
+    void playReadySetPlantSequence();
+    void maybeGoGame();
 };

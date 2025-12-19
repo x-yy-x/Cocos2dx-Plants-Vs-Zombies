@@ -22,14 +22,15 @@
 #include "SpikeWeed.h"
 #include "Jalapeno.h"
 #include "TwinSunflower.h"
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
 namespace
 {
-    const float SEED_BANK_POS_X_RATIO = 0.312f;
-    const float SEED_BANK_POS_Y_RATIO = 0.922f;
-    const float SEED_BANK_SCALE_FACTOR_X = 1.36f;
+    const float SEED_BANK_POS_X_RATIO = 0.315f;
+    const float SEED_BANK_POS_Y_RATIO = 0.927f;
+    const float SEED_BANK_SCALE_FACTOR_X = 1.34f;
     const float SEED_BANK_SCALE_FACTOR_Y = 1.0f;
     const std::string SEED_BANK_IMAGE = "seedBank.png";
 }
@@ -93,11 +94,14 @@ bool SelectCardsScene::init()
     this->addChild(_uiLayer, 10);
 
     _zombieShowLayer = Node::create();
-    this->addChild(_zombieShowLayer, 15);
+    this->addChild(_zombieShowLayer, 8);
 
     buildWorld();
     buildUI();
     runIntroMove();
+
+    // Loop BGM for select scene
+    _selectBgmId = cocos2d::AudioEngine::play2d("select.mp3", true);
 
     return true;
 }
@@ -132,8 +136,8 @@ void SelectCardsScene::buildWorld()
     _background = Sprite::create(bgFile);
     if (_background)
     {
-        _background->setPosition(Vec2(vs.width * 1.48f / 2.0f + origin.x, vs.height * 0.5f + origin.y));
-        float scaleX = vs.width / _background->getContentSize().width * 1.48f;
+        _background->setPosition(Vec2(vs.width * 1.47f / 2.0f + origin.x, vs.height * 0.5f + origin.y));
+        float scaleX = vs.width / _background->getContentSize().width * 1.47f;
         float scaleY = vs.height / _background->getContentSize().height;
         _background->setScale(scaleX, scaleY);
         _worldLayer->addChild(_background, 0);
@@ -168,11 +172,17 @@ void SelectCardsScene::buildUI()
         "btn_Menu.png",
         "btn_Menu2.png",
         [this](Ref*) {
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+            // stop select bgm when leaving
+            if (_selectBgmId != cocos2d::AudioEngine::INVALID_AUDIO_ID) {
+                cocos2d::AudioEngine::stop(_selectBgmId);
+                _selectBgmId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+            }
             Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameMenu::createScene()));
         }
     );
     backItem->setScale(0.8f);
-    backItem->setPosition(Vec2(vs.width - 60.0f + origin.x, vs.height - 40.0f + origin.y));
+    backItem->setPosition(Vec2(vs.width - 100.0f + origin.x, vs.height - 40.0f + origin.y));
 
     _backMenu = Menu::create(backItem, nullptr);
     _backMenu->setPosition(Vec2::ZERO);
@@ -213,6 +223,7 @@ void SelectCardsScene::showSelectBG()
 
         auto startLabel = Label::createWithSystemFont("Let's start!", "Arial", 28);
         auto startItem = MenuItemLabel::create(startLabel, [this](Ref*){
+            cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
             // Hide selectBG and all cards inside it
             if (_selectBG && _selectBG->isVisible()) {
                 _selectBG->runAction(Sequence::create(
@@ -230,14 +241,20 @@ void SelectCardsScene::showSelectBG()
             if (_worldLayer) {
                 auto moveBack = MoveBy::create(_moveDuration, Vec2(_moveOffsetX, 0));
                 auto stayBack = MoveBy::create(_moveDuration, Vec2(_moveOffsetX, 0));
-                auto wait = DelayTime::create(2.0f);
-                auto goGame = CallFunc::create([this]() {
-                    // Pass selected plant names to GameWorld
-                    Director::getInstance()->replaceScene(GameWorld::createScene(_isNightMode, _selectedPlantNames));
-                });
-                _worldLayer->runAction(moveBack);
-                _zombieShowLayer->runAction(stayBack);
-                _worldLayer->runAction(Sequence::create(wait, goGame, nullptr));
+                // Move scene back to left, then play Ready-Set-Plant sequence
+                _worldLayer->runAction(Sequence::create(
+                    moveBack,
+                    CallFunc::create([this](){
+                        // stop select bgm to avoid mixing
+                        if (_selectBgmId != cocos2d::AudioEngine::INVALID_AUDIO_ID) {
+                            cocos2d::AudioEngine::stop(_selectBgmId);
+                            _selectBgmId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+                        }
+                        playReadySetPlantSequence();
+                    }),
+                    nullptr
+                ));
+                if (_zombieShowLayer) _zombieShowLayer->runAction(stayBack);
             }
         });
         auto startMenu = Menu::create(startItem, nullptr);
@@ -252,7 +269,7 @@ void SelectCardsScene::spawnZombieShowcase()
     auto addShow = [&](Sprite* sp){
         if (!sp) return;
         sp->setPosition(Vec2(_zShowStartX, _zShowStartY + _zShowGapY * idx));
-        if (_zombieShowLayer) _zombieShowLayer->addChild(sp, 100 - idx * 2);
+        if (_zombieShowLayer) _zombieShowLayer->addChild(sp, 7 - idx);
         idx++;
     };
 
@@ -348,7 +365,7 @@ void SelectCardsScene::createSelectCards()
     
     // Layout cards: 8 per row, reference GameWorld spacing
     const float cardSpacingX = 65.0f;
-    const float cardSpacingY = 75.0f;  // Increased vertical spacing to avoid overlap
+    const float cardSpacingY = 85.0f;  // Increased vertical spacing to avoid overlap
     const float cardStartX = 50.0f;  // Offset from selectBG left edge
     const float cardStartY = _selectBG->getContentSize().height - 100.0f;  // Offset from top
     
@@ -397,9 +414,13 @@ void SelectCardsScene::onCardSelected(SelectCard* card)
     
     // Maximum 9 plants can be selected
     if (!wasSelected && _selectedCards.size() >= 9) {
+        cocos2d::AudioEngine::play2d("buzzer.mp3", false);
         return;  // Cannot select more
     }
     
+    // Valid toggle
+    cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+
     card->setSelected(!wasSelected);
     
     auto* seedPacket = card->getSeedPacket();
@@ -475,4 +496,57 @@ void SelectCardsScene::updateSelectedCardsDisplay()
             Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, displaySprite);
         }
     }
+}
+
+void SelectCardsScene::playReadySetPlantSequence()
+{
+    if (_isTransitioning) return;
+    _isTransitioning = true;
+
+    auto vs = Director::getInstance()->getVisibleSize();
+    auto origin = Director::getInstance()->getVisibleOrigin();
+    Vec2 center(vs.width * 0.5f + origin.x, vs.height * 0.5f + origin.y);
+
+    // Create sprites
+    auto s1 = Sprite::create("w_0000_Group-1.png");
+    auto s2 = Sprite::create("w_0001_Group-2.png");
+    auto s3 = Sprite::create("w_0001_Group-3.png");
+
+    float maxScale = 1.0f;
+    auto setupSprite = [&](Sprite* sp){
+        if (!sp) return;
+        sp->setPosition(center);
+        sp->setOpacity(0);
+        sp->setScale(maxScale);
+        this->addChild(sp, 1000);
+    };
+    setupSprite(s1);
+    setupSprite(s2);
+    setupSprite(s3);
+
+    // Sequence: show s1 -> s2 -> s3 (fixed timing)
+    float dur = 0.6f; // per panel stay duration
+    if (s1) s1->runAction(Sequence::create(FadeIn::create(0.1f), DelayTime::create(dur), FadeOut::create(0.1f), nullptr));
+    if (s2) s2->runAction(Sequence::create(DelayTime::create(dur + 0.2f), FadeIn::create(0.1f), DelayTime::create(dur), FadeOut::create(0.1f), nullptr));
+    if (s3) s3->runAction(Sequence::create(DelayTime::create(2*dur + 0.4f), FadeIn::create(0.1f), DelayTime::create(dur), FadeOut::create(0.1f), nullptr));
+
+    // Play voice (do not wait for finish)
+    _readySfxId = cocos2d::AudioEngine::play2d("plants-vs-zombies-ready-set-plant.mp3", false);
+
+    // Fixed wait, then go to game
+    float totalWait = 2.6f; // covers three panels' total duration
+    this->runAction(Sequence::create(
+        DelayTime::create(totalWait),
+        CallFunc::create([this]() { maybeGoGame(); }),
+        nullptr
+    ));
+}
+
+void SelectCardsScene::maybeGoGame()
+{
+    // stop this scene audios
+    cocos2d::AudioEngine::stopAll();
+
+    // enter game scene with selected plants (keep original behavior/signature)
+    Director::getInstance()->replaceScene(GameWorld::createScene(_isNightMode, _selectedPlantNames));
 }
