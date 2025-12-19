@@ -2,6 +2,7 @@
 #include "Zombie.h"
 #include "Plant.h"
 #include "SpikeWeed.h"
+#include "SpikeRock.h"
 #include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
@@ -333,6 +334,9 @@ void Zombie::checkCollision(const std::vector<Plant*>& plants)
         {
             auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
             if (spikeweed)
+                continue;
+            auto spikerock = dynamic_cast<SpikeRock*>(plant);
+            if (spikerock)
                 continue;
             // Create a slightly offset collision box for the zombie
             // This allows the zombie to eat the plant when it's slightly overlapping

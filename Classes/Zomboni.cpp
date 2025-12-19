@@ -278,6 +278,9 @@ void Zomboni::checkCollision(const std::vector<Plant*>& plants)
             auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
             if (spikeweed)
                 continue;
+            auto spikerock = dynamic_cast<SpikeRock*>(plant);
+            if (spikerock)
+                continue;
             // Create a slightly offset collision box for the zombie
             // This allows the zombie to eat the plant when it's slightly overlapping
             // Adjust COLLISION_OFFSET_X to control how close the zombie needs to be

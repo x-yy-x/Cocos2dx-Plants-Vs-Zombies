@@ -40,6 +40,7 @@ enum class PlantName
     PEASHOOTER,
     PUFFSHROOM,
     REPEATER,
+    SPIKEROCK,
     SPIKEWEED,
     SUNFLOWER,
     SUNSHROOM,

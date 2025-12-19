@@ -23,6 +23,7 @@
 #include "Jalapeno.h"
 #include "TwinSunflower.h"
 #include "GatlingPea.h"
+#include "SpikeRock.h"
 #include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
@@ -310,7 +311,8 @@ void SelectCardsScene::createSelectCards()
         {"seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED},
         {"seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO},
         {"seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER},
-        {"seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA}
+        {"seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA},
+        {"seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK}
     };
     
     // Create seed packets and select cards
@@ -352,6 +354,9 @@ void SelectCardsScene::createSelectCards()
                 break;
             case PlantName::GATLINGPEA:
                 seedPacket = SeedPacket::create<GatlingPea>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
+                break;
+            case PlantName::SPIKEROCK:
+                seedPacket = SeedPacket::create<SpikeRock>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
                 break;
             default:
                 break;

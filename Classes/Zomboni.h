@@ -6,6 +6,7 @@
 #include "GameDefs.h"
 #include "Zombie.h"
 #include "SpikeWeed.h"
+#include "SpikeRock.h"
 #include "IceTile.h"
 #include <vector>
 
