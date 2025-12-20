@@ -36,10 +36,10 @@ bool Coin::init(CoinType coinType)
         return false;
     }
 
-    // Load sun image
+    // Load coin image
     if (!Sprite::initWithFile(IMAGE_FILENAME[_coinType]))
     {
-        CCLOG("Failed to load sun image: %s", IMAGE_FILENAME.c_str());
+        CCLOG("Failed to load coin image: %s", IMAGE_FILENAME[_coinType].c_str());
         return false;
     }
 

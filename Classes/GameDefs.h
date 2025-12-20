@@ -46,5 +46,6 @@ enum class PlantName
     SUNSHROOM,
     THREEPEATER,
     TWINSUNFLOWER,
-    WALLNUT
+    WALLNUT,
+    UNKNOWN
 };

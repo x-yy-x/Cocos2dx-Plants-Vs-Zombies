@@ -25,6 +25,7 @@
 #include "GatlingPea.h"
 #include "SpikeRock.h"
 #include "audio/include/AudioEngine.h"
+#include "PlayerProfile.h"
 
 USING_NS_CC;
 
@@ -386,9 +387,15 @@ void SelectCardsScene::createSelectCards()
             float x = cardStartX + col * cardSpacingX;
             float y = cardStartY - row * cardSpacingY;
             _allSelectCards[i]->setPosition(Vec2(x, y));
+
+            auto card = _allSelectCards[i];
+
+            // Check if the plant is unlocked
+            if (!PlayerProfile::getInstance()->isPlantUnlocked(card->getPlantName())) {
+                card->setColor(Color3B(100, 100, 100)); // Gray out the card
+            }
             
             // Set callback for card selection
-            auto card = _allSelectCards[i];
             auto listener = EventListenerTouchOneByOne::create();
             listener->setSwallowTouches(true);
             listener->onTouchBegan = [this, card](Touch* touch, Event* event) -> bool {
@@ -419,6 +426,12 @@ void SelectCardsScene::createSelectCards()
 void SelectCardsScene::onCardSelected(SelectCard* card)
 {
     if (!card) return;
+
+    // Check if the plant is unlocked before proceeding
+    if (!PlayerProfile::getInstance()->isPlantUnlocked(card->getPlantName())) {
+        cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+        return; // Not unlocked, do nothing
+    }
     
     bool wasSelected = card->isSelected();
     

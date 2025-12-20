@@ -18,6 +18,8 @@ class AttackingPlant;
 class BombPlant;
 class IceTile;
 class Coin;
+class Rake;
+class Mower;
 
 class GameWorld : public cocos2d::Scene
 {
@@ -261,6 +263,10 @@ private:
     std::vector<Sun*> _suns;
     std::vector<IceTile*> _iceTiles;
     std::vector<Coin*> _coins;
+
+    // Rake trap per row (optional)
+    Rake* _rakePerRow[MAX_ROW];
+    Mower* _mowerPerRow[MAX_ROW];
 
     // Timed batch spawning (方案D)
     int _currentWave;                // (legacy, unused by 方案D but kept)

@@ -32,12 +32,15 @@
 #include "TwinSunflower.h"
 #include "GatlingPea.h"
 #include "SpikeRock.h"
+#include "Rake.h"
+#include "Mower.h"
 #include "coin.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include "audio/include/AudioEngine.h"
 #include "base/ccUtils.h"
+#include "PlayerProfile.h"
 
 // CCRANDOM
 #include "base/ccRandom.h"
@@ -134,6 +137,9 @@ bool GameWorld::init()
     _sunSpawnTimer = 0.0f;
     _zombieGroanTimer = 3.0f;
 
+    // 初始化 Rake/Mower 槽
+    for (int r = 0; r < MAX_ROW; ++r) { _rakePerRow[r] = nullptr; _mowerPerRow[r] = nullptr; }
+
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
@@ -145,6 +151,39 @@ bool GameWorld::init()
         return false;
     }
     this->addChild(backGround, BACKGROUND_LAYER);
+
+    // Spawn Rake if enabled (random row, right end)
+    if (PlayerProfile::getInstance()->isRakeEnabled())
+    {
+        int rakeRow = rand() % MAX_ROW;
+        auto rake = Rake::create();
+        if (rake)
+        {
+            float y = GRID_ORIGIN.y + rakeRow * CELLSIZE.height + CELLSIZE.height * 0.6f;
+            float x = visibleSize.width - 120.0f;
+            rake->setPosition(Vec2(x, y));
+            this->addChild(rake, ENEMY_LAYER);
+            _rakePerRow[rakeRow] = rake;
+        }
+    }
+
+    // Spawn Mowers per row at far left if enabled
+    if (PlayerProfile::getInstance()->isMowerEnabled())
+    {
+        for (int r = 0; r < MAX_ROW; ++r)
+        {
+            if (_mowerPerRow[r]) continue;
+            auto mower = Mower::create();
+            if (mower)
+            {
+                float y = GRID_ORIGIN.y + r * CELLSIZE.height + CELLSIZE.height * 0.6f;
+                float x = GRID_ORIGIN.x - 30.0f; // just left to the first cell
+                mower->setPosition(Vec2(x, y));
+                this->addChild(mower, ENEMY_LAYER);
+                _mowerPerRow[r] = mower;
+            }
+        }
+    }
 
     auto progressBG = Sprite::create("FlagMeterEmpty.png");
     if (progressBG) {
@@ -307,7 +346,7 @@ bool GameWorld::init()
     }
 
    //金币系统
-    _moneyCountLabel = Label::createWithSystemFont(std::to_string(_moneyCount), "Arial", 20);
+    _moneyCountLabel = Label::createWithSystemFont(std::to_string(PlayerProfile::getInstance()->getCoins()), "Arial", 20);
     if (_moneyCountLabel)
     {
         _moneyCountLabel->setPosition(Vec2(100, 20));
@@ -399,8 +438,19 @@ bool GameWorld::init()
         this->addChild(speedMenu, UI_LAYER);
     }
 
+    // DEBUG:rake
+    auto rake = Rake::create();
+    if (rake)
+    {
+        float y = GRID_ORIGIN.y + 2 * CELLSIZE.height + CELLSIZE.height * 0.6f;
+        float x = visibleSize.width - 500.0f;
+        rake->setPosition(Vec2(x, y));
+        this->addChild(rake, ENEMY_LAYER);
+        _rakePerRow[2] = rake;
+    }
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
+
     {
         auto debugZombie = PoleVaulter::createZombie();
         if (debugZombie)
@@ -480,9 +530,12 @@ void GameWorld::setupUserInteraction()
         for (auto coin : _coins) {
             if (coin && coin->isCollectible()) {
                 if (coin->getBoundingBox().containsPoint(pos)) {
-                    _moneyCount += coin->collect();
-                    updateMoneyBankDisplay();
-                    //音效还没加
+                    int gained = coin->collect();
+                    if (gained > 0) {
+                        PlayerProfile::getInstance()->addCoins(gained);
+                        updateMoneyBankDisplay();
+                    }
+                    // 音效可在 coin->collect() 内或此处补充
                     return true;
                 }
             }
@@ -779,6 +832,18 @@ void GameWorld::update(float delta)
     removeExpiredIceTiles();
     removeExpiredCoins();
 
+    // 清理离屏 Mower
+    {
+        auto vs = Director::getInstance()->getVisibleSize();
+        for (int r = 0; r < MAX_ROW; ++r) {
+            auto mower = _mowerPerRow[r];
+            if (mower && mower->getPositionX() > vs.width + 100.0f) {
+                mower->removeFromParent();
+                _mowerPerRow[r] = nullptr;
+            }
+        }
+    }
+
     // 胜利判定：最终波已触发并且所有子批已排程完成，且场上无“存活中的”僵尸
     // 不要求容器为空，允许仍存在已死亡/正在死亡动画中的僵尸对象
     if (!_winShown && _finalWaveTriggered && _finalWaveSpawningDone)
@@ -964,6 +1029,37 @@ void GameWorld::updateZombies(float delta)
             // Check pointer validity and skip dead/dying zombies
             if (zombie && !zombie->isDead())
             {
+                    // Rake collision: check on this row
+                if (_rakePerRow[row])
+                {
+                    auto rake = _rakePerRow[row];
+                    Rect zbb = zombie->getBoundingBox();
+                    Rect rbb = rake->getBoundingBox();
+                    if (zbb.intersectsRect(rbb))
+                    {
+                        zombie->takeDamage(5000); // massive damage
+                        rake->trigger(zombie);
+                        _rakePerRow[row] = nullptr; // one-time
+                    }
+                }
+
+                // Mower collision (row-based)
+                if (_mowerPerRow[row])
+                {
+                    auto mower = _mowerPerRow[row];
+                    Rect zbb = zombie->getBoundingBox();
+                    Rect mbb = mower->getBoundingBox();
+                    if (zbb.intersectsRect(mbb))
+                    {
+                        if (!mower->isMoving()) {
+                            mower->start();
+                        } else {
+                            // kill zombies that the mower drives through
+                            zombie->takeDamage(99999);
+                        }
+                    }
+                }
+
                 // Check if zombie reached the left edge of screen
                 float zombieX = zombie->getPositionX();
                 if (zombieX <= 0 && !_isGameOver)
@@ -1061,7 +1157,7 @@ void GameWorld::updateMoneyBankDisplay()
 {
     if (_moneyCountLabel)
     {
-        _moneyCountLabel->setString(std::to_string(_moneyCount));
+        _moneyCountLabel->setString(std::to_string(PlayerProfile::getInstance()->getCoins()));
     }
 }
 
@@ -1362,7 +1458,7 @@ void GameWorld::showGameOver()
         auto callbackAction = CallFunc::create([this]() {
             // Stop all audio
             cocos2d::AudioEngine::stopAll();
-            
+
             // Reset time scale to normal
             Director::getInstance()->getScheduler()->setTimeScale(1.0f);
             _speedLevel = 0;
@@ -1399,6 +1495,7 @@ void GameWorld::showGameOver()
 
 void GameWorld::showWinTrophy()
 {
+    if (_winShown) return; // 防止重复调用
     _winShown = true;
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
