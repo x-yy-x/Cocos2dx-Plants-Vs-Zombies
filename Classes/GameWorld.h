@@ -17,6 +17,7 @@ class SunProducingPlant;
 class AttackingPlant;
 class BombPlant;
 class IceTile;
+class Coin;
 
 class GameWorld : public cocos2d::Scene
 {
@@ -182,6 +183,12 @@ private:
      */
     void removeInactiveBullets();
 
+    void updateMoneyBankDisplay();
+
+    void updateCoins(float delta);
+
+    void removeExpiredCoins();
+
     /**
      * @brief Update sun counter display
      */
@@ -211,6 +218,7 @@ private:
 
     bool hasIceAt(int row,int col);
 
+    void spawnCoinAfterZombieDeath(Zombie* zombie);
   
     // Grid storage system - stores Plant pointers directly
     Plant* _plantGrid[MAX_ROW][MAX_COL];
@@ -224,6 +232,7 @@ private:
     bool _shovelSelected;
 
     // UI elements
+    cocos2d::Sprite* _coinBank;
     Shovel* _shovel;
     cocos2d::Sprite* _shovelBack;
     std::vector<SeedPacket*> _seedPackets;
@@ -242,11 +251,16 @@ private:
     int _sunCount;
     cocos2d::Label* _sunCountLabel;
 
+    // 金币系统
+    int _moneyCount;
+    cocos2d::Label* _moneyCountLabel;
+
     // Containers for game objects
     std::vector<Zombie*> _zombiesInRow[MAX_ROW];
     std::vector<Bullet*> _bullets;
     std::vector<Sun*> _suns;
     std::vector<IceTile*> _iceTiles;
+    std::vector<Coin*> _coins;
 
     // Timed batch spawning (方案D)
     int _currentWave;                // (legacy, unused by 方案D but kept)

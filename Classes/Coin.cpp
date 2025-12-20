@@ -1,0 +1,132 @@
+#include "Coin.h"
+
+
+USING_NS_CC;
+
+// ----------------------------------------------------
+// Static constant definitions
+// ----------------------------------------------------
+const std::string Coin::IMAGE_FILENAME[3] = { "coin_silver_dollar.png","coin_gold_dollar.png","Diamond.png" };
+const int Coin::COIN_VALUE[3] = { 10,50,1000 };
+const float Coin::LIFETIME = 10.0f;
+
+// Constructor
+Coin::Coin()
+    : _isCollected(false)
+    , _lifeTime(0.0f)
+    , _targetPos(Vec2::ZERO)
+    , _coinScale(1.0f)
+    , _coinType(CoinType::SILVER)
+{
+    CCLOG("Coin created.");
+}
+
+// Destructor
+Coin::~Coin()
+{
+    CCLOG("Coin destroyed.");
+}
+
+// Initialization
+bool Coin::init(CoinType coinType)
+{
+    this->_coinType = coinType;
+    if (!GameObject::init())
+    {
+        return false;
+    }
+
+    // Load sun image
+    if (!Sprite::initWithFile(IMAGE_FILENAME[_coinType]))
+    {
+        CCLOG("Failed to load sun image: %s", IMAGE_FILENAME.c_str());
+        return false;
+    }
+
+    // Apply custom scale
+    this->setScale(_coinScale);
+
+    _isCollected = false;
+    _lifeTime = 0.0f;
+
+    // Set up animation (placeholder for now)
+    setAnimation();
+
+    // Enable update
+    this->scheduleUpdate();
+
+    return true;
+}
+
+// Update function
+void Coin::update(float delta)
+{
+    if (_isCollected)
+    {
+        return;
+    }
+
+    _lifeTime += delta;
+}
+
+// Check if collectible
+bool Coin::isCollectible() const
+{
+    return !_isCollected;
+}
+
+// Collect sun
+int Coin::collect()
+{
+    if (_isCollected)
+    {
+        return 0;
+    }
+
+    _isCollected = true;
+    
+    // Fade out and remove
+    auto fadeOut = FadeOut::create(0.2f);
+    auto remove = RemoveSelf::create();
+    auto sequence = Sequence::create(fadeOut, remove, nullptr);
+    this->runAction(sequence);
+
+    CCLOG("Coin collected! Value: %d", COIN_VALUE[_coinType]);
+    return COIN_VALUE[_coinType];
+}
+
+// Check if should be removed
+bool Coin::shouldRemove() const
+{
+    return _isCollected || (_lifeTime >= LIFETIME);
+}
+
+// Set animation (placeholder)
+void Coin::setAnimation()
+{
+    if (_coinType == 2)
+        return;
+    float time = 0.5f;
+
+    auto spin = RepeatForever::create(
+        Sequence::create(
+            EaseInOut::create(ScaleTo::create(time, -1.0f, 1.0f), 2.0f),
+            EaseInOut::create(ScaleTo::create(time, 1.0f, 1.0f), 2.0f),
+            nullptr
+        )
+    );
+
+    this->runAction(spin);
+}
+
+Coin* Coin::create(CoinType CoinType)
+{
+    Coin* coin = new (std::nothrow) Coin();
+    if (coin && coin->init(CoinType))
+    {
+        coin->autorelease();
+        return coin;
+    }
+    CC_SAFE_DELETE(coin);
+    return nullptr;
+}

@@ -80,7 +80,7 @@ public:
      * @brief Check if zombie is truly dead (ready for removal, death animation finished).
      * @return true if truly dead (not dying), false otherwise
      */
-    bool isTrulyDead() const { return _isDead && !_isDying; }
+    virtual bool isTrulyDead() const { return _isDead && !_isDying; }
 
     /**
      * @brief Apply damage to zombie and reduce health.

@@ -80,6 +80,8 @@ public:
      */
     virtual void encounterPlant(const std::vector<Plant*>& plants);
 
+    virtual bool isTrulyDead() const { return _isDead && !_isDying; }
+
 protected:
     // Protected constructor
     Imp();

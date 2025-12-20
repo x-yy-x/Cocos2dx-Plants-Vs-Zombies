@@ -32,6 +32,7 @@
 #include "TwinSunflower.h"
 #include "GatlingPea.h"
 #include "SpikeRock.h"
+#include "coin.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -305,6 +306,26 @@ bool GameWorld::init()
         this->addChild(_sunCountLabel, UI_LAYER);
     }
 
+   //金币系统
+    _moneyCountLabel = Label::createWithSystemFont(std::to_string(_moneyCount), "Arial", 20);
+    if (_moneyCountLabel)
+    {
+        _moneyCountLabel->setPosition(Vec2(100, 20));
+        _moneyCountLabel->setColor(Color3B::BLACK);
+        this->addChild(_moneyCountLabel, UI_LAYER);
+    }
+
+    _coinBank = Sprite::create("CoinBank.png");
+    if (_coinBank == nullptr)
+    {
+        problemLoading("'Coinbank.png'");
+    }
+    else
+    {
+        _coinBank->setPosition(Vec2(100, 20));
+        this->addChild(_coinBank, SEEDPACKET_LAYER);
+    }
+
     // Create shovel background
     _shovelBack = Sprite::create("ShovelBack.png");
     if (_shovelBack == nullptr)
@@ -381,7 +402,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = Gargantuar::createZombie();
+        auto debugZombie = PoleVaulter::createZombie();
         if (debugZombie)
         {
             int row = 2;
@@ -392,6 +413,27 @@ bool GameWorld::init()
             this->addChild(debugZombie, ENEMY_LAYER);
             _zombiesInRow[row].push_back(debugZombie);
             CCLOG("DEBUG: Spawned test zombie at row %d", row);
+        }
+    }
+
+    {
+        auto debugCoin0 = Coin::create(Coin::CoinType::SILVER);
+        if (debugCoin0) {
+            debugCoin0->setPosition(Vec2(300, 300));
+            this->addChild(debugCoin0, SUN_LAYER);
+            _coins.push_back(debugCoin0);
+        }
+        auto debugCoin1 = Coin::create(Coin::CoinType::GOLD);
+        if (debugCoin1) {
+            debugCoin1->setPosition(Vec2(500, 300));
+            this->addChild(debugCoin1, SUN_LAYER);
+            _coins.push_back(debugCoin1);
+        }
+        auto debugCoin2 = Coin::create(Coin::CoinType::DIAMOND);
+        if (debugCoin2) {
+            debugCoin2->setPosition(Vec2(800, 300));
+            this->addChild(debugCoin2, SUN_LAYER);
+            _coins.push_back(debugCoin2);
         }
     }
 
@@ -430,6 +472,17 @@ void GameWorld::setupUserInteraction()
                     updateSunDisplay();
                     cocos2d::AudioEngine::play2d("sun_pickup_sound.mp3", false);
                     CCLOG("Sun collected! +%d sun (Total: %d)", sunValue, _sunCount);
+                    return true;
+                }
+            }
+        }
+
+        for (auto coin : _coins) {
+            if (coin && coin->isCollectible()) {
+                if (coin->getBoundingBox().containsPoint(pos)) {
+                    _moneyCount += coin->collect();
+                    updateMoneyBankDisplay();
+                    //音效还没加
                     return true;
                 }
             }
@@ -711,6 +764,10 @@ void GameWorld::update(float delta)
     updateSuns(delta);
     maybePlayZombieGroan(delta);
 
+    // 金币系统更新
+    updateCoins(delta);
+
+
     //Update IceTile
     updateIceTiles(delta);
 
@@ -720,6 +777,7 @@ void GameWorld::update(float delta)
     removeInactiveBullets();
     removeExpiredSuns();
     removeExpiredIceTiles();
+    removeExpiredCoins();
 
     // 胜利判定：最终波已触发并且所有子批已排程完成，且场上无“存活中的”僵尸
     // 不要求容器为空，允许仍存在已死亡/正在死亡动画中的僵尸对象
@@ -951,6 +1009,8 @@ void GameWorld::removeDeadZombies()
             // isTrulyDead() returns true only when _isDead == true && _isDying == false
             if (zombie && zombie->isTrulyDead())
             {
+                log("zombie is dead");
+                spawnCoinAfterZombieDeath(zombie);
                 // Safe removal sequence to prevent dangling pointers and double deletion:
                 // 1. Get pointer before erasing (iterator will be invalidated after erase)
                 Zombie* deadZombie = zombie;
@@ -995,6 +1055,45 @@ void GameWorld::removeInactiveBullets()
             ++it;
         }
     }
+}
+
+void GameWorld::updateMoneyBankDisplay()
+{
+    if (_moneyCountLabel)
+    {
+        _moneyCountLabel->setString(std::to_string(_moneyCount));
+    }
+}
+
+void GameWorld::updateCoins(float delta)
+{
+    for (auto coin : _coins) {
+        if (coin) {
+            coin->update(delta);
+        }
+    }
+}
+
+void GameWorld::removeExpiredCoins()
+{
+    _coins.erase(
+        std::remove_if(
+            _coins.begin(),
+            _coins.end(),
+            [&](Coin* coin)
+            {
+                if (!coin) return true;
+
+                if (coin->shouldRemove())
+                {
+                    coin->removeFromParent();
+                    return true;
+                }
+                return false;
+            }
+        ),
+        _coins.end()
+    );
 }
 
 void GameWorld::updateSunDisplay()
@@ -1652,4 +1751,52 @@ void GameWorld::removeIceInRow(int row)
             ice->markAsExpired();
         }
     }
+}
+
+void GameWorld::spawnCoinAfterZombieDeath(Zombie* zombie)
+{
+    if (!zombie) {
+        log("zombie==null");
+        return;
+    }
+    log("zombie != null");
+    float posibilityBonus = 1.0f;
+    if (dynamic_cast<Gargantuar*>(zombie) != nullptr)
+        posibilityBonus = 2.0f;
+    else if (dynamic_cast<Zomboni*>(zombie) != nullptr)
+        posibilityBonus = 1.5f;
+    else if (dynamic_cast<PoleVaulter*>(zombie) != nullptr)
+        posibilityBonus = 1.2f;
+    else if (dynamic_cast<Imp*>(zombie) != nullptr)
+        posibilityBonus = 1.2f;
+    else
+        posibilityBonus = 1.0f;
+
+    float r = CCRANDOM_0_1();
+    float silver = 0.4f, gold = 0.2f, diamond = 0.05f;
+    if (r <= posibilityBonus * diamond) {
+        auto coin = Coin::create(Coin::CoinType::DIAMOND);
+        if (coin) {
+            coin->setPosition(zombie->getPosition());
+            this->addChild(coin, SUN_LAYER);
+            _coins.push_back(coin);
+        }
+    }
+    else if (r <= posibilityBonus * gold) {
+        auto coin = Coin::create(Coin::CoinType::GOLD);
+        if (coin) {
+            coin->setPosition(zombie->getPosition());
+            this->addChild(coin, SUN_LAYER);
+            _coins.push_back(coin);
+        }
+    }
+    else if (r <= posibilityBonus * silver) {
+        auto coin = Coin::create(Coin::CoinType::SILVER);
+        if (coin) {
+            coin->setPosition(zombie->getPosition());
+            this->addChild(coin, SUN_LAYER);
+            _coins.push_back(coin);
+        }
+    }
+
 }
