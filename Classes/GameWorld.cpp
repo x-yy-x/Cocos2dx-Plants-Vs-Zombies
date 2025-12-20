@@ -118,7 +118,7 @@ bool GameWorld::init()
     _shovelSelected = false;
     _shovel = nullptr;
     _shovelBack = nullptr;
-    _sunCount = 10000; // Initial sun count
+    _sunCount = 225; // Initial sun count
     _sunCountLabel = nullptr;
 
     // Initialize timed batch spawning (方案D)

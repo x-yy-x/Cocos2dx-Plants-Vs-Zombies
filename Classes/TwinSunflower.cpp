@@ -9,7 +9,7 @@ USING_NS_CC;
 const std::string TwinSunflower::IMAGE_FILENAME = "twinsunflower_spritesheet.png";
 const cocos2d::Rect TwinSunflower::INITIAL_PIC_RECT = Rect(0.0f, 512.0f - 128.0f, 85.333f, 128.0f);
 const cocos2d::Size TwinSunflower::OBJECT_SIZE = Size(85.333f, 128.0f);
-const float TwinSunflower::SUN_PRODUCTION_INTERVAL = 24.0f;  // Produce sun every 24 seconds
+const float TwinSunflower::SUN_PRODUCTION_INTERVAL = 12.0f;  // Produce sun every 24 seconds
 
 // Protected constructor
 TwinSunflower::TwinSunflower()
