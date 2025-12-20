@@ -7,10 +7,40 @@ USING_NS_CC;
 
 Sprite* PoleVaulter::createShowcaseSprite(const Vec2& pos)
 {
-    const float frameWidth = 125.0f;
-    const float frameHeight = 225.0f;
-    auto sp = Sprite::create("pole_vaulter_walk_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
-    if (sp) sp->setPosition(pos);
+    float frameWidth = 1250.0f;
+    float frameHeight = 785.0f;
+
+    Vector<SpriteFrame*> frames;
+
+    for (int row = 0; row < 3; row++)
+    {
+        for (int col = 0; col < 5; col++)
+        {
+            if (row == 2 && col == 3)
+                break;
+
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                "pole_vaulter_idle_spritesheet.png",
+                Rect(x, y, frameWidth, frameHeight)
+            );
+
+            frames.pushBack(frame);
+        }
+    }
+
+    auto animation = Animation::createWithSpriteFrames(frames, 0.06f);
+    auto animate = Animate::create(animation);
+    auto _idleAction = RepeatForever::create(animate);
+
+    auto sp = Sprite::create();
+    if (sp) {
+        sp->setPosition(pos);
+        sp->setScale(0.35f);
+        sp->runAction(_idleAction);
+    }
     return sp;
 }
 

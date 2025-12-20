@@ -83,12 +83,39 @@ Zombie* Zombie::createZombie()
 
 Sprite* Zombie::createShowcaseSprite(const Vec2& pos)
 {
-    // 使用行走序列第一帧作为静态展示
-    float frameWidth = 125.0f;
-    float frameHeight = 173.8f;
-    auto sp = Sprite::create("zombie_walk_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
-    sp->setScale(1.11f);
-    if (sp) sp->setPosition(pos);
+    float frameWidth = 235.0f;
+    float frameHeight = 225.0f;
+
+    Vector<SpriteFrame*> frames;
+
+    for (int row = 0; row < 6; row++)
+    {
+        for (int col = 0; col < 5; col++)
+        {
+            if (row == 5 && col == 4)
+                break;
+
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                "zombie_idle_spritesheet.png",
+                Rect(x, y, frameWidth, frameHeight)
+            );
+
+            frames.pushBack(frame);
+        }
+    }
+
+    auto animation = Animation::createWithSpriteFrames(frames, 0.05f);
+    auto animate = Animate::create(animation);
+    auto _idleAction = RepeatForever::create(animate);
+
+    auto sp = Sprite::create("zombie_idle_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
+    if (sp) {
+        sp->setPosition(pos);
+        sp->runAction(_idleAction);
+    }
     return sp;
 }
 

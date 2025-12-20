@@ -8,10 +8,38 @@ USING_NS_CC;
 
 Sprite* Gargantuar::createShowcaseSprite(const Vec2& pos)
 {
-    const float frameWidth = 280.0f;
-    const float frameHeight = 292.0f;
-    auto sp = Sprite::create("gargantuar_walk_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
-    if (sp) sp->setPosition(pos);
+    float frameWidth = 750.0f;
+    float frameHeight = 750.0f;
+
+    Vector<SpriteFrame*> frames;
+
+    for (int row = 0; row < 9; row++)
+    {
+        for (int col = 0; col < 5; col++)
+        {
+
+            float x = col * frameWidth;
+            float y = row * frameHeight;
+
+            auto frame = SpriteFrame::create(
+                "gargantuar_idle_spritesheet.png",
+                Rect(x, y, frameWidth, frameHeight)
+            );
+
+            frames.pushBack(frame);
+        }
+    }
+
+    auto animation = Animation::createWithSpriteFrames(frames, 0.05f);
+    auto animate = Animate::create(animation);
+    auto _idleAction = RepeatForever::create(animate);
+
+    auto sp = Sprite::create();
+    if (sp) {
+        sp->setPosition(pos);
+        sp->setScale(0.4f);
+        sp->runAction(_idleAction);
+    }
     return sp;
 }
 
