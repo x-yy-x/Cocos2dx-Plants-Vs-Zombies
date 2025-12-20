@@ -242,6 +242,7 @@ void Zomboni::setAnimationForState(ZombieState state)
         auto fadeOut = FadeOut::create(0.5f);
         auto markDead = CallFunc::create([this]() {
             _isDead = true;
+            _isDying = false;
             CCLOG("Zombie death animation finished, marked as dead.");
             });
         auto sequence = Sequence::create(fadeOut, markDead, nullptr);

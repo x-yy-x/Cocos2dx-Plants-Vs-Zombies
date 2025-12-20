@@ -80,6 +80,8 @@ public:
 
     void setSpecialDeath();
 
+    virtual bool isTrulyDead() const { return _isDead && !_isDying; }
+
 protected:
     // Protected constructor
     Zomboni();

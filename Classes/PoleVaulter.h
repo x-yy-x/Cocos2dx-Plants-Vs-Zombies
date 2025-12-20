@@ -84,6 +84,8 @@ public:
      */
     void encounterPlant(const std::vector<Plant*>& plants) override;
 
+    virtual bool isTrulyDead() const { return _isDead && !_isDying; }
+
 protected:
     // Protected constructor
     PoleVaulter();
