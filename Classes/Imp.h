@@ -150,10 +150,11 @@ protected:
     // Animation actions
     cocos2d::RepeatForever* _walkAction;
     cocos2d::RepeatForever* _eatAction;
-    cocos2d::Animate* _flyAction;
+    cocos2d::Animate* _flyAnimate;
     
     // Eating state
     bool _isEating;                  // Is currently eating
+    bool _isFlying;
     Plant* _targetPlant;             // Target plant being eaten
     cocos2d::Vec2 _speed;                    // Current movement speed
     float _normalSpeed;              // Normal walking speed

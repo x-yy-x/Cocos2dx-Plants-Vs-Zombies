@@ -35,10 +35,12 @@ enum class PlantCategory
 enum class PlantName
 {
     CHERRYBOMB,
+    GATLINGPEA,
     JALAPENO,
     PEASHOOTER,
     PUFFSHROOM,
     REPEATER,
+    SPIKEROCK,
     SPIKEWEED,
     SUNFLOWER,
     SUNSHROOM,

@@ -8,11 +8,12 @@ USING_NS_CC;
 
 Sprite* Zomboni::createShowcaseSprite(const Vec2& pos)
 {
-    const float frameWidth = 470.0f;
-    const float frameHeight = 450.0f;
-    auto sp = Sprite::create("zomboni_drive_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
-    sp->setScale(0.45f);
-    if (sp) sp->setPosition(pos);
+    auto sp = Sprite::create();
+    if (sp) {
+        sp->setScale(0.45f);
+        sp->setPosition(pos);
+        sp->runAction(_driveAction);
+    }
     return sp;
 }
 
@@ -277,6 +278,9 @@ void Zomboni::checkCollision(const std::vector<Plant*>& plants)
         {
             auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
             if (spikeweed)
+                continue;
+            auto spikerock = dynamic_cast<SpikeRock*>(plant);
+            if (spikerock)
                 continue;
             // Create a slightly offset collision box for the zombie
             // This allows the zombie to eat the plant when it's slightly overlapping

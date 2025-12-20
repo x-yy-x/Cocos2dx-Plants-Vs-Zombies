@@ -30,6 +30,8 @@
 #include "Jalapeno.h"
 #include "IceTile.h"
 #include "TwinSunflower.h"
+#include "GatlingPea.h"
+#include "SpikeRock.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -227,6 +229,12 @@ bool GameWorld::init()
                 case PlantName::TWINSUNFLOWER:
                     newPacket = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
                     break;
+                case PlantName::GATLINGPEA:
+                    newPacket = SeedPacket::create<GatlingPea>("seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA);
+                    break;
+                case PlantName::SPIKEROCK:
+                    newPacket = SeedPacket::create<SpikeRock>("seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK);
+                    break;
                 default:
                     break;
             }
@@ -251,12 +259,15 @@ bool GameWorld::init()
         auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150, PlantName::CHERRYBOMB);
         auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED);
         auto jalapenoPacket= SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO);
-        auto twinsunflower = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
+        auto twinSunflowerPacket = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
+        auto gatlingPeaPacket= SeedPacket::create<GatlingPea>("seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA);
+        auto spikeRockPacket = SeedPacket::create<SpikeRock>("seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK);
 
         if (sunflowerPacket && sunshroomPacket && peashooterPacket && 
             repeaterPacket && threepeaterPacket && puffshroomPacket && 
             wallnutPacket && cherryBombPacket && spikeWeedPacket && 
-            jalapenoPacket && twinsunflower)
+            jalapenoPacket && twinSunflowerPacket && gatlingPeaPacket &&
+            spikeRockPacket)
         {
             _seedPackets.push_back(sunflowerPacket);
             _seedPackets.push_back(sunshroomPacket);
@@ -268,7 +279,9 @@ bool GameWorld::init()
             _seedPackets.push_back(cherryBombPacket);
             _seedPackets.push_back(spikeWeedPacket);
             _seedPackets.push_back(jalapenoPacket);
-            _seedPackets.push_back(twinsunflower);
+            _seedPackets.push_back(twinSunflowerPacket);
+            _seedPackets.push_back(gatlingPeaPacket);
+            _seedPackets.push_back(spikeRockPacket);
 
             // Set positions for seed packets (more compact spacing)
             float baseX = 187.0f;
@@ -368,7 +381,7 @@ bool GameWorld::init()
     // DEBUG: Spawn one zombie at start for testing
     // TODO: Remove this before final release
     {
-        auto debugZombie = Zomboni::createZombie();
+        auto debugZombie = Gargantuar::createZombie();
         if (debugZombie)
         {
             int row = 2;
@@ -575,6 +588,14 @@ bool GameWorld::tryPlantAtPosition(const Vec2& globalPos, SeedPacket* seedPacket
 
     if (seedPacket->getPlantName() == PlantName::TWINSUNFLOWER) {
         if (dynamic_cast<Sunflower*>(_plantGrid[row][col]) == nullptr)
+            return false;
+    }
+    else if (seedPacket->getPlantName() == PlantName::GATLINGPEA) {
+        if (dynamic_cast<Repeater*>(_plantGrid[row][col]) == nullptr)
+            return false;
+    }
+    else if (seedPacket->getPlantName() == PlantName::SPIKEROCK) {
+        if (dynamic_cast<SpikeWeed*>(_plantGrid[row][col]) == nullptr)
             return false;
     }
 
