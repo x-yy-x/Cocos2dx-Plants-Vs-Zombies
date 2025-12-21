@@ -23,6 +23,7 @@ private:
     float _selectBGScale;
     float _zShowStartX;
     float _zShowStartY;
+    float _zShowGapX;
     float _zShowGapY;
     
     // Card selection

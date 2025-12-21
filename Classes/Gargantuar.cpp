@@ -339,7 +339,6 @@ void Gargantuar::takeDamage(int damage)
             _isDead = true;
             CCLOG("Zombie death animation finished, marked as dead.");
             _isDying = false;
-            log("Zombie death animation finished, marked as dead.");
             });
         auto sequence = Sequence::create(fadeOut, markDead, nullptr);
         this->runAction(sequence);

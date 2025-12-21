@@ -25,6 +25,7 @@
 #include "GatlingPea.h"
 #include "SpikeRock.h"
 #include "PotatoMine.h"
+#include "BucketHeadZombie.h"
 #include "audio/include/AudioEngine.h"
 #include "PlayerProfile.h"
 
@@ -76,7 +77,8 @@ SelectCardsScene::SelectCardsScene()
     , _selectBGScale(1.0f)
     , _zShowStartX(880.0f)
     , _zShowStartY(140.0f)
-    , _zShowGapY(120.0f)
+    , _zShowGapX(200.0f)
+    , _zShowGapY(150.0f)
     , _selectedCardsContainer(nullptr)
 {
 }
@@ -269,12 +271,16 @@ void SelectCardsScene::showSelectBG()
 
 void SelectCardsScene::spawnZombieShowcase()
 {
-    int idx = 0;
+    int idx = 0, idy = 0;
     auto addShow = [&](Sprite* sp){
         if (!sp) return;
-        sp->setPosition(Vec2(_zShowStartX, _zShowStartY + _zShowGapY * idx));
-        if (_zombieShowLayer) _zombieShowLayer->addChild(sp, 7 - idx);
-        idx++;
+        sp->setPosition(Vec2(_zShowStartX + _zShowGapX * idx, _zShowStartY + _zShowGapY * idy));
+        if (_zombieShowLayer) _zombieShowLayer->addChild(sp, 7 - idy);
+        idy++;
+        if (idy >= 4) {
+            idy = 0;
+            ++idx;
+        }
     };
 
     if (auto z = Zombie::createZombie())
@@ -286,6 +292,8 @@ void SelectCardsScene::spawnZombieShowcase()
     if (auto z = Zomboni::createZombie())
         addShow(z->createShowcaseSprite(Vec2::ZERO));
     if (auto z = Gargantuar::createZombie())
+        addShow(z->createShowcaseSprite(Vec2::ZERO));
+    if (auto z = BucketHeadZombie::createZombie())
         addShow(z->createShowcaseSprite(Vec2::ZERO));
 }
 

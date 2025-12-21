@@ -36,6 +36,7 @@
 #include "Rake.h"
 #include "Mower.h"
 #include "coin.h"
+#include "BucketHeadZombie.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -446,10 +447,10 @@ bool GameWorld::init()
 
 
     // debug mode
-    bool debug = false;
+    bool debug = true;
     if (debug) {
         // DEBUG:rake
-        auto rake = Rake::create();
+        /*auto rake = Rake::create();
         if (rake)
         {
             float y = GRID_ORIGIN.y + 2 * CELLSIZE.height + CELLSIZE.height * 0.6f;
@@ -457,12 +458,12 @@ bool GameWorld::init()
             rake->setPosition(Vec2(x, y));
             this->addChild(rake, ENEMY_LAYER);
             _rakePerRow[2] = rake;
-        }
+        }*/
 
         // DEBUG: Spawn one zombie at start for testing
         // TODO: Remove this before final release
         {
-            auto debugZombie = Zombie::createZombie();
+            auto debugZombie = BucketHeadZombie::createZombie();
             if (debugZombie)
             {
                 int row = 2;
@@ -1007,7 +1008,8 @@ void GameWorld::updateBullets(float delta)
                                 // Hit!
                                 zombie->takeDamage(bullet->getDamage());
                                 bullet->deactivate();
-                                cocos2d::AudioEngine::play2d("bullet_hit.mp3", false);
+                                if (dynamic_cast<Zomboni*>(zombie) == nullptr && dynamic_cast<BucketHeadZombie*>(zombie) == nullptr)
+                                    cocos2d::AudioEngine::play2d("bullet_hit.mp3", false);
                                 break; // Bullet hits one zombie and disappears
                             }
                         }
@@ -1116,7 +1118,6 @@ void GameWorld::removeDeadZombies()
             // isTrulyDead() returns true only when _isDead == true && _isDying == false
             if (zombie && zombie->isTrulyDead())
             {
-                log("zombie is dead");
                 spawnCoinAfterZombieDeath(zombie);
                 // Safe removal sequence to prevent dangling pointers and double deletion:
                 // 1. Get pointer before erasing (iterator will be invalidated after erase)
@@ -1863,26 +1864,25 @@ void GameWorld::removeIceInRow(int row)
 
 void GameWorld::spawnCoinAfterZombieDeath(Zombie* zombie)
 {
-    if (!zombie) {
-        log("zombie==null");
+    if (!zombie)
         return;
-    }
-    log("zombie != null");
-    float posibilityBonus = 1.0f;
+    float possibilityBonus = 1.0f;
     if (dynamic_cast<Gargantuar*>(zombie) != nullptr)
-        posibilityBonus = 2.0f;
+        possibilityBonus = 2.0f;
     else if (dynamic_cast<Zomboni*>(zombie) != nullptr)
-        posibilityBonus = 1.5f;
+        possibilityBonus = 1.5f;
+    else if (dynamic_cast<BucketHeadZombie*>(zombie) != nullptr)
+        possibilityBonus = 1.4f;
     else if (dynamic_cast<PoleVaulter*>(zombie) != nullptr)
-        posibilityBonus = 1.2f;
+        possibilityBonus = 1.2f;
     else if (dynamic_cast<Imp*>(zombie) != nullptr)
-        posibilityBonus = 1.2f;
+        possibilityBonus = 1.2f;
     else
-        posibilityBonus = 1.0f;
+        possibilityBonus = 1.0f;
 
     float r = CCRANDOM_0_1();
     float silver = 0.4f, gold = 0.2f, diamond = 0.05f;
-    if (r <= posibilityBonus * diamond) {
+    if (r <= possibilityBonus * diamond) {
         auto coin = Coin::create(Coin::CoinType::DIAMOND);
         if (coin) {
             coin->setPosition(zombie->getPosition());
@@ -1890,7 +1890,7 @@ void GameWorld::spawnCoinAfterZombieDeath(Zombie* zombie)
             _coins.push_back(coin);
         }
     }
-    else if (r <= posibilityBonus * gold) {
+    else if (r <= possibilityBonus * gold) {
         auto coin = Coin::create(Coin::CoinType::GOLD);
         if (coin) {
             coin->setPosition(zombie->getPosition());
@@ -1898,7 +1898,7 @@ void GameWorld::spawnCoinAfterZombieDeath(Zombie* zombie)
             _coins.push_back(coin);
         }
     }
-    else if (r <= posibilityBonus * silver) {
+    else if (r <= possibilityBonus * silver) {
         auto coin = Coin::create(Coin::CoinType::SILVER);
         if (coin) {
             coin->setPosition(zombie->getPosition());
