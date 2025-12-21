@@ -235,7 +235,7 @@ void Gargantuar::update(float delta)
     }
 
     // If zombie is not eating, continue walking left
-    if (!_isSmashing&&!_isThrowing)
+    if (!_isSmashing && !_isThrowing)
     {
         if (_currentHealth <= 1500 && _currentHealth > 0 && _hasthrown == false && this->getPositionX() >= 500) {
             this->_speed = 0;
@@ -252,7 +252,7 @@ void Gargantuar::update(float delta)
             CCLOG("Zombie reached the house!");
         }
     }
-    else if(_isSmashing)
+    else if (_isSmashing)
     {
         _accumulatedTime += delta;
         // If eating, deal damage periodically
@@ -294,7 +294,7 @@ void Gargantuar::setState(ZombieState newState)
         _currentState = newState;
         CCLOG("Zombie state changed.");
         setAnimationForState(newState);
-        
+
     }
 }
 
@@ -313,32 +313,33 @@ void Gargantuar::takeDamage(int damage)
     }
 
     _currentHealth -= damage;
-     CCLOG("Zombie took %d damage, remaining health: %d", damage, _currentHealth); // Reduced logging
+    CCLOG("Zombie took %d damage, remaining health: %d", damage, _currentHealth); // Reduced logging
 
     if (_currentHealth <= 0)
     {
         _currentHealth = 0;
-        
+
         // Mark as dying (playing death animation)
         _isDying = true;
-        
+
         // CRITICAL: Clear target plant pointer to prevent dangling pointer access
         _targetPlant = nullptr;
         _isSmashing = false;
-        
+
         setState(ZombieState::DYING);
         CCLOG("Zombie is dying.");
-        
+
         // Stop all actions
         this->stopAllActions();
-        
+
         // Play fade out animation, then mark as dead
         auto fadeOut = FadeOut::create(0.5f);
         auto markDead = CallFunc::create([this]() {
             _isDead = true;
+            CCLOG("Zombie death animation finished, marked as dead.");
             _isDying = false;
             log("Zombie death animation finished, marked as dead.");
-        });
+            });
         auto sequence = Sequence::create(fadeOut, markDead, nullptr);
         this->runAction(sequence);
     }
@@ -363,11 +364,11 @@ void Gargantuar::setAnimationForState(ZombieState state)
             break;
         case ZombieState::SMASHING:
             CCLOG("Setting EATING animation.");
-            this->stopAction(_walkAction);       
+            this->stopAction(_walkAction);
             this->runAction(Sequence::create(
-                MoveBy::create(0, Vec2(-20, 55)), 
-                _smashAction, 
-                MoveBy::create(0, Vec2(20, -55)), 
+                MoveBy::create(0, Vec2(-20, 55)),
+                _smashAction,
+                MoveBy::create(0, Vec2(20, -55)),
                 CallFunc::create([this]() {
                     this->_isSmashing = false;
                     this->_speed = _normalSpeed;
@@ -376,7 +377,7 @@ void Gargantuar::setAnimationForState(ZombieState state)
                 nullptr
             ));
             break;
-        case ZombieState::THROWING:        
+        case ZombieState::THROWING:
             CCLOG("setting throwing animation");
             this->stopAllActions();
             _speed = 0;
@@ -387,7 +388,7 @@ void Gargantuar::setAnimationForState(ZombieState state)
                     CallFunc::create([this]() {
                         this->throwImp();
                         }),
-                   _postthrowAction,
+                    _postthrowAction,
                     MoveBy::create(0, Vec2(46, -35)),
                     CallFunc::create([this]() {
                         this->_hasthrown = true;
@@ -416,7 +417,7 @@ void Gargantuar::encounterPlant(const std::vector<Plant*>& plants)
 // Check collision with plants
 void Gargantuar::checkCollision(const std::vector<Plant*>& plants)
 {
-    if (_isSmashing||_isThrowing)
+    if (_isSmashing || _isThrowing)
         return;
 
     for (auto plant : plants)
@@ -428,7 +429,7 @@ void Gargantuar::checkCollision(const std::vector<Plant*>& plants)
             float SIZE_CORRECTION = 180.0f;
             Rect zombieRect = this->getBoundingBox();
 
-            zombieRect.origin.x += COLLISION_OFFSET_X; 
+            zombieRect.origin.x += COLLISION_OFFSET_X;
             zombieRect.size.width -= SIZE_CORRECTION;
 
             if (zombieRect.intersectsRect(plant->getBoundingBox()))
@@ -462,7 +463,7 @@ void Gargantuar::onPlantDied()
 void Gargantuar::throwImp()
 {
     CCLOG("imp created");
-    auto imp = Imp::createZombie();   
+    auto imp = Imp::createZombie();
     imp->setState(Imp::ZombieState::FLYING);
     cocos2d::AudioEngine::play2d("imp-pvz.mp3", false, 1.0f);
     auto pos = this->getPosition();
