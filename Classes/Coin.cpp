@@ -1,5 +1,5 @@
 #include "Coin.h"
-
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
@@ -84,7 +84,14 @@ int Coin::collect()
     }
 
     _isCollected = true;
-    
+	if (CoinType::DIAMOND == _coinType)
+	{
+		cocos2d::AudioEngine::play2d("diamond.mp3", false);
+	}
+	else
+	{
+		cocos2d::AudioEngine::play2d("coin.mp3", false);
+	}
     // Fade out and remove
     auto fadeOut = FadeOut::create(0.2f);
     auto remove = RemoveSelf::create();

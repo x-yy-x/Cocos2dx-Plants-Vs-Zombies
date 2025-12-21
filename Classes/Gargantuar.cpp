@@ -262,6 +262,7 @@ void Gargantuar::update(float delta)
             if (_targetPlant && !_targetPlant->isDead())
             {
                 _targetPlant->takeDamage((int)ATTACK_DAMAGE);
+                cocos2d::AudioEngine::play2d("gargantuar-thump.mp3", false, 1.0f);
                 CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
 
                 // Check if plant died

@@ -61,7 +61,7 @@ bool Zomboni::init()
     }
 
     // Enable per-frame update
-
+    cocos2d::AudioEngine::play2d("zomboni.mp3", false, 1.0f);
     this->setScale(0.45f);
     this->scheduleUpdate();
 

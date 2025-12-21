@@ -3,6 +3,7 @@
 #include "PlayerProfile.h"
 #include "ui/CocosGUI.h"
 #include "audio/include/AudioEngine.h"
+#include "ccRandom.h"
 
 USING_NS_CC;
 
@@ -19,7 +20,7 @@ static const int PRICE_GATLING_PEA = 5000;
 static const int PRICE_SPIKE_ROCK = 3000;
 
 static const float DAVE_FRAME_DELAY = 0.10f;
-static int DAVE_IDLE_LOOPS = 5;
+static int DAVE_IDLE_LOOPS = 3;
 
 Scene* ShopScene::createScene()
 {
@@ -39,6 +40,7 @@ bool ShopScene::init()
         return false;
     }
 
+    cocos2d::AudioEngine::play2d("title.mp3", true);
     setupUI();
     setupDaveAnimation();
     setupShopItems();
@@ -101,27 +103,35 @@ void ShopScene::setupDaveAnimation()
     _daveSprite->setPosition(Vec2(150 + origin.x, 150 + origin.y));
     this->addChild(_daveSprite, 1);
 
+    // idling 动画
     auto idleAnimation = Animation::create();
-    for (int i = 1; i <= 17; ++i)
-    {
+    for (int i = 1; i <= 17; ++i) {
         idleAnimation->addSpriteFrameWithFile(StringUtils::format("dave/idling/1 (%d).png", i));
     }
     idleAnimation->setDelayPerUnit(DAVE_FRAME_DELAY);
 
+    // speaking 动画
     auto speakingAnimation = Animation::create();
-    for (int i = 1; i <= 13; ++i)
-    {
+    for (int i = 1; i <= 13; ++i) {
         speakingAnimation->addSpriteFrameWithFile(StringUtils::format("dave/speaking/1 (%d).png", i));
     }
     speakingAnimation->setDelayPerUnit(DAVE_FRAME_DELAY);
 
+    // 随机声音 Lambda
+    auto playRandomDaveSound = CallFunc::create([]() {
+        int randNum = cocos2d::random(1, 4);
+        std::string soundFile = cocos2d::StringUtils::format("dave%d.mp3", randNum);
+        cocos2d::AudioEngine::play2d(soundFile, false, 1.0f);
+        });
+
     auto idleOnce = Animate::create(idleAnimation);
     auto idleRepeat = Repeat::create(idleOnce, DAVE_IDLE_LOOPS);
     auto speakOnce = Animate::create(speakingAnimation);
-    auto cycle = Sequence::create(idleRepeat, speakOnce, nullptr);
+
+    // 组合序列
+    auto cycle = Sequence::create(idleRepeat, playRandomDaveSound, speakOnce, nullptr);
     _daveSprite->runAction(RepeatForever::create(cycle));
 }
-
 void ShopScene::setupShopItems()
 {
     auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -189,11 +199,14 @@ void ShopScene::createShopItem(const std::string& image, const std::string& name
                 hitRect.merge(priceRect);
             }
             Vec2 pInParent = target->getParent()->convertToNodeSpace(touch->getLocation());
-            if (!hitRect.containsPoint(pInParent)) return false;
-
-            if (isPlant && PlayerProfile::getInstance()->isPlantUnlocked(plantName))
+            if (!hitRect.containsPoint(pInParent)) {
                 return false;
+            }
 
+            if (isPlant && PlayerProfile::getInstance()->isPlantUnlocked(plantName)) {
+                cocos2d::AudioEngine::play2d("buzzer.mp3");
+                return false;
+            }
             if (PlayerProfile::getInstance()->spendCoins(price))
             {
                 cocos2d::AudioEngine::play2d("buttonclick.mp3");

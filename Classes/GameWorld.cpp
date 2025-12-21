@@ -452,7 +452,7 @@ bool GameWorld::init()
     // TODO: Remove this before final release
 
     {
-        auto debugZombie = PoleVaulter::createZombie();
+        auto debugZombie = Gargantuar::createZombie();
         if (debugZombie)
         {
             int row = 2;
@@ -1055,6 +1055,7 @@ void GameWorld::updateZombies(float delta)
                             mower->start();
                         } else {
                             // kill zombies that the mower drives through
+                            cocos2d::AudioEngine::play2d("limbs-pop.mp3", false, 1.0f);
                             zombie->takeDamage(99999);
                         }
                     }
@@ -1554,7 +1555,7 @@ void GameWorld::showPauseMenu(Ref* sender)
 
     _isPaused = true;
     Director::getInstance()->pause();
-
+    cocos2d::AudioEngine::play2d("pause_menu.mp3", false);
     _pauseMenuLayer = Layer::create();
     _pauseMenuLayer->setPosition(Vec2::ZERO);
     this->addChild(_pauseMenuLayer, UI_LAYER + 10);

@@ -1,6 +1,7 @@
 #include "Sunshroom.h"
 #include "Sun.h"
 #include "GameWorld.h"
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
@@ -379,7 +380,7 @@ void Sunshroom::startGrowingSequence()
     {
         growUpAction = DelayTime::create(1.0f);
     }
-
+    cocos2d::AudioEngine::play2d("plantgrow.mp3", false, 1.0f);
     auto switchToGrown = CallFunc::create(CC_CALLBACK_0(Sunshroom::onGrowthSequenceFinished, this));
     auto sequence = Sequence::create(scaleUp, growUpAction, switchToGrown, nullptr);
     this->runAction(sequence);
