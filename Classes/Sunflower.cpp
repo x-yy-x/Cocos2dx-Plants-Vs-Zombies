@@ -22,7 +22,7 @@ Sunflower::Sunflower()
 // ------------------------------------------------------------------------
 bool Sunflower::init()
 {
-    return initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 100, SUN_PRODUCTION_INTERVAL);
+    return initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 80, SUN_PRODUCTION_INTERVAL);
 }
 
 // ------------------------------------------------------------------------

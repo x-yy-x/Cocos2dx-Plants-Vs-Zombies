@@ -31,7 +31,7 @@ bool Puffshroom::init()
 {
     // Initialize with basic plant settings (like Sunshroom does)
     // Use a neutral init image as default, animation will be set in first update
-    if (!initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 0, ATTACK_COOLDOWN))
+    if (!initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 80, ATTACK_COOLDOWN))
     {
         return false;
     }

@@ -11,7 +11,7 @@ USING_NS_CC;
 const std::string Sunshroom::IMAGE_FILENAME = "sunshroom/init/1 (1).png";
 const cocos2d::Rect Sunshroom::INITIAL_PIC_RECT = Rect::ZERO;
 const cocos2d::Size Sunshroom::OBJECT_SIZE = Size(85.333f, 78.0f);
-const float Sunshroom::SUN_PRODUCTION_INTERVAL = 15.0f;  // Produce sun every 24 seconds
+const float Sunshroom::SUN_PRODUCTION_INTERVAL = 15.0f;  // Produce sun every 15 seconds
 const float Sunshroom::GROWTH_TIME = 25.0f;              // Time to grow from small to grown (5 seconds)
 const float Sunshroom::SMALL_SCALE = 0.7f;              // Scale factor for small Sunshroom
 const float Sunshroom::GROWN_SCALE = 1.0f;              // Scale factor for grown Sunshroom
@@ -35,7 +35,7 @@ Sunshroom::Sunshroom()
 // ------------------------------------------------------------------------
 bool Sunshroom::init()
 {
-    if (!initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 25, SUN_PRODUCTION_INTERVAL))
+    if (!initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 80, SUN_PRODUCTION_INTERVAL))
     {
         return false;
     }

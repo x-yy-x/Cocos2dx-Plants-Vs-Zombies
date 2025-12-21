@@ -19,7 +19,7 @@ ThreePeater::ThreePeater()
 // ------------------------------------------------------------------------
 bool ThreePeater::init()
 {
-    return initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 300, 1.5f);
+    return initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 80, 1.5f);
 }
 
 // ------------------------------------------------------------------------

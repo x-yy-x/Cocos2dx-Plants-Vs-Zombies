@@ -32,6 +32,7 @@
 #include "TwinSunflower.h"
 #include "GatlingPea.h"
 #include "SpikeRock.h"
+#include "PotatoMine.h"
 #include "Rake.h"
 #include "Mower.h"
 #include "coin.h"
@@ -124,7 +125,7 @@ bool GameWorld::init()
     _shovelSelected = false;
     _shovel = nullptr;
     _shovelBack = nullptr;
-    _sunCount = 225; // Initial sun count
+    _sunCount = 200; // Initial sun count
     _sunCountLabel = nullptr;
 
     // Initialize timed batch spawning (方案D)
@@ -243,7 +244,7 @@ bool GameWorld::init()
                     newPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM);
                     break;
                 case PlantName::PEASHOOTER:
-                    newPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER);
+                    newPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 5.0f, 100, PlantName::PEASHOOTER);
                     break;
                 case PlantName::REPEATER:
                     newPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER);
@@ -255,25 +256,28 @@ bool GameWorld::init()
                     newPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0, PlantName::PUFFSHROOM);
                     break;
                 case PlantName::WALLNUT:
-                    newPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50, PlantName::WALLNUT);
+                    newPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 20.0f, 50, PlantName::WALLNUT);
                     break;
                 case PlantName::CHERRYBOMB:
-                    newPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150, PlantName::CHERRYBOMB);
+                    newPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 3.0f, 150, PlantName::CHERRYBOMB);
                     break;
                 case PlantName::SPIKEWEED:
-                    newPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED);
+                    newPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 3.0f, 100, PlantName::SPIKEWEED);
                     break;
                 case PlantName::JALAPENO:
-                    newPacket = SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO);
+                    newPacket = SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 3.0f, 125, PlantName::JALAPENO);
                     break;
                 case PlantName::TWINSUNFLOWER:
-                    newPacket = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
+                    newPacket = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 3.0f, 150, PlantName::TWINSUNFLOWER);
                     break;
                 case PlantName::GATLINGPEA:
-                    newPacket = SeedPacket::create<GatlingPea>("seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA);
+                    newPacket = SeedPacket::create<GatlingPea>("seedpacket_gatlingpea.png", 3.0f, 250, PlantName::GATLINGPEA);
+                    break;
+                case PlantName::POTATOMINE:
+                    newPacket = SeedPacket::create<PotatoMine>("seedpacket_potatoBomb.png", 15.0f, 25, PlantName::POTATOMINE);
                     break;
                 case PlantName::SPIKEROCK:
-                    newPacket = SeedPacket::create<SpikeRock>("seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK);
+                    newPacket = SeedPacket::create<SpikeRock>("seedpacket_spikerock.png", 3.0f, 125, PlantName::SPIKEROCK);
                     break;
                 default:
                     break;
@@ -300,7 +304,8 @@ bool GameWorld::init()
         auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED);
         auto jalapenoPacket= SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO);
         auto twinSunflowerPacket = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
-        auto gatlingPeaPacket= SeedPacket::create<GatlingPea>("seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA);
+        auto gatlingPeaPacket = SeedPacket::create<GatlingPea>("seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA);
+        auto potatoMinePacket= SeedPacket::create<PotatoMine>("seedpacket_potatoBomb.png", 30.0f, 25, PlantName::POTATOMINE);
         auto spikeRockPacket = SeedPacket::create<SpikeRock>("seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK);
 
         if (sunflowerPacket && sunshroomPacket && peashooterPacket && 
@@ -316,6 +321,7 @@ bool GameWorld::init()
             _seedPackets.push_back(threepeaterPacket);
             _seedPackets.push_back(puffshroomPacket);
             _seedPackets.push_back(wallnutPacket);
+            _seedPackets.push_back(potatoMinePacket);
             _seedPackets.push_back(cherryBombPacket);
             _seedPackets.push_back(spikeWeedPacket);
             _seedPackets.push_back(jalapenoPacket);
@@ -438,55 +444,59 @@ bool GameWorld::init()
         this->addChild(speedMenu, UI_LAYER);
     }
 
-    // DEBUG:rake
-    auto rake = Rake::create();
-    if (rake)
-    {
-        float y = GRID_ORIGIN.y + 2 * CELLSIZE.height + CELLSIZE.height * 0.6f;
-        float x = visibleSize.width - 500.0f;
-        rake->setPosition(Vec2(x, y));
-        this->addChild(rake, ENEMY_LAYER);
-        _rakePerRow[2] = rake;
-    }
-    // DEBUG: Spawn one zombie at start for testing
-    // TODO: Remove this before final release
 
-    {
-        auto debugZombie = Gargantuar::createZombie();
-        if (debugZombie)
+    // debug mode
+    bool debug = false;
+    if (debug) {
+        // DEBUG:rake
+        auto rake = Rake::create();
+        if (rake)
         {
-            int row = 2;
-            const float ZOMBIE_Y_OFFSET = 0.7f;
-            float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
-            float x = visibleSize.width - 200; 
-            debugZombie->setPosition(Vec2(x, y));
-            this->addChild(debugZombie, ENEMY_LAYER);
-            _zombiesInRow[row].push_back(debugZombie);
-            CCLOG("DEBUG: Spawned test zombie at row %d", row);
+            float y = GRID_ORIGIN.y + 2 * CELLSIZE.height + CELLSIZE.height * 0.6f;
+            float x = visibleSize.width - 500.0f;
+            rake->setPosition(Vec2(x, y));
+            this->addChild(rake, ENEMY_LAYER);
+            _rakePerRow[2] = rake;
+        }
+
+        // DEBUG: Spawn one zombie at start for testing
+        // TODO: Remove this before final release
+        {
+            auto debugZombie = Zombie::createZombie();
+            if (debugZombie)
+            {
+                int row = 2;
+                const float ZOMBIE_Y_OFFSET = 0.7f;
+                float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
+                float x = visibleSize.width - 200;
+                debugZombie->setPosition(Vec2(x, y));
+                this->addChild(debugZombie, ENEMY_LAYER);
+                _zombiesInRow[row].push_back(debugZombie);
+                CCLOG("DEBUG: Spawned test zombie at row %d", row);
+            }
+        }
+
+        {
+            auto debugCoin0 = Coin::create(Coin::CoinType::SILVER);
+            if (debugCoin0) {
+                debugCoin0->setPosition(Vec2(300, 300));
+                this->addChild(debugCoin0, SUN_LAYER);
+                _coins.push_back(debugCoin0);
+            }
+            auto debugCoin1 = Coin::create(Coin::CoinType::GOLD);
+            if (debugCoin1) {
+                debugCoin1->setPosition(Vec2(500, 300));
+                this->addChild(debugCoin1, SUN_LAYER);
+                _coins.push_back(debugCoin1);
+            }
+            auto debugCoin2 = Coin::create(Coin::CoinType::DIAMOND);
+            if (debugCoin2) {
+                debugCoin2->setPosition(Vec2(800, 300));
+                this->addChild(debugCoin2, SUN_LAYER);
+                _coins.push_back(debugCoin2);
+            }
         }
     }
-
-    {
-        auto debugCoin0 = Coin::create(Coin::CoinType::SILVER);
-        if (debugCoin0) {
-            debugCoin0->setPosition(Vec2(300, 300));
-            this->addChild(debugCoin0, SUN_LAYER);
-            _coins.push_back(debugCoin0);
-        }
-        auto debugCoin1 = Coin::create(Coin::CoinType::GOLD);
-        if (debugCoin1) {
-            debugCoin1->setPosition(Vec2(500, 300));
-            this->addChild(debugCoin1, SUN_LAYER);
-            _coins.push_back(debugCoin1);
-        }
-        auto debugCoin2 = Coin::create(Coin::CoinType::DIAMOND);
-        if (debugCoin2) {
-            debugCoin2->setPosition(Vec2(800, 300));
-            this->addChild(debugCoin2, SUN_LAYER);
-            _coins.push_back(debugCoin2);
-        }
-    }
-
     // Setup user interaction
     setupUserInteraction();
 

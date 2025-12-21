@@ -8,7 +8,7 @@ USING_NS_CC;
 const std::string Sun::IMAGE_FILENAME = "sun_spritesheet.png";
 const int Sun::SUN_VALUE = 25;
 const float Sun::FALL_SPEED = 50.0f;  // pixels per second
-const float Sun::LIFETIME = 10.0f;    // 10 seconds
+const float Sun::LIFETIME = 15.0f;    // 15 seconds
 
 // Constructor
 Sun::Sun()

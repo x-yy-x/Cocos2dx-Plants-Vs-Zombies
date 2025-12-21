@@ -47,5 +47,6 @@ enum class PlantName
     THREEPEATER,
     TWINSUNFLOWER,
     WALLNUT,
+    POTATOMINE,
     UNKNOWN
 };

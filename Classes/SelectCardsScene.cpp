@@ -24,6 +24,7 @@
 #include "TwinSunflower.h"
 #include "GatlingPea.h"
 #include "SpikeRock.h"
+#include "PotatoMine.h"
 #include "audio/include/AudioEngine.h"
 #include "PlayerProfile.h"
 
@@ -303,6 +304,7 @@ void SelectCardsScene::createSelectCards()
     std::vector<PlantInfo> plants = {
         {"seedpacket_sunflower.png", 3.0f, 50, PlantName::SUNFLOWER},
         {"seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM},
+        {"seedpacket_potatoBomb.png", 30.0f, 25, PlantName::POTATOMINE},
         {"seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER},
         {"seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER},
         {"Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER},
@@ -313,7 +315,7 @@ void SelectCardsScene::createSelectCards()
         {"seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO},
         {"seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER},
         {"seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA},
-        {"seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK}
+        {"seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK},
     };
     
     // Create seed packets and select cards
@@ -355,6 +357,9 @@ void SelectCardsScene::createSelectCards()
                 break;
             case PlantName::GATLINGPEA:
                 seedPacket = SeedPacket::create<GatlingPea>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
+                break;
+            case PlantName::POTATOMINE:
+                seedPacket = SeedPacket::create<PotatoMine>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
                 break;
             case PlantName::SPIKEROCK:
                 seedPacket = SeedPacket::create<SpikeRock>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
