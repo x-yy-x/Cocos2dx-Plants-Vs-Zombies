@@ -24,7 +24,9 @@
 #include "TwinSunflower.h"
 #include "GatlingPea.h"
 #include "SpikeRock.h"
+#include "PotatoMine.h"
 #include "audio/include/AudioEngine.h"
+#include "PlayerProfile.h"
 
 USING_NS_CC;
 
@@ -302,6 +304,7 @@ void SelectCardsScene::createSelectCards()
     std::vector<PlantInfo> plants = {
         {"seedpacket_sunflower.png", 3.0f, 50, PlantName::SUNFLOWER},
         {"seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM},
+        {"seedpacket_potatoBomb.png", 30.0f, 25, PlantName::POTATOMINE},
         {"seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER},
         {"seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER},
         {"Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER},
@@ -312,7 +315,7 @@ void SelectCardsScene::createSelectCards()
         {"seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO},
         {"seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER},
         {"seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA},
-        {"seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK}
+        {"seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK},
     };
     
     // Create seed packets and select cards
@@ -355,6 +358,9 @@ void SelectCardsScene::createSelectCards()
             case PlantName::GATLINGPEA:
                 seedPacket = SeedPacket::create<GatlingPea>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
                 break;
+            case PlantName::POTATOMINE:
+                seedPacket = SeedPacket::create<PotatoMine>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
+                break;
             case PlantName::SPIKEROCK:
                 seedPacket = SeedPacket::create<SpikeRock>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
                 break;
@@ -386,9 +392,15 @@ void SelectCardsScene::createSelectCards()
             float x = cardStartX + col * cardSpacingX;
             float y = cardStartY - row * cardSpacingY;
             _allSelectCards[i]->setPosition(Vec2(x, y));
+
+            auto card = _allSelectCards[i];
+
+            // Check if the plant is unlocked
+            if (!PlayerProfile::getInstance()->isPlantUnlocked(card->getPlantName())) {
+                card->setColor(Color3B(100, 100, 100)); // Gray out the card
+            }
             
             // Set callback for card selection
-            auto card = _allSelectCards[i];
             auto listener = EventListenerTouchOneByOne::create();
             listener->setSwallowTouches(true);
             listener->onTouchBegan = [this, card](Touch* touch, Event* event) -> bool {
@@ -419,6 +431,12 @@ void SelectCardsScene::createSelectCards()
 void SelectCardsScene::onCardSelected(SelectCard* card)
 {
     if (!card) return;
+
+    // Check if the plant is unlocked before proceeding
+    if (!PlayerProfile::getInstance()->isPlantUnlocked(card->getPlantName())) {
+        cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+        return; // Not unlocked, do nothing
+    }
     
     bool wasSelected = card->isSelected();
     

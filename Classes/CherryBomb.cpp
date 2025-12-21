@@ -41,8 +41,8 @@ bool CherryBomb::init()
         return false;
     }
 
-    _maxHealth = 300;
-    _currentHealth = 300;
+    _maxHealth = 1000;
+    _currentHealth = 1000;
     _cooldownInterval = 0.0f;  // No cooldown needed
     _accumulatedTime = 0.0f;
     _idleAnimationDuration = 0.0f;

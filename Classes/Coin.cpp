@@ -1,5 +1,5 @@
 #include "Coin.h"
-
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
@@ -36,10 +36,10 @@ bool Coin::init(CoinType coinType)
         return false;
     }
 
-    // Load sun image
+    // Load coin image
     if (!Sprite::initWithFile(IMAGE_FILENAME[_coinType]))
     {
-        CCLOG("Failed to load sun image: %s", IMAGE_FILENAME.c_str());
+        CCLOG("Failed to load coin image: %s", IMAGE_FILENAME[_coinType].c_str());
         return false;
     }
 
@@ -84,7 +84,14 @@ int Coin::collect()
     }
 
     _isCollected = true;
-    
+	if (CoinType::DIAMOND == _coinType)
+	{
+		cocos2d::AudioEngine::play2d("diamond.mp3", false);
+	}
+	else
+	{
+		cocos2d::AudioEngine::play2d("coin.mp3", false);
+	}
     // Fade out and remove
     auto fadeOut = FadeOut::create(0.2f);
     auto remove = RemoveSelf::create();

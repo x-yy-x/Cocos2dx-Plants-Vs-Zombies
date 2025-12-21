@@ -18,6 +18,8 @@ class AttackingPlant;
 class BombPlant;
 class IceTile;
 class Coin;
+class Rake;
+class Mower;
 
 class GameWorld : public cocos2d::Scene
 {
@@ -262,11 +264,14 @@ private:
     std::vector<IceTile*> _iceTiles;
     std::vector<Coin*> _coins;
 
+    // Rake trap per row (optional)
+    Rake* _rakePerRow[MAX_ROW];
+    Mower* _mowerPerRow[MAX_ROW];
+
     // Timed batch spawning (方案D)
     int _currentWave;                // (legacy, unused by 方案D but kept)
     float _nextBatchTimeSec;         // 下一次脚本批次触发时间（秒）
     bool _finalWaveTriggered{ false }; // 是否已触发最终大波
-    //bool _gameStarted;               // Whether game has started
 
     // Win flow
     bool _finalWaveSpawningDone{ false };

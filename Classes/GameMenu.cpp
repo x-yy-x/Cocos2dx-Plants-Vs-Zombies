@@ -1,19 +1,14 @@
-/**
- * @file GameMenu.cpp
- * @brief ʵ����Ϸ���˵������������������úͲ˵����ܡ�
- */
-
 #include "GameMenu.h"
-#include "GameWorld.h" 
+#include "GameWorld.h"
 #include "SelectCardsScene.h"
+#include "ShopScene.h"
 #include "cocos2d.h"
-#include "ui/UIButton.h" 
+#include "ui/UIButton.h"
 #include "audio/include/AudioEngine.h"
-#include <vector> 
-#include <string> 
-#include <functional> 
+#include <vector>
+#include <string>
+#include <functional>
 
-// ʹ�������ռ�򻯴���
 USING_NS_CC;
 using namespace ui;
 
@@ -29,41 +24,21 @@ GameMenu::~GameMenu()
     }
 }
 
-// =========================================================================
-// 1. �������� (createScene)
-// =========================================================================
-
-Scene* GameMenu::createScene()
-{
-    // ʹ�� Cocos2d-x �� CREATE_FUNC �괴������ʵ��
-    return GameMenu::create();
-}
-
-// =========================================================================
-// 2. �������ýṹ�� (ģ�廯����)
-// =========================================================================
-
-/**
- * @brief ����˵���ť�����ýṹ�壬������ѭ���е����á�
- */
 struct ButtonConfig {
     std::string text;
-    // �ص�����
     std::function<void(Ref*)> callback;
 };
 
-/**
- * @brief �����һ����ť��ģ�壩���Ӿ������ṹ�塣
- */
 struct ButtonVisualTemplate {
-    float x_offset_ratio = 0.0f; // X �����������Ļ���Ŀ��ȵ�ƫ�Ʊ���
-    float rotation_angle = 0.0f; // ��ת�Ƕ�
-    float scale_factor = 1.0f;   // �Ŵ���
+    float x_offset_ratio = 0.0f;
+    float rotation_angle = 0.0f;
+    float scale_factor = 1.0f;
 };
 
-// =========================================================================
-// 3. ������ʼ�� (init)
-// =========================================================================
+Scene* GameMenu::createScene()
+{
+    return GameMenu::create();
+}
 
 bool GameMenu::init()
 {
@@ -78,22 +53,16 @@ bool GameMenu::init()
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // --- A. ���л����ֲ��� ---
     const float FONT_SIZE = 40;
-    const float VERTICAL_PADDING = 120.0f; // ��ť֮��Ĵ�ֱ���
-    // ���޸ĵ� 1�����������ϵ�������������ƫ����
-    const float START_Y_OFFSET = 250.0f; // �˵����������Ļ���ĵ�����ƫ����
+    const float VERTICAL_PADDING = 120.0f;
+    const float START_Y_OFFSET = 250.0f;
 
-    // --- B. ��һ����ť���Ӿ�ģ�� (���а�ť�������մ�ģ��) ---
     ButtonVisualTemplate DAY_MODE_TEMPLATE = {
-        // ���޸ĵ� 2�����������ҵ��������� X ��ƫ�Ʊ���
-        0.2f,     // X ��ƫ�Ʊ��� (0.1f ������Ļ���ȵ� 10% ƫ��)
-        // ���޸ĵ� 3������ת 10 ��
-        5.0f,    // ��ת�Ƕ� (10.0f)
-        1.2f      // �Ŵ��� (���ֲ���)
+        0.2f,
+        5.0f,
+        1.2f
     };
 
-    // --- C. ���� Lambda ����ʽ���ڻص� ---
     auto dayModeCallback = [](Ref* sender) {
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f, SelectCardsScene::createScene(false)));
     };
@@ -102,19 +71,21 @@ bool GameMenu::init()
         Director::getInstance()->replaceScene(TransitionFade::create(0.5f, SelectCardsScene::createScene(true)));
     };
 
+    auto shopCallback = [](Ref* sender) {
+        Director::getInstance()->replaceScene(TransitionFade::create(0.5f, ShopScene::createScene()));
+    };
+
     auto exitCallback = [this](Ref* sender) {
         this->menuCloseCallback(sender);
-        };
+    };
 
-    // --- D. �򻯰�ť�����б� ---
     std::vector<ButtonConfig> configs = {
         { "1. day mode",         dayModeCallback },
         { "2. night mode",       nightModeCallback },
-        { "3. shop",             nullptr },
+        { "3. shop",             shopCallback },
         { "4. exit",             exitCallback }
     };
 
-    // --- E. ȫ�ֱ������� ---
     auto background = Sprite::create("MenuBackground.png");
     if (background)
     {
@@ -129,8 +100,6 @@ bool GameMenu::init()
         log("Error: Failed to load background image: MenuBackground.png");
     }
 
-    // --- F. �Զ������Ͷ�λ��ť�������߼��� ---
-    // ���޸ĵ㡿��Y ����ʼλ��ʹ���µ� START_Y_OFFSET
     float currentY = visibleSize.height / 2 + origin.y + START_Y_OFFSET;
     float centerX = visibleSize.width / 2 + origin.x;
 
@@ -143,39 +112,25 @@ bool GameMenu::init()
         button->setTitleFontSize(FONT_SIZE);
         button->setTitleColor(Color3B::WHITE);
 
-        // --- Ӧ��ģ����� ---
-
-        // 1. ���� X ���꣨ʹ��ģ��� X ƫ�ƣ�
         float finalX = centerX + (visibleSize.width * DAY_MODE_TEMPLATE.x_offset_ratio);
-
-        // 2. ����λ�ã�Y ������ѭ���м��㣩
         button->setPosition(Vec2(finalX, currentY));
-
-        // 3. ������ת�Ƕȣ�ʹ��ģ�����ת�ǣ�
         button->setRotation(DAY_MODE_TEMPLATE.rotation_angle);
-
-        // 4. ���÷Ŵ�����ʹ��ģ������ű�����
         button->setScale(DAY_MODE_TEMPLATE.scale_factor);
 
-        // ------------------------------------
-
-        // ���ûص�����
         if (config.callback)
         {
             button->addTouchEventListener([callback = config.callback](Ref* sender, Widget::TouchEventType type) {
                 if (type == Widget::TouchEventType::ENDED) {
                     callback(sender);
                 }
-                });
+            });
         }
 
         this->addChild(button, 2);
 
-        // ������һ����ť��Y����
         currentY -= VERTICAL_PADDING;
     }
 
-    // Stop any existing music and play menu music
     if (_backgroundMusicId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
     {
         cocos2d::AudioEngine::stop(_backgroundMusicId);
@@ -185,20 +140,10 @@ bool GameMenu::init()
     return true;
 }
 
-// =========================================================================
-// 4. �˳���Ϸ�ص� (menuCloseCallback)
-// =========================================================================
-
-/**
- * @brief �˳���Ϸ�Ļص�������
- * @param sender �����ص��Ķ���
- */
 void GameMenu::menuCloseCallback(Ref* sender)
 {
-    // ֹͣ Cocos2d-x �������ѭ��
     Director::getInstance()->end();
 
-    // ��� iOS ƽ̨����Ҫ��ʽ���� exit(0)
 #if (CC_TARGET_PLATFORM == CC_PLATFORM_IOS)
     exit(0);
 #endif

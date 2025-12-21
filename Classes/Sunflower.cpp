@@ -9,7 +9,7 @@ USING_NS_CC;
 const std::string Sunflower::IMAGE_FILENAME = "Sunflower_spritesheet.png";
 const cocos2d::Rect Sunflower::INITIAL_PIC_RECT = Rect(0.0f, 512.0f - 128.0f, 85.333f, 128.0f);
 const cocos2d::Size Sunflower::OBJECT_SIZE = Size(85.333f, 128.0f);
-const float Sunflower::SUN_PRODUCTION_INTERVAL = 24.0f;  // Produce sun every 24 seconds
+const float Sunflower::SUN_PRODUCTION_INTERVAL = 12.0f;  // Produce sun every 24 seconds
 
 // Protected constructor
 Sunflower::Sunflower()
@@ -22,7 +22,7 @@ Sunflower::Sunflower()
 // ------------------------------------------------------------------------
 bool Sunflower::init()
 {
-    return initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 100, SUN_PRODUCTION_INTERVAL);
+    return initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 80, SUN_PRODUCTION_INTERVAL);
 }
 
 // ------------------------------------------------------------------------
