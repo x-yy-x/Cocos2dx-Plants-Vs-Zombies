@@ -81,7 +81,8 @@ std::vector<Bullet*> SpikeWeed::checkAndAttack(std::vector<Zombie*> allZombiesIn
                 this->takeDamage(1000);
             }
             else {
-                zombie->takeDamage(10);
+                zombie->takeDamage(20);
+                cocos2d::AudioEngine::play2d("bullet_hit.mp3");
             }
             
         }

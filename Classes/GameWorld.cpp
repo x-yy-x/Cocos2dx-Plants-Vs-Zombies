@@ -528,9 +528,10 @@ void GameWorld::setupUserInteraction()
             {
                 if (sun->getBoundingBox().containsPoint(pos))
                 {
-                    int sunValue = sun->collect();
-                    _sunCount += sunValue;
-                    updateSunDisplay();
+                    sun->collect([this](int sunvalue) {
+                        _sunCount += sunvalue;
+                        updateSunDisplay();
+                        });
                     cocos2d::AudioEngine::play2d("sun_pickup_sound.mp3", false);
                     CCLOG("Sun collected! +%d sun (Total: %d)", sunValue, _sunCount);
                     return true;
@@ -541,12 +542,11 @@ void GameWorld::setupUserInteraction()
         for (auto coin : _coins) {
             if (coin && coin->isCollectible()) {
                 if (coin->getBoundingBox().containsPoint(pos)) {
-                    int gained = coin->collect();
-                    if (gained > 0) {
-                        PlayerProfile::getInstance()->addCoins(gained);
+                    coin->collect([this](int coinvalue) {
+                        PlayerProfile::getInstance()->addCoins(coinvalue);
                         updateMoneyBankDisplay();
-                    }
-                    // 音效可在 coin->collect() 内或此处补充
+                        });
+                    
                     return true;
                 }
             }
@@ -1008,8 +1008,26 @@ void GameWorld::updateBullets(float delta)
                                 // Hit!
                                 zombie->takeDamage(bullet->getDamage());
                                 bullet->deactivate();
-                                if (dynamic_cast<Zomboni*>(zombie) == nullptr && dynamic_cast<BucketHeadZombie*>(zombie) == nullptr)
-                                    cocos2d::AudioEngine::play2d("bullet_hit.mp3", false);
+                                auto zomboni = dynamic_cast<Zomboni*>(zombie);
+                                auto bucketheadzombie = dynamic_cast<BucketHeadZombie*>(zombie);
+                                if (!zomboni && !bucketheadzombie || bucketheadzombie && !bucketheadzombie->hasBucketHead())
+                                    cocos2d::AudioEngine::play2d("bullet_hit.mp3");
+                                else {
+                                    int r = cocos2d::random(1, 3);
+                                    switch (r) {
+                                        case 1:
+                                            cocos2d::AudioEngine::play2d("hittingiron1.mp3");
+                                            break;
+                                        case 2:
+                                            cocos2d::AudioEngine::play2d("hittingiron2.mp3");
+                                            break;
+                                        case 3:
+                                            cocos2d::AudioEngine::play2d("hittingiron3.mp3");
+                                            break;
+                                        default:
+                                            break;
+                                    }
+                                }
                                 break; // Bullet hits one zombie and disappears
                             }
                         }

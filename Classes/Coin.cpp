@@ -13,6 +13,7 @@ const float Coin::LIFETIME = 10.0f;
 // Constructor
 Coin::Coin()
     : _isCollected(false)
+    , _isCollecting(false)
     , _lifeTime(0.0f)
     , _targetPos(Vec2::ZERO)
     , _coinScale(1.0f)
@@ -61,7 +62,7 @@ bool Coin::init(CoinType coinType)
 // Update function
 void Coin::update(float delta)
 {
-    if (_isCollected)
+    if (_isCollected || _isCollecting)
     {
         return;
     }
@@ -76,15 +77,14 @@ bool Coin::isCollectible() const
 }
 
 // Collect sun
-int Coin::collect()
+void Coin::collect(const std::function<void(int)>& onfinished)
 {
     if (_isCollected)
     {
-        return 0;
+        return;
     }
-
-    _isCollected = true;
-	if (CoinType::DIAMOND == _coinType)
+    this->_isCollecting = true;
+	if (_coinType == CoinType::DIAMOND)
 	{
 		cocos2d::AudioEngine::play2d("diamond.mp3", false);
 	}
@@ -93,13 +93,20 @@ int Coin::collect()
 		cocos2d::AudioEngine::play2d("coin.mp3", false);
 	}
     // Fade out and remove
+    auto move = MoveTo::create(0.8f, Vec2(50, 20));
     auto fadeOut = FadeOut::create(0.2f);
-    auto remove = RemoveSelf::create();
-    auto sequence = Sequence::create(fadeOut, remove, nullptr);
+    auto addCoinValue = CallFunc::create([this, onfinished]() {
+        onfinished(COIN_VALUE[_coinType]);
+        });
+    auto markCollected = CallFunc::create([this]() {
+        this->_isCollected = true;
+        this->_isCollecting = false;
+        });
+    auto sequence = Sequence::create(move, fadeOut, addCoinValue, markCollected, nullptr);
     this->runAction(sequence);
 
     CCLOG("Coin collected! Value: %d", COIN_VALUE[_coinType]);
-    return COIN_VALUE[_coinType];
+    return;
 }
 
 // Check if should be removed

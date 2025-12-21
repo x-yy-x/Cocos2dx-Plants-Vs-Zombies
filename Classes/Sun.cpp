@@ -13,6 +13,7 @@ const float Sun::LIFETIME = 15.0f;    // 15 seconds
 // Constructor
 Sun::Sun()
     : _isCollected(false)
+    , _isCollecting(false)
     , _isFalling(false)
     , _lifeTime(0.0f)
     , _targetPos(Vec2::ZERO)
@@ -106,7 +107,7 @@ Sun* Sun::createFromSky(int targetGridCol, float startY)
 // Update function
 void Sun::update(float delta)
 {
-    if (_isCollected)
+    if (_isCollected || _isCollecting)
     {
         return;
     }
@@ -140,23 +141,30 @@ bool Sun::isCollectible() const
 }
 
 // Collect sun
-int Sun::collect()
+void Sun::collect(const std::function<void(int)>& onfinish)
 {
     if (_isCollected)
     {
-        return 0;
+        return;
     }
-
-    _isCollected = true;
-    
+    this->_isFalling = false;
+    this->_isCollecting = true;
     // Fade out and remove
+    
+    auto move = MoveTo::create(0.8f, Vec2(95, 675));
     auto fadeOut = FadeOut::create(0.2f);
-    auto remove = RemoveSelf::create();
-    auto sequence = Sequence::create(fadeOut, remove, nullptr);
+    auto addSunValue = CallFunc::create([this, onfinish]() {
+        onfinish(_sunValue);
+        });
+    auto markCollected = CallFunc::create([this]() {
+        this->_isCollected = true;
+        this->_isCollecting = false;
+        });
+    auto sequence = Sequence::create(move, fadeOut, addSunValue, markCollected, nullptr);
     this->runAction(sequence);
 
     CCLOG("Sun collected! Value: %d", _sunValue);
-    return _sunValue;
+    return;
 }
 
 // Check if should be removed

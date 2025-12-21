@@ -84,6 +84,8 @@ public:
 
     virtual bool isTrulyDead() const { return _isDead && !_isDying; }
 
+    inline bool hasBucketHead() const { return !_useNormalZombie; }
+
 protected:
     // Protected constructor
     BucketHeadZombie();

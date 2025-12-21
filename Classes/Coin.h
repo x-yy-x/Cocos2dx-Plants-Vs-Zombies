@@ -41,7 +41,7 @@ public:
      * @brief Collect the sun (returns sun value and marks for removal)
      * @return Coin value (usually 25)
      */
-    int collect();
+    void collect(const std::function<void(int)>& onfinished);
 
     /**
      * @brief Check if sun should be removed (expired or collected)
@@ -69,6 +69,7 @@ protected:
     // Member variables
     // ----------------------------------------------------
     bool _isCollected;        // Has been collected
+    bool _isCollecting;
     float _lifeTime;          // Time elapsed since creation
     cocos2d::Vec2 _targetPos; // Target position for falling suns
     float _coinScale;          // Scale factor for sun size

@@ -197,20 +197,7 @@ void Zomboni::takeDamage(int damage)
     {
         return;
     }
-    int r = cocos2d::random(1, 3);
-    switch (r) {
-        case 1:
-            cocos2d::AudioEngine::play2d("hittingiron1.mp3");
-            break;
-        case 2:
-            cocos2d::AudioEngine::play2d("hittingiron2.mp3");
-            break;
-        case 3:
-            cocos2d::AudioEngine::play2d("hittingiron3.mp3");
-            break;
-        default:
-            break;
-    }
+    
     _currentHealth -= damage;
     // CCLOG("Zombie took %d damage, remaining health: %d", damage, _currentHealth); // Reduced logging
 

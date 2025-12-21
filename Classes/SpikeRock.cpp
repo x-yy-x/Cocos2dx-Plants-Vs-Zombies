@@ -101,7 +101,8 @@ std::vector<Bullet*> SpikeRock::checkAndAttack(std::vector<Zombie*> allZombiesIn
                 this->takeDamage(1000);
             }
             else {
-                zombie->takeDamage(10);
+                cocos2d::AudioEngine::play2d("bullet_hit.mp3");
+                zombie->takeDamage(20);
             }
             
         }

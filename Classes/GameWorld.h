@@ -254,7 +254,6 @@ private:
     cocos2d::Label* _sunCountLabel;
 
     // 金币系统
-    int _moneyCount;
     cocos2d::Label* _moneyCountLabel;
 
     // Containers for game objects

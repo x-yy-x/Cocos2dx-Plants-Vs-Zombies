@@ -60,6 +60,7 @@ protected:
     static const std::string IMAGE_FILENAME_THIRD;
     static const cocos2d::Rect INITIAL_PIC_RECT;
 
+    const int _cooldownInterval = 2;
     SpikeRockState _currentState;
     /**
      * @brief Set up animation frames
