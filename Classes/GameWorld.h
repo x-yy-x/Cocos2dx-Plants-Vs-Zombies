@@ -106,11 +106,13 @@ public:
 
     void removeIceInRow(int row);
 
+	int getSunCount() const { return _sunCount; }
+
 private:
     /** 脚本式分阶段批次生成（方案D） */
     void spawnTimedBatch(float normalizedTime);
     void spawnFinalWave();
-    void spawnSubBatch(int normalCnt, int poleCnt, int zamboniCnt, int gargantuarCnt, float delaySec);
+    void spawnSubBatch(int normalCnt, int poleCnt, int bucketHeadCnt, int zamboniCnt, int gargantuarCnt, float delaySec);
     int randRange(int a, int b);
     int applyNightFactor(int baseCount, bool allowZero = false);
 
@@ -195,6 +197,7 @@ private:
      * @brief Update sun counter display
      */
     void updateSunDisplay();
+
 
     /**
      * @brief Update all suns (movement and lifetime)

@@ -1,5 +1,6 @@
 #include "SeedPacket.h"
 #include "Plant.h"
+#include "GameWorld.h"
 
 USING_NS_CC;
 
@@ -64,17 +65,18 @@ void SeedPacket::onEnter()
 // Update function
 void SeedPacket::update(float delta)
 {
+    auto currentScene = Director::getInstance()->getRunningScene();
+    auto gameWorld = dynamic_cast<GameWorld*>(currentScene);
     if (_isOnCooldown)
     {
         _accumulatedTime += delta;
 
         if (_accumulatedTime >= _cooldownTime)
         {
-            // Cooldown finished - restore to full brightness
+            // 冷却结束，恢复到 50% 灰度
             _isOnCooldown = false;
             _accumulatedTime = 0.0f;
-            this->setColor(Color3B::WHITE);
-            CCLOG("Seed packet cooldown finished!");
+
         }
         else
         {
@@ -84,8 +86,14 @@ void SeedPacket::update(float delta)
     }
     else
     {
-        // Ensure full brightness when not on cooldown
-        this->setColor(Color3B::WHITE);
+        if (gameWorld->getSunCount() < _sunCost) {
+            this->setColor(Color3B(128, 128, 128));
+            CCLOG("Seed packet cooldown finished!");
+        }
+        else {
+            this->setColor(Color3B::WHITE);
+            CCLOG("Seed packet cooldown finished and ready to use!");
+        }
     }
 }
 

@@ -501,6 +501,7 @@ bool GameWorld::init()
     // Setup user interaction
     setupUserInteraction();
 
+
     // Enable update loop
     this->scheduleUpdate();
 
@@ -1221,7 +1222,30 @@ void GameWorld::removeExpiredCoins()
         _coins.end()
     );
 }
+/*
+// 根据阳光数量刷新种子卡片颜色（冷却结束但阳光不足时保持 50% 灰度）
+void GameWorld::refreshSeedPacketColors()
+{
+    for (auto packet : _seedPackets)
+    {
+        if (!packet) continue;
 
+        // 只有在冷却结束后才根据阳光数量亮/灰
+        if (packet->isReady())
+        {
+            if (_sunCount >= packet->getSunCost())
+            {
+                packet->setColor(cocos2d::Color3B::WHITE); // 亮色
+            }
+            else
+            {
+                packet->setColor(cocos2d::Color3B(128,128,128)); // 50% 灰
+            }
+        }
+        // 冷却中的卡片颜色由 SeedPacket 自己控制
+    }
+}
+*/
 void GameWorld::updateSunDisplay()
 {
     if (_sunCountLabel)
@@ -1257,7 +1281,7 @@ int GameWorld::applyNightFactor(int baseCount, bool allowZero)
     return std::max(0, c);
 }
 
-void GameWorld::spawnSubBatch(int normalCnt, int poleCnt, int zamboniCnt, int gargantuarCnt, float delaySec)
+void GameWorld::spawnSubBatch(int normalCnt, int poleCnt, int bucketHeadCnt, int zamboniCnt, int gargantuarCnt, float delaySec)
 {
     this->runAction(Sequence::create(
         DelayTime::create(delaySec),
@@ -1280,6 +1304,12 @@ void GameWorld::spawnSubBatch(int normalCnt, int poleCnt, int zamboniCnt, int ga
             }
             for (int i = 0; i < poleCnt; ++i) {
                 if (auto z = PoleVaulter::createZombie()) {
+                    int row = rand() % MAX_ROW;
+                    spawnAtRow(z, row);
+                }
+            }
+            for (int i = 0; i < bucketHeadCnt; ++i) {
+                if (auto z = BucketHeadZombie::createZombie()) {
                     int row = rand() % MAX_ROW;
                     spawnAtRow(z, row);
                 }
@@ -1310,6 +1340,7 @@ void GameWorld::spawnTimedBatch(float normalizedTime)
     // 阶段参数
     int normalMin=1, normalMax=2;
     float poleProb = 0.0f;
+    float bucketHeadProb = 0.0f; // 新增铁桶概率
     float zamboniProb = 0.0f;
     float gargantuarProb = 0.0f;
     float intervalSec = 10.0f;
@@ -1324,14 +1355,16 @@ void GameWorld::spawnTimedBatch(float normalizedTime)
         intervalSec = 10.0f;
     } else if (p1) {
         normalMin = 3; normalMax = 5;
-        poleProb = 0.25f;
-        zamboniProb = 0.15f;      // 提前开放冰车，略提高概率
+        poleProb = 0.12f;         // 降低撑杆概率
+        bucketHeadProb = 0.12f;   // 新增铁桶概率
+        zamboniProb = 0.10f;      // 降低冰车概率
         gargantuarProb = 0.03f;   // 小概率出现巨人
         intervalSec = 10.0f;
     } else if (p2) {
         normalMin = 3; normalMax = 5;
-        poleProb = 0.25f;
-        zamboniProb = 0.30f;      // 明显提高冰车概率（仍少于撑杆总量）
+        poleProb = 0.20f;         // 降低撑杆概率
+        bucketHeadProb = 0.25f;   // 提高铁桶概率
+        zamboniProb = 0.25f;      // 降低冰车概率
         gargantuarProb = 0.08f;   // 略提高巨人概率
         intervalSec = 12.0f;
     }
@@ -1339,6 +1372,7 @@ void GameWorld::spawnTimedBatch(float normalizedTime)
     // 夜间调整概率
     float probScale = _isNightMode ? 0.8f : 1.0f;
     poleProb *= probScale;
+    bucketHeadProb *= probScale;
     zamboniProb *= probScale;
     gargantuarProb *= probScale;
 
@@ -1352,11 +1386,14 @@ void GameWorld::spawnTimedBatch(float normalizedTime)
     int zamboniCnt = 0;
     if (CCRANDOM_0_1() < zamboniProb) zamboniCnt = 1;
 
+    int bucketHeadCnt = 0;
+    if (CCRANDOM_0_1() < bucketHeadProb) bucketHeadCnt = 1;
+
     int gargantuarCnt = 0;
     if (CCRANDOM_0_1() < gargantuarProb) gargantuarCnt = 1; // 常规阶段最多1个巨人
 
     // 分发到子批
-    int nRemain = normalCnt, pRemain = poleCnt, zRemain = zamboniCnt, gRemain = gargantuarCnt;
+    int nRemain = normalCnt, pRemain = poleCnt, bRemain = bucketHeadCnt, zRemain = zamboniCnt, gRemain = gargantuarCnt;
     float startDelay = 0.0f;
 
     auto takePortion = [](int& remain, int slotsLeft){
@@ -1372,9 +1409,10 @@ void GameWorld::spawnTimedBatch(float normalizedTime)
         int slotsLeft = subBatches - i;
         int nThis = takePortion(nRemain, slotsLeft);
         int pThis = takePortion(pRemain, slotsLeft);
+        int bThis = takePortion(bRemain, slotsLeft);
         int zThis = takePortion(zRemain, slotsLeft);
         int gThis = takePortion(gRemain, slotsLeft);
-        spawnSubBatch(nThis, pThis, zThis, gThis, startDelay + i * subDelay);
+        spawnSubBatch(nThis, pThis, bThis, zThis, gThis, startDelay + i * subDelay);
     }
 
     // 下一批时间
@@ -1422,13 +1460,17 @@ void GameWorld::spawnFinalWave()
     z->setPosition(Vec2(x, y));
     this->addChild(z, ENEMY_LAYER);
     _zombiesInRow[3].push_back(z);
-    // 子批：0s巨人、1.2s普通+撑杆、2.4s冰车+普通、3.6s普通+撑杆、4.8s冰车+普通（都整体延后4秒）
-    spawnSubBatch(0, 0, 0, gCount, baseDelay + 0.0f);
+    // 最终波加入铁桶僵尸
+    int bucket2 = (CCRANDOM_0_1() < (_isNightMode ? 0.25f : 0.35f)) ? 1 : 0;
+    int bucket4 = (CCRANDOM_0_1() < (_isNightMode ? 0.20f : 0.30f)) ? 1 : 0;
+
+    // 子批：0s巨人、1.2s普通+撑杆+铁桶、2.4s冰车+普通、3.6s普通+撑杆+铁桶、4.8s冰车+普通（都整体延后4秒）
+    spawnSubBatch(0, 0, 0, 0, gCount, baseDelay + 0.0f);
     AudioEngine::play2d("zombies.mp3");
-    spawnSubBatch(normal2, pole2, 0, 0, baseDelay + 1.2f);
-    spawnSubBatch(normal3, 0, zambo3, 0, baseDelay + 2.4f);
-    spawnSubBatch(normal4, pole4, 0, 0, baseDelay + 3.6f);
-    spawnSubBatch(normal5, 0, zambo5, 0, baseDelay + 4.8f);
+    spawnSubBatch(normal2, pole2, bucket2, 0, 0, baseDelay + 1.2f);
+    spawnSubBatch(normal3, 0, 0, zambo3, 0, baseDelay + 2.4f);
+    spawnSubBatch(normal4, pole4, bucket4, 0, 0, baseDelay + 3.6f);
+    spawnSubBatch(normal5, 0, 0, zambo5, 0, baseDelay + 4.8f);
 
     // 在最后一批计划完毕后，标记最终波已全部释放完成（再稍微延迟一点点，确保排程添加完成）
     this->runAction(Sequence::create(
