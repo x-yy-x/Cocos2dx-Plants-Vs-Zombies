@@ -126,7 +126,7 @@ bool GameWorld::init()
     _shovelSelected = false;
     _shovel = nullptr;
     _shovelBack = nullptr;
-    _sunCount = 200; // Initial sun count
+    _sunCount = 200000; // Initial sun count
     _sunCountLabel = nullptr;
 
     // Initialize timed batch spawning (方案D)
@@ -534,7 +534,6 @@ void GameWorld::setupUserInteraction()
                         updateSunDisplay();
                         });
                     cocos2d::AudioEngine::play2d("sun_pickup_sound.mp3", false);
-                    CCLOG("Sun collected! +%d sun (Total: %d)", sunValue, _sunCount);
                     return true;
                 }
             }
@@ -1222,6 +1221,7 @@ void GameWorld::removeExpiredCoins()
         _coins.end()
     );
 }
+
 /*
 // 根据阳光数量刷新种子卡片颜色（冷却结束但阳光不足时保持 50% 灰度）
 void GameWorld::refreshSeedPacketColors()

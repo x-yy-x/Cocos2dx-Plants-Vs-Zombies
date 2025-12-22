@@ -67,6 +67,11 @@ void SeedPacket::update(float delta)
 {
     auto currentScene = Director::getInstance()->getRunningScene();
     auto gameWorld = dynamic_cast<GameWorld*>(currentScene);
+	if (!gameWorld)
+	{
+		CCLOG("SeedPacket update: GameWorld not found!");
+		return;
+	}
     if (_isOnCooldown)
     {
         _accumulatedTime += delta;
