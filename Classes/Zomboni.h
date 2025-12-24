@@ -21,19 +21,15 @@ class Plant;
 class Zomboni : public Zombie
 {
 public:
-    /**
-     * @brief Zombie state enumeration
-     */
+
     enum class ZombieState
     {
-        DRIVING,      // Walking state
-        DYING,         // Dying state
+        DRIVING,
+        DYING,
         SPECIAL
     };
 
-    /**
-     * @brief Zombie initialization function
-     */
+
     virtual bool init() override;
 
     // Implement the auto-generated static Zombie* create() function
@@ -46,7 +42,7 @@ public:
     static Zomboni* createZombie();
 
     // 选卡展示静态图
-    virtual cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos) override;
+    cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos);
 
     /**
      * @brief Update function called every frame for movement, attack, death, etc.
@@ -60,27 +56,8 @@ public:
      */
     void setState(ZombieState newState);
 
-    /**
-     * @brief Check if zombie is dead.
-     * @return true if dead, false if alive
-     */
-    bool isDead() const;
-
-    /**
-     * @brief Apply damage to zombie and reduce health.
-     * @param damage Damage value
-     */
-    void takeDamage(int damage);
-
-    /**
-     * @brief Check and handle plant encounters
-     * @param plants Vector of all plants in the scene
-     */
-    virtual void encounterPlant(const std::vector<Plant*>& plants);
-
     void setSpecialDeath();
 
-    virtual bool isTrulyDead() const { return _isDead && !_isDying; }
 
 protected:
     // Protected constructor
@@ -99,21 +76,12 @@ protected:
      */
     void initSpecialDieAnimation();
 
-    /**
-     * @brief Set up animation
-     */
-    virtual void setAnimation();
 
     /**
      * @brief Set animation corresponding to state
      * @param state Target state
      */
     void setAnimationForState(ZombieState state);
-
-    /**
-     * @brief Check collision with plants
-     */
-    void checkCollision(const std::vector<Plant*>& plants);
 
     void spawnIce();
 
@@ -122,21 +90,14 @@ protected:
     static const float ICE_STEP;
     static const float ICE_LENGTH ;
     static const int ICE_COUNT;
+    static const int MAX_HEALTH;
 
-
-    ZombieState _currentState;       // Current state
-    bool _isDead;                    // Is dead flag
-    int _maxHealth;                  // Maximum health
-    int _currentHealth;              // Current health
-    cocos2d::Vec2 _zombiePos;        // Zombie position
-    float _iceAccumulate;   // �ۻ��ƶ�����
-    int   _iceIndex;           // ��ǰ�õڼ��α�
+    ZombieState _currentState;
+    float _iceAccumulate;
+    int   _iceIndex;
     
     // Animation actions
     cocos2d::RepeatForever* _driveAction;
     cocos2d::Animate* _specialDieAction;
     
-    // Eating state
-    Plant* _targetPlant;             // Target plant being eaten
-    float _speed;                    // Current movement speed
 };

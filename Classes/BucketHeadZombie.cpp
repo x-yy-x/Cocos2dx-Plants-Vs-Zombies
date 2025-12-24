@@ -6,32 +6,11 @@ USING_NS_CC;
 
 Sprite* BucketHeadZombie::createShowcaseSprite(const Vec2& pos)
 {
-    float frameWidth = 1200.0f;
-    float frameHeight = 975.0f;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 7; row++)
-    {
-        for (int col = 0; col < 5; col++)
-        {
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                "bucket_head_idle_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
-    }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.06f);
+    auto animation = initAnimate("bucket_head_idle_spritesheet.png", 1200.0f, 975.0f, 7, 5, 35, 0.06f);
     auto animate = Animate::create(animation);
     auto _idleAction = RepeatForever::create(animate);
 
-    auto sp = Sprite::create("flag_zombie_idle_spritesheet.png", Rect(0, 0, frameWidth, frameHeight));
+    auto sp = Sprite::create();
     if (sp) {
         sp->setPosition(pos);
         sp->setScale(0.2f);
@@ -40,47 +19,11 @@ Sprite* BucketHeadZombie::createShowcaseSprite(const Vec2& pos)
     return sp;
 }
 
-// ----------------------------------------------------
-// Static constant definitions
-// ----------------------------------------------------
-const std::string BucketHeadZombie::IMAGE_FILENAME = "flag_zombie_walk_spritesheet.png";
-const cocos2d::Rect BucketHeadZombie::INITIAL_PIC_RECT = Rect::ZERO;
-const cocos2d::Size BucketHeadZombie::OBJECT_SIZE = Size(125.0f, 173.8f);
-const float BucketHeadZombie::MOVE_SPEED = 20.0f;       // Move 20 pixels per second
-const float BucketHeadZombie::ATTACK_DAMAGE = 10.0f;    // Damage per attack
-const float BucketHeadZombie::ATTACK_RANGE = 50.0f;     // Attack range
-
-// Protected constructor
-BucketHeadZombie::BucketHeadZombie()
-    : _currentState(ZombieState::WALKING)
-    , _isDead(false)
-    , _maxHealth(200)
-    , _currentHealth(200)
-    , _bucketHealth(1000)
-    , _attackInterval(0.5f)
-    , _accumulatedTime(0.0f)
-    , _zombiePos(Vec2::ZERO)
-    , _walkAction(nullptr)
-    , _eatAction(nullptr)
-    , _isEating(false)
-    , _normalEatAction(nullptr)
-    , _normalWalkAction(nullptr)
-    , _targetPlant(nullptr)
-    , _speed(MOVE_SPEED)
-    , _normalSpeed(MOVE_SPEED)
-    , _useNormalZombie(false)
-    , _groanAudioId(cocos2d::AudioEngine::INVALID_AUDIO_ID)
-{
-    CCLOG("Zombie created.");
-}
 
 // Destructor
 BucketHeadZombie::~BucketHeadZombie()
 {
-    if (_groanAudioId != cocos2d::AudioEngine::INVALID_AUDIO_ID)
-    {
-        cocos2d::AudioEngine::stop(_groanAudioId);
-    }
+
     CC_SAFE_RELEASE(_walkAction);
     CC_SAFE_RELEASE(_eatAction);
     CCLOG("Zombie destroyed.");
@@ -120,33 +63,8 @@ BucketHeadZombie* BucketHeadZombie::createZombie()
 // Initialize walking animation
 void BucketHeadZombie::initWalkAnimation()
 {
-    const float frameWidth = 125.0f;
-    const float frameHeight = 173.8f;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 5; row++)
-    {
-        for (int col = 0; col < 10; col++)
-        {
-            if (row == 4 && col == 6)
-                break;
-
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                "bucket_head_walk_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
-    }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.05f);
+    auto animation = initAnimate("bucket_head_walk_spritesheet.png", 125.0f, 173.8f, 5, 10, 46, 0.05f);
     auto animate = Animate::create(animation);
-
     this->_walkAction = RepeatForever::create(animate);
     _walkAction->retain();
 }
@@ -154,94 +72,13 @@ void BucketHeadZombie::initWalkAnimation()
 // Initialize eating animation
 void BucketHeadZombie::initEatAnimation()
 {
-    const float frameWidth = 125.0f;
-    const float frameHeight = 173.8f;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 4; row++)
-    {
-        for (int col = 0; col < 10; col++)
-        {
-            if (row == 3 && col == 9)
-                break;
-
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                "bucket_head_eat_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
-    }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.03f);
+    auto animation = initAnimate("bucket_head_eat_spritesheet.png", 125.0f, 173.8f, 4, 10, 39, 0.03f);
     auto animate = Animate::create(animation);
-
     this->_eatAction = RepeatForever::create(animate);
     _eatAction->retain();
 }
 
-// Update every frame
-void BucketHeadZombie::update(float delta)
-{
-    if (_isDead || _isDying)
-    {
-        return;
-    }
 
-    _accumulatedTime += delta;
-
-    // If zombie is not eating, continue walking left
-    if (!_isEating)
-    {
-        float newX = this->getPositionX() - _speed * delta;
-        this->setPositionX(newX);
-
-        // Check if zombie reached the left edge (game over condition)
-        if (newX < -100)
-        {
-            // Zombie reached the house - game over
-            //CCLOG("Zombie reached the house!");
-        }
-    }
-    else
-    {
-        // If eating, deal damage periodically
-        if (_accumulatedTime >= _attackInterval)
-        {
-            if (_targetPlant && !_targetPlant->isDead())
-            {
-                _targetPlant->takeDamage((int)ATTACK_DAMAGE);
-                cocos2d::AudioEngine::play2d("zombie_eating.mp3", false);
-                CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
-                _accumulatedTime = 0.0f;
-
-                // Check if plant died
-                if (_targetPlant->isDead())
-                {
-                    cocos2d::AudioEngine::play2d("zombie_gulp.mp3", false);
-                    onPlantDied();
-                }
-            }
-            else
-            {
-                // Target plant is null or already dead
-                onPlantDied();
-            }
-        }
-    }
-}
-
-// Get zombie state
-BucketHeadZombie::ZombieState BucketHeadZombie::getState() const
-{
-    CCLOG("getstate����");
-    return _currentState;
-}
 
 // Set zombie state
 void BucketHeadZombie::setState(ZombieState newState)
@@ -255,14 +92,9 @@ void BucketHeadZombie::setState(ZombieState newState)
     }
 }
 
-// Check if dead
-bool BucketHeadZombie::isDead() const
-{
-    return _isDead;
-}
 
 // Take damage
-void BucketHeadZombie::takeDamage(int damage)
+void BucketHeadZombie::takeDamage(float damage)
 {
     if (_isDead || _isDying)
     {
@@ -279,7 +111,7 @@ void BucketHeadZombie::takeDamage(int damage)
     }
     else
         _currentHealth -= damage;
-    // CCLOG("Zombie took %d damage, remaining health: %d", damage, _currentHealth); // Reduced logging
+
 
     if (_currentHealth <= 0)
     {
@@ -293,27 +125,9 @@ void BucketHeadZombie::takeDamage(int damage)
         _isEating = false;
 
         setState(ZombieState::DYING);
-
-        // Stop all actions
-        this->stopAllActions();
-
-        // Play fade out animation, then mark as dead
-        auto fadeOut = FadeOut::create(0.5f);
-        auto markDead = CallFunc::create([this]() {
-            _isDead = true;
-            _isDying = false;           
-            });
-        auto sequence = Sequence::create(fadeOut, markDead, nullptr);
-        this->runAction(sequence);
     }
 }
 
-// Set animation default implementation
-void BucketHeadZombie::setAnimation()
-{
-    CCLOG("Zombie::setAnimation() called.");
-    setAnimationForState(_currentState);
-}
 
 // Set animation corresponding to state
 void BucketHeadZombie::setAnimationForState(ZombieState state)
@@ -322,94 +136,32 @@ void BucketHeadZombie::setAnimationForState(ZombieState state)
     {
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");
-            if (_eatAction)
-            {
-                this->stopAction(_eatAction);
-            }
-            if (_walkAction)
-            {
-                this->runAction(_walkAction);
-            }
+            this->stopAllActions();
+            this->runAction(_walkAction);            
             break;
         case ZombieState::EATING:
             CCLOG("Setting EATING animation.");
-            if (_walkAction)
-            {
-                this->stopAction(_walkAction);
-            }
-            if (_eatAction)
-            {
-                this->runAction(_eatAction);
-            }
+            this->stopAllActions();
+            this->runAction(_eatAction);
             break;
         case ZombieState::DYING:
+        {
             CCLOG("Setting DYING animation.");
+            this->stopAllActions();
+            auto fadeOut = FadeOut::create(0.5f);
+            auto markDead = CallFunc::create([this]() {
+                _isDead = true;
+                _isDying = false;
+                });
+            auto sequence = Sequence::create(fadeOut, markDead, nullptr);
+            this->runAction(sequence);
             break;
+        }
         default:
             break;
     }
 }
 
-// Check and handle plant encounters
-void BucketHeadZombie::encounterPlant(const std::vector<Plant*>& plants)
-{
-    checkCollision(plants);
-}
-
-// Check collision with plants
-void BucketHeadZombie::checkCollision(const std::vector<Plant*>& plants)
-{
-    if (_isEating) return;
-
-    for (auto plant : plants)
-    {
-        if (plant && !plant->isDead())
-        {
-            auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
-            if (spikeweed)
-                continue;
-            auto spikerock = dynamic_cast<SpikeRock*>(plant);
-            if (spikerock)
-                continue;
-            // Create a slightly offset collision box for the zombie
-            // This allows the zombie to eat the plant when it's slightly overlapping
-            // Adjust COLLISION_OFFSET_X to control how close the zombie needs to be
-            float COLLISION_OFFSET_X = 40.0f;
-            float SIZE_CORRECTION = 100.0f;
-            Rect zombieRect = this->getBoundingBox();
-            // Move the rect slightly to the left/right or adjust width
-            // Here we check if the zombie's "eating mouth" (left side) overlaps with plant
-            zombieRect.origin.x += COLLISION_OFFSET_X;
-            zombieRect.size.width -= SIZE_CORRECTION;
-
-            if (zombieRect.intersectsRect(plant->getBoundingBox()))
-            {
-                startEating(plant);
-                return;
-            }
-        }
-    }
-}
-
-// Start eating a plant
-void BucketHeadZombie::startEating(Plant* plant)
-{
-    _isEating = true;
-    _targetPlant = plant;
-    _speed = 0;  // Stop moving
-    setState(ZombieState::EATING);
-    CCLOG("Zombie start eating plant!");
-}
-
-// Called when plant dies
-void BucketHeadZombie::onPlantDied()
-{
-    _isEating = false;
-    _speed = _normalSpeed;
-    _targetPlant = nullptr;
-    setState(ZombieState::WALKING);
-    CCLOG("Zombie resume walking");
-}
 
 void BucketHeadZombie::onBucketBroken()
 {

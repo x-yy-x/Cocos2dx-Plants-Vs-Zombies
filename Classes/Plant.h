@@ -47,7 +47,7 @@ public:
      * @brief Apply damage to the plant and reduce health.
      * @param damage Damage value
      */
-    void takeDamage(int damage);
+    void takeDamage(float damage);
 
 protected:
     // Protected constructor

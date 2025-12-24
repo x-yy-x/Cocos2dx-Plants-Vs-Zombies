@@ -26,6 +26,7 @@
 #include "SpikeRock.h"
 #include "PotatoMine.h"
 #include "BucketHeadZombie.h"
+#include "NormalZombie.h"
 #include "audio/include/AudioEngine.h"
 #include "PlayerProfile.h"
 
@@ -283,7 +284,7 @@ void SelectCardsScene::spawnZombieShowcase()
         }
     };
 
-    if (auto z = Zombie::createZombie())
+    if (auto z = NormalZombie::createZombie())
         addShow(z->createShowcaseSprite(Vec2::ZERO));
     if (auto z = FlagZombie::createZombie())
         addShow(z->createShowcaseSprite(Vec2::ZERO));

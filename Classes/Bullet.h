@@ -58,6 +58,6 @@ protected:
     // ----------------------------------------------------
     bool _isActive;           // Is bullet active
     int _damage;              // Damage value
-    float _speed;             // Movement speed
+    float _currentSpeed;             // Movement speed
     cocos2d::Size _hitboxSize; // Collision box size
 };

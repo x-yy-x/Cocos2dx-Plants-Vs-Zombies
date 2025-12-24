@@ -13,7 +13,7 @@ class Coin : public GameObject
 {
 public:
 
-    static enum CoinType{
+    enum CoinType{
         SILVER,
         GOLD,
         DIAMOND

@@ -37,12 +37,6 @@ bool Coin::init(CoinType coinType)
         return false;
     }
 
-    // Load coin image
-    if (!Sprite::initWithFile(IMAGE_FILENAME[_coinType]))
-    {
-        CCLOG("Failed to load coin image: %s", IMAGE_FILENAME[_coinType].c_str());
-        return false;
-    }
 
     // Apply custom scale
     this->setScale(_coinScale);
@@ -118,7 +112,7 @@ bool Coin::shouldRemove() const
 // Set animation (placeholder)
 void Coin::setAnimation()
 {
-    if (_coinType == 2)
+    if (_coinType == CoinType::DIAMOND)
         return;
     float time = 0.5f;
 

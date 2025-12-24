@@ -19,15 +19,6 @@ class Plant;
 class BucketHeadZombie : public Zombie
 {
 public:
-    /**
-     * @brief Zombie state enumeration
-     */
-    static enum class ZombieState
-    {
-        WALKING,      // Walking state
-        EATING,       // Eating plant state
-        DYING         // Dying state
-    };
 
     /**
      * @brief Zombie initialization function
@@ -44,19 +35,8 @@ public:
     static BucketHeadZombie* createZombie();
 
     // 选卡展示静态图
-    virtual cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos) override;
+    cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos) ;
 
-    /**
-     * @brief Update function called every frame for movement, attack, death, etc.
-     * @param delta Time delta
-     */
-    virtual void update(float delta) override;
-
-    /**
-     * @brief Get current zombie state
-     * @return ZombieState Current state
-     */
-    ZombieState getState() const;
 
     /**
      * @brief Set zombie state
@@ -64,31 +44,17 @@ public:
      */
     void setState(ZombieState newState);
 
-    /**
-     * @brief Check if zombie is dead.
-     * @return true if dead, false if alive
-     */
-    bool isDead() const;
 
     /**
      * @brief Apply damage to zombie and reduce health.
      * @param damage Damage value
      */
-    void takeDamage(int damage);
+    virtual void takeDamage(float damage) override;
 
-    /**
-     * @brief Check and handle plant encounters
-     * @param plants Vector of all plants in the scene
-     */
-    virtual void encounterPlant(const std::vector<Plant*>& plants);
-
-    virtual bool isTrulyDead() const { return _isDead && !_isDying; }
 
     inline bool hasBucketHead() const { return !_useNormalZombie; }
 
 protected:
-    // Protected constructor
-    BucketHeadZombie();
 
     // Virtual destructor
     virtual ~BucketHeadZombie();
@@ -108,55 +74,12 @@ protected:
     cocos2d::RepeatForever* createNormalEatActionFromFrame(int frameIndex);
 
     /**
-     * @brief Set up animation
-     */
-    virtual void setAnimation();
-
-    /**
      * @brief Set animation corresponding to state
      * @param state Target state
      */
     void setAnimationForState(ZombieState state);
 
-    /**
-     * @brief Check collision with plants
-     */
-    void checkCollision(const std::vector<Plant*>& plants);
-
-    /**
-     * @brief Start eating a plant
-     * @param plant Target plant to eat
-     */
-    void startEating(Plant* plant);
-
-    /**
-     * @brief Called when the plant being eaten dies
-     */
-    void onPlantDied();
-
     void onBucketBroken();
-
-    // ----------------------------------------------------
-    // Static constants
-    // ----------------------------------------------------
-    static const std::string IMAGE_FILENAME;
-    static const cocos2d::Rect INITIAL_PIC_RECT;
-    static const cocos2d::Size OBJECT_SIZE;
-    static const float MOVE_SPEED;     // Movement speed
-    static const float ATTACK_DAMAGE;  // Attack damage per hit
-    static const float ATTACK_RANGE;   // Attack range
-
-    // ----------------------------------------------------
-    // Member variables
-    // ----------------------------------------------------
-    ZombieState _currentState;       // Current state
-    bool _isDead;                    // Is dead flag
-    int _maxHealth;                  // Maximum health
-    int _currentHealth;              // Current health
-    int _bucketHealth;
-    float _attackInterval;           // Attack interval
-    float _accumulatedTime;          // Cooldown accumulated time
-    cocos2d::Vec2 _zombiePos;        // Zombie position
 
     // Animation actions
     cocos2d::RepeatForever* _walkAction;
@@ -164,11 +87,7 @@ protected:
     cocos2d::RepeatForever* _normalWalkAction;
     cocos2d::RepeatForever* _normalEatAction;
 
-    // Eating state
-    bool _isEating;                  // Is currently eating
-    Plant* _targetPlant;             // Target plant being eaten
-    float _speed;                    // Current movement speed
-    float _normalSpeed;              // Normal walking speed
-    bool _useNormalZombie;
-    int _groanAudioId;
+    bool _useNormalZombie = false;
+    float _bucketHealth = 1000;
+
 };

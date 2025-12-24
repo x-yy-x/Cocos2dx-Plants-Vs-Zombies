@@ -22,7 +22,7 @@ public:
     /**
      * @brief Zombie state enumeration
      */
-    enum class PoleVaulterState
+    enum  class ZombieState
     {
         RUNNING,
         JUMPING,
@@ -45,8 +45,7 @@ public:
      */
     static PoleVaulter* createZombie();
 
-    // 选卡展示静态图
-    virtual cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos) override;
+    cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos) ;
 
     /**
      * @brief Update function called every frame for movement, attack, death, etc.
@@ -55,120 +54,45 @@ public:
     virtual void update(float delta) override;
 
     /**
-     * @brief Get current zombie state
-     * @return ZombieState Current state
-     */
-    PoleVaulterState getState() const;
-
-    /**
      * @brief Set zombie state
      * @param newState New state
      */
-    void setState(PoleVaulterState newState);
-
-    /**
-     * @brief Check if zombie is dead.
-     * @return true if dead, false if alive
-     */
-    bool isDead() const;
-
-    /**
-     * @brief Apply damage to zombie and reduce health.
-     * @param damage Damage value
-     */
-    void takeDamage(int damage);
+    void setState(ZombieState newState);
 
     /**
      * @brief Check and handle plant encounters
      * @param plants Vector of all plants in the scene
      */
-    void encounterPlant(const std::vector<Plant*>& plants) override;
+    virtual void encounterPlant(const std::vector<Plant*>& plants) override;
 
-    virtual bool isTrulyDead() const { return _isDead && !_isDying; }
 
 protected:
-    // Protected constructor
     PoleVaulter();
 
-    // Virtual destructor
     virtual ~PoleVaulter();
 
     void initRunningAnimation();
 
     void initJumpingAnimation();
 
-
-
-    /**
-     * @brief Initialize walking animation
-     */
     void initWalkAnimation();
 
-    /**
-     * @brief Initialize eating animation
-     */
     void initEatAnimation();
 
-    /**
-     * @brief Set up animation
-     */
-    virtual void setAnimation();
-
-    /**
-     * @brief Set animation corresponding to state
-     * @param state Target state
-     */
-    void setAnimationForState(PoleVaulterState state);
-
-    /**
-     * @brief Check collision with plants
-     */
-    void checkCollision(const std::vector<Plant*>& plants);
-
-    /**
-     * @brief Start eating a plant
-     * @param plant Target plant to eat
-     */
-    void startEating(Plant* plant);
-
-    /**
-     * @brief Called when the plant being eaten dies
-     */
-    void onPlantDied();
-
+    void setAnimationForState(ZombieState state);
 
     void startJumping();
 
-    // ----------------------------------------------------
-    // Static constants
-    // ----------------------------------------------------
-    static const std::string IMAGE_FILENAME;
-    static const cocos2d::Rect INITIAL_PIC_RECT;
-    static const cocos2d::Size OBJECT_SIZE;
-    static const float MOVE_SPEED;     // Movement speed
-    static const float ATTACK_DAMAGE;  // Attack damage per hit
-    static const float ATTACK_RANGE;   // Attack range
     static const float RUNNING_SPEED;
-    // ----------------------------------------------------
-    // Member variables
-    // ----------------------------------------------------
-    PoleVaulterState _currentState;       // Current state
-    bool _isDead;                    // Is dead flag
-    int _maxHealth;                  // Maximum health
-    int _currentHealth;              // Current health
-    float _attackInterval;           // Attack interval
-    float _accumulatedTime;          // Cooldown accumulated time
-    cocos2d::Vec2 _zombiePos;        // Zombie position
 
-    // Animation actions
+    ZombieState _currentState;
+    
     cocos2d::RepeatForever* _walkAction;
     cocos2d::RepeatForever* _eatAction;
     cocos2d::RepeatForever* _runAction;
     cocos2d::Animate* _jumpAction;
-    // Eating state
-    bool _isEating;
+
     bool _isJumping;
     bool _hasJumped;
-    Plant* _targetPlant;             // Target plant being eaten
-    float _speed;                    // Current movement speed
+
 };

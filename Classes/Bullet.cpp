@@ -6,7 +6,7 @@ USING_NS_CC;
 Bullet::Bullet()
     : _isActive(true)
     , _damage(0)
-    , _speed(0.0f)
+    , _currentSpeed(0.0f)
     , _hitboxSize(Size::ZERO)
 {
     CCLOG("Bullet created.");

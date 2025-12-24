@@ -36,7 +36,7 @@ bool Pea::init()
 
     // Set default values
     _damage = DEFAULT_DAMAGE;
-    _speed = DEFAULT_SPEED;
+    _currentSpeed = DEFAULT_SPEED;
     _hitboxSize = this->getContentSize();
 
     return true;
@@ -64,6 +64,6 @@ Pea* Pea::create(const Vec2& startPos)
 void Pea::updateMovement(float delta)
 {
     // Move forward (to the right)
-    float newX = getPositionX() + _speed * delta;
+    float newX = getPositionX() + _currentSpeed * delta;
     setPositionX(newX);
 }

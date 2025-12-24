@@ -63,7 +63,7 @@ bool Plant::isDead() const
 }
 
 // Take damage
-void Plant::takeDamage(int damage)
+void Plant::takeDamage(float damage)
 {
     if (_isDead)
     {

@@ -37,6 +37,7 @@
 #include "Mower.h"
 #include "coin.h"
 #include "BucketHeadZombie.h"
+#include "NormalZombie.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -882,9 +883,9 @@ void GameWorld::spawnZombieWave(int waveNumber)
 
     for (int i = 0; i < zombieCount; ++i)
     {
-        auto zombie = Zombie::createZombie();
+        auto normalZombie = NormalZombie::createZombie();
         auto pole_vaulter = PoleVaulter::createZombie();
-        if (zombie&&pole_vaulter)
+        if (normalZombie &&pole_vaulter)
         {
             int row = rand() % MAX_ROW;
             int type = rand() % 2;
@@ -894,9 +895,9 @@ void GameWorld::spawnZombieWave(int waveNumber)
 
             if (type == 0) {
                 CCLOG("normal zombie created");
-                zombie->setPosition(Vec2(x, y));
-                this->addChild(zombie, ENEMY_LAYER);
-                _zombiesInRow[row].push_back(zombie);
+                normalZombie->setPosition(Vec2(x, y));
+                this->addChild(normalZombie, ENEMY_LAYER);
+                _zombiesInRow[row].push_back(normalZombie);
             }
             else if (type == 1) {
                 CCLOG("pole vaulter created");
@@ -1133,8 +1134,8 @@ void GameWorld::removeDeadZombies()
             Zombie* zombie = *it;
             
             // CRITICAL FIX: Only remove truly dead zombies (death animation finished)
-            // isTrulyDead() returns true only when _isDead == true && _isDying == false
-            if (zombie && zombie->isTrulyDead())
+            // isDead() returns true only when _isDead == true && _isDying == false
+            if (zombie && zombie->isDead())
             {
                 spawnCoinAfterZombieDeath(zombie);
                 // Safe removal sequence to prevent dangling pointers and double deletion:
@@ -1297,7 +1298,7 @@ void GameWorld::spawnSubBatch(int normalCnt, int poleCnt, int bucketHeadCnt, int
             };
 
             for (int i = 0; i < normalCnt; ++i) {
-                if (auto z = Zombie::createZombie()) {
+                if (auto z = NormalZombie::createZombie()) {
                     int row = rand() % MAX_ROW;
                     spawnAtRow(z, row);
                 }

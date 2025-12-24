@@ -1,34 +1,23 @@
 
-#include "FlagZombie.h"
+#include "NormalZombie.h"
 #include "Plant.h"
+#include "SpikeWeed.h"
+#include "SpikeRock.h"
+#include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
 
-Sprite* FlagZombie::createShowcaseSprite(const Vec2& pos)
-{
-    auto animation = initAnimate("flag_zombie_idle_spritesheet.png", 250.0f, 250.0f, 6, 5, 29, 0.05f);
-    auto animate = Animate::create(animation);
-    auto _idleAction = RepeatForever::create(animate);
-
-    auto sp = Sprite::create();
-    if (sp) {
-        sp->setPosition(pos);
-        sp->runAction(_idleAction);
-    }
-    return sp;
-}
-
 
 // Destructor
-FlagZombie::~FlagZombie()
+NormalZombie::~NormalZombie()
 {
     CC_SAFE_RELEASE(_walkAction);
     CC_SAFE_RELEASE(_eatAction);
-    CCLOG("Zombie destroyed.");
+    CCLOG("NormalZombie destroyed.");
 }
 
 // Initialization function
-bool FlagZombie::init()
+bool NormalZombie::init()
 {
     // Call parent class initialization
     if (!Sprite::init())
@@ -43,9 +32,9 @@ bool FlagZombie::init()
 }
 
 // Static factory method to create zombie with animations
-FlagZombie* FlagZombie::createZombie()
+NormalZombie* NormalZombie::createZombie()
 {
-    FlagZombie* z = new FlagZombie();
+    NormalZombie* z = new NormalZombie();
     if (z && z->init())
     {
         z->autorelease();
@@ -58,40 +47,53 @@ FlagZombie* FlagZombie::createZombie()
     return nullptr;
 }
 
-// Initialize walking animation
-void FlagZombie::initWalkAnimation()
+Sprite* NormalZombie::createShowcaseSprite(const Vec2& pos)
 {
-    auto animation = initAnimate("flag_zombie_walk_spritesheet.png", 208.0f, 180.0f, 3, 5, 12, 0.18f);
+    auto animation = initAnimate("zombie_idle_spritesheet.png", 235.0f, 225.0f, 6, 5, 29, 0.05f);
+    auto animate = Animate::create(animation);
+    auto _idleAction = RepeatForever::create(animate);
+
+    auto sp = Sprite::create();
+    if (sp) {
+        sp->setPosition(pos);
+        sp->runAction(_idleAction);
+    }
+    return sp;
+}
+
+// Initialize walking animation
+void NormalZombie::initWalkAnimation()
+{
+    auto animation = initAnimate("zombie_walk_spritesheet.png", 125.0f, 173.8f, 5, 10, 46, 0.05f);
     auto animate = Animate::create(animation);
     this->_walkAction = RepeatForever::create(animate);
     _walkAction->retain();
 }
 
 // Initialize eating animation
-void FlagZombie::initEatAnimation()
+void NormalZombie::initEatAnimation()
 {
-    auto animation = initAnimate("flag_zombie_walk_spritesheet.png", 208.0f, 180.0f, 3, 5, 11, 0.1f);
+    auto animation = initAnimate("zombie_eat_spritesheet.png", 125.0f, 173.8f, 4, 10, 39, 0.03f);
     auto animate = Animate::create(animation);
-    this->_walkAction = RepeatForever::create(animate);
-    _walkAction->retain();
+    this->_eatAction = RepeatForever::create(animate);
+    _eatAction->retain();
 }
 
 
 // Set zombie state
-void FlagZombie::setState(ZombieState newState)
+void NormalZombie::setState(ZombieState newState)
 {
-
     if (_currentState != newState)
     {
         _currentState = newState;
-        CCLOG("Zombie state changed.");
+        CCLOG("NormalZombie state changed.");
         setAnimationForState(newState);
     }
 }
 
 
 // Set animation corresponding to state
-void FlagZombie::setAnimationForState(ZombieState state)
+void NormalZombie::setAnimationForState(ZombieState state)
 {
     switch (state)
     {

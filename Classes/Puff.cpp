@@ -39,7 +39,7 @@ bool Puff::init()
 
     // Set default values
     _damage = DEFAULT_DAMAGE;
-    _speed = DEFAULT_SPEED;
+    _currentSpeed = DEFAULT_SPEED;
     _hitboxSize = this->getContentSize();
     _lifetime = 0.0f;
 
@@ -80,6 +80,6 @@ void Puff::updateMovement(float delta)
     }
 
     // Move forward (to the right)
-    float newX = getPositionX() + _speed * delta;
+    float newX = getPositionX() + _currentSpeed * delta;
     setPositionX(newX);
 }

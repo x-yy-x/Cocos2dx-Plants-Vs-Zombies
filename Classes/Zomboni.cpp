@@ -17,26 +17,18 @@ Sprite* Zomboni::createShowcaseSprite(const Vec2& pos)
     return sp;
 }
 
-// ----------------------------------------------------
-// Static constant definitions
-// ----------------------------------------------------
 
 const float Zomboni::MOVE_SPEED = 20.0f;
 const float Zomboni::ICE_STEP = 10.0f;
 const int Zomboni::ICE_COUNT = 15;
 const float Zomboni::ICE_LENGTH = 150.0f;
+const int Zomboni::MAX_HEALTH = 1300;
 
 // Protected constructor
 Zomboni::Zomboni()
     : _currentState(ZombieState::DRIVING)
-    , _isDead(false)
-    , _maxHealth(1000)
-    , _currentHealth(1000)
-    , _zombiePos(Vec2::ZERO)
     , _driveAction(nullptr)
     , _specialDieAction(nullptr)
-    , _targetPlant(nullptr)
-    , _speed(MOVE_SPEED)
     , _iceAccumulate(0.0f)
     , _iceIndex(0)
 {
@@ -47,7 +39,6 @@ Zomboni::Zomboni()
 Zomboni::~Zomboni()
 {
     CC_SAFE_RELEASE(_driveAction);
-    CC_SAFE_RELEASE(_eatAction);
     CCLOG("Zombie destroyed.");
 }
 
@@ -61,7 +52,8 @@ bool Zomboni::init()
     }
 
     // Enable per-frame update
-    cocos2d::AudioEngine::play2d("zomboni.mp3", false, 1.0f);
+    cocos2d::AudioEngine::play2d("zomboni.mp3");
+    this->_currentHealth = MAX_HEALTH;
     this->setScale(0.45f);
     this->scheduleUpdate();
 
@@ -87,31 +79,8 @@ Zomboni* Zomboni::createZombie()
 // Initialize walking animation
 void Zomboni::initDriveAnimation()
 {
-    const float frameWidth = 470.0f;
-    const float frameHeight = 450.0f;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 3; row++)
-    {
-        for (int col = 0; col < 4; col++)
-        {
-
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                "zomboni_drive_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
-    }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.08f);
+    auto animation = initAnimate("zomboni_drive_spritesheet.png", 470.0f, 450.0f, 3, 4, 12, 0.08f);
     auto animate = Animate::create(animation);
-
     this->_driveAction = RepeatForever::create(animate);
     _driveAction->retain();
 }
@@ -119,29 +88,7 @@ void Zomboni::initDriveAnimation()
 // Initialize eating animation
 void Zomboni::initSpecialDieAnimation()
 {
-    const float frameWidth = 600.0f;
-    const float frameHeight = 525.0f;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 2; row++)
-    {
-        for (int col = 0; col < 6; col++)
-        {
-
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                "zomboni_special_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
-    }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.08f);
+    auto animation = initAnimate("zomboni_special_spritesheet.png", 600.0f, 525.0f, 2, 6, 12, 0.08f);
     this->_specialDieAction = Animate::create(animation);
     _specialDieAction->retain();
 }
@@ -152,7 +99,7 @@ void Zomboni::update(float delta)
     if (_isDead || _isDying)
         return;
 
-    float dx = _speed * delta;
+    float dx = _currentSpeed * delta;
     float newX = this->getPositionX() - dx;
     this->setPositionX(newX);
 
@@ -182,47 +129,6 @@ void Zomboni::setState(ZombieState newState)
         CCLOG("Zombie state changed.");
         setAnimationForState(newState);
     }
-}
-
-// Check if dead
-bool Zomboni::isDead() const
-{
-    return _isDead;
-}
-
-// Take damage
-void Zomboni::takeDamage(int damage)
-{
-    if (_isDead || _isDying)
-    {
-        return;
-    }
-    
-    _currentHealth -= damage;
-    // CCLOG("Zombie took %d damage, remaining health: %d", damage, _currentHealth); // Reduced logging
-
-    if (_currentHealth <= 0)
-    {
-        _currentHealth = 0;
-        
-        // Mark as dying (playing death animation)
-        _isDying = true;
-        
-        // CRITICAL: Clear target plant pointer to prevent dangling pointer access
-        _targetPlant = nullptr;
-        _isEating = false;
-        
-        setState(ZombieState::DYING);
-        CCLOG("Zombie is dying.");
-               
-    }
-}
-
-// Set animation default implementation
-void Zomboni::setAnimation()
-{
-    CCLOG("Zombie::setAnimation() called.");
-    setAnimationForState(_currentState);
 }
 
 // Set animation corresponding to state
@@ -263,45 +169,7 @@ void Zomboni::setAnimationForState(ZombieState state)
     }
 }
 
-// Check and handle plant encounters
-void Zomboni::encounterPlant(const std::vector<Plant*>& plants)
-{
-    checkCollision(plants);
-}
 
-// Check collision with plants
-void Zomboni::checkCollision(const std::vector<Plant*>& plants)
-{
-
-    for (auto plant : plants)
-    {
-        if (plant && !plant->isDead())
-        {
-            auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
-            if (spikeweed)
-                continue;
-            auto spikerock = dynamic_cast<SpikeRock*>(plant);
-            if (spikerock)
-                continue;
-            // Create a slightly offset collision box for the zombie
-            // This allows the zombie to eat the plant when it's slightly overlapping
-            // Adjust COLLISION_OFFSET_X to control how close the zombie needs to be
-            float COLLISION_OFFSET_X = 45.0f;
-            float SIZE_CORRECTION = 100.0f;
-            Rect zombieRect = this->getBoundingBox();
-            // Move the rect slightly to the left/right or adjust width
-            // Here we check if the zombie's "eating mouth" (left side) overlaps with plant
-            zombieRect.origin.x += COLLISION_OFFSET_X; 
-            zombieRect.size.width -= SIZE_CORRECTION;
-
-            if (zombieRect.intersectsRect(plant->getBoundingBox()))
-            {               
-                plant->takeDamage(1000);
-                return;
-            }
-        }
-    }
-}
 
 void Zomboni::spawnIce()
 {    
@@ -314,7 +182,7 @@ void Zomboni::spawnIce()
     if (!ice) return;
 
 
-    // 交给 GameWorld 管理（⚠ 不要自己留指针）
+    // 交给 GameWorld 管理
     auto gameWorld = dynamic_cast<GameWorld*>(this->getParent());
     if (gameWorld)
     {
