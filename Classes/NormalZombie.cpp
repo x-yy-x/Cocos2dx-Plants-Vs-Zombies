@@ -80,22 +80,11 @@ void NormalZombie::initEatAnimation()
 }
 
 
-// Set zombie state
-void NormalZombie::setState(ZombieState newState)
-{
-    if (_currentState != newState)
-    {
-        _currentState = newState;
-        CCLOG("NormalZombie state changed.");
-        setAnimationForState(newState);
-    }
-}
-
 
 // Set animation corresponding to state
-void NormalZombie::setAnimationForState(ZombieState state)
+void NormalZombie::setAnimationForState()
 {
-    switch (state)
+    switch (static_cast<ZombieState>(_currentState))
     {
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");

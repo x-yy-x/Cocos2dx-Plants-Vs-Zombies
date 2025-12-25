@@ -464,7 +464,7 @@ bool GameWorld::init()
         // DEBUG: Spawn one zombie at start for testing
         // TODO: Remove this before final release
         {
-            auto debugZombie = BucketHeadZombie::createZombie();
+            auto debugZombie = Gargantuar::createZombie();
             if (debugZombie)
             {
                 int row = 2;
@@ -757,8 +757,7 @@ bool GameWorld::tryRemovePlantAtPosition(const Vec2& globalPos)
     Plant* plantToRemove = _plantGrid[row][col];
     if (plantToRemove == nullptr) return false;
 
-    this->removeChild(plantToRemove);
-    _plantGrid[row][col] = nullptr;
+    plantToRemove->takeDamage(10000);
 
     return true;
 }

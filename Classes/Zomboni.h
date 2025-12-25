@@ -24,8 +24,9 @@ public:
 
     enum class ZombieState
     {
-        DRIVING,
         DYING,
+        DRIVING,
+        NOTHING,
         SPECIAL
     };
 
@@ -50,11 +51,6 @@ public:
      */
     virtual void update(float delta) override;
 
-    /**
-     * @brief Set zombie state
-     * @param newState New state
-     */
-    void setState(ZombieState newState);
 
     void setSpecialDeath();
 
@@ -81,7 +77,7 @@ protected:
      * @brief Set animation corresponding to state
      * @param state Target state
      */
-    void setAnimationForState(ZombieState state);
+    virtual void setAnimationForState() override;
 
     void spawnIce();
 
@@ -92,7 +88,6 @@ protected:
     static const int ICE_COUNT;
     static const int MAX_HEALTH;
 
-    ZombieState _currentState;
     float _iceAccumulate;
     int   _iceIndex;
     

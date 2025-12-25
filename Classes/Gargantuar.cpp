@@ -22,19 +22,12 @@ Sprite* Gargantuar::createShowcaseSprite(const Vec2& pos)
 }
 
 
-const float Gargantuar::ATTACK_DAMAGE = 1000.0f;
-const int Gargantuar::MAX_HEALTH = 3000;
-const float Gargantuar::ATTACK_INTERVAL = 2.64f;
-
-
 // Protected constructor
 Gargantuar::Gargantuar()
-    : _currentState(ZombieState::WALKING)
-    , _walkAction(nullptr)
+    : _walkAction(nullptr)
     , _smashAction(nullptr)
     , _prethrowAction(nullptr)
     , _postthrowAction(nullptr)
-    , _isSmashing(false)
     , _isThrowing(false)
     , _hasthrown(false)
 {
@@ -73,7 +66,9 @@ Gargantuar* Gargantuar::createZombie()
         z->initWalkAnimation();
         z->initSmashAnimation();
         z->initThrowAnimation();
-        z->_currentHealth = MAX_HEALTH;
+        z->_currentHealth = 3000.0f;
+        z->ATTACK_DAMAGE = 1000.0f;
+        z->ATTACK_INTERVAL = 2.64f;
         z->runAction(z->_walkAction);
         return z;
     }
@@ -84,7 +79,7 @@ Gargantuar* Gargantuar::createZombie()
 // Initialize walking animation
 void Gargantuar::initWalkAnimation()
 {
-    auto animation = initAnimate("gargantuar_walk_spritesheet.png", 280.0f, 292.0f, 6, 7, 40, 0.08f);
+    auto animation = initAnimate("gargantuar_walk_spritesheet.png", 280.0f, 292.0f, 7, 6, 40, 0.08f);
     auto animate = Animate::create(animation);
     this->_walkAction = RepeatForever::create(animate);
     _walkAction->retain();
@@ -93,7 +88,7 @@ void Gargantuar::initWalkAnimation()
 // Initialize eating animation
 void Gargantuar::initSmashAnimation()
 {
-    auto animation = initAnimate("gargantuar_smash_spritesheet.png", 395.0f, 365.0f, 5, 7, 33, 0.08f);
+    auto animation = initAnimate("gargantuar_smash_spritesheet.png", 395.0f, 365.0f, 7, 5, 33, 0.08f);
     auto animate = Animate::create(animation);
     this->_smashAction = Animate::create(animation);
     _smashAction->retain();
@@ -150,12 +145,12 @@ void Gargantuar::update(float delta)
     }
 
     // If zombie is not eating, continue walking left
-    if (!_isSmashing && !_isThrowing)
+    if (!_isEating && !_isThrowing)
     {
         if (_currentHealth <= 1500 && _currentHealth > 0 && _hasthrown == false && this->getPositionX() >= 500) {
             this->_currentSpeed = 0;
             this->_isThrowing = true;
-            setState(ZombieState::THROWING);
+            setState(static_cast<int>(ZombieState::THROWING));
         }
         float newX = this->getPositionX() - _currentSpeed * delta;
         this->setPositionX(newX);
@@ -167,7 +162,7 @@ void Gargantuar::update(float delta)
             CCLOG("Zombie reached the house!");
         }
     }
-    else if (_isSmashing)
+    else if (_isEating)
     {
         _accumulatedTime += delta;
         // If eating, deal damage periodically
@@ -186,27 +181,18 @@ void Gargantuar::update(float delta)
                     onPlantDied();
                 }
             }
+            else
+                onPlantDied();
         }
     }
 }
 
 
-// Set zombie state
-void Gargantuar::setState(ZombieState newState)
-{
-    if (_currentState != newState)
-    {
-        _currentState = newState;
-        CCLOG("Zombie state changed.");
-        setAnimationForState(newState);
-    }
-}
-
 
 // Set animation corresponding to state
-void Gargantuar::setAnimationForState(ZombieState state)
+void Gargantuar::setAnimationForState()
 {
-    switch (state)
+    switch (static_cast<ZombieState>(_currentState))
     {
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");
@@ -221,9 +207,9 @@ void Gargantuar::setAnimationForState(ZombieState state)
                 _smashAction,
                 MoveBy::create(0, Vec2(20, -55)),
                 CallFunc::create([this]() {
-                    this->_isSmashing = false;
+                    this->_isEating = false;
                     this->_currentSpeed = MOVE_SPEED;
-                    setState(ZombieState::WALKING);
+                    setState(static_cast<int>(ZombieState::WALKING));
                     }),
                 nullptr
             ));
@@ -237,6 +223,7 @@ void Gargantuar::setAnimationForState(ZombieState state)
                     MoveBy::create(0, Vec2(-46, 35)),
                     _prethrowAction,
                     CallFunc::create([this]() {
+                        log("throw");
                         this->throwImp();
                         }),
                     _postthrowAction,
@@ -245,15 +232,25 @@ void Gargantuar::setAnimationForState(ZombieState state)
                         this->_hasthrown = true;
                         this->_isThrowing = false;
                         this->_currentSpeed = MOVE_SPEED;
-                        this->setState(ZombieState::WALKING);
+                        this->setState(static_cast<int>(ZombieState::WALKING));
                         }),
                     nullptr
                 )
             );
             break;
         case ZombieState::DYING:
-            CCLOG("Setting gargantuar DYING animation.");
+        {
+            log("Setting DYING animation.");
+            this->stopAllActions();
+            auto fadeOut = FadeOut::create(0.5f);
+            auto markDead = CallFunc::create([this]() {
+                _isDead = true;
+                _isDying = false;
+                });
+            auto sequence = Sequence::create(fadeOut, markDead, nullptr);
+            this->runAction(sequence);
             break;
+        }
         default:
             break;
     }
@@ -262,14 +259,13 @@ void Gargantuar::setAnimationForState(ZombieState state)
 // Check and handle plant encounters
 void Gargantuar::encounterPlant(const std::vector<Plant*>& plants)
 {
-    if (_isSmashing || _isThrowing)
+    if (_isEating || _isThrowing)
         return;
 
     for (auto plant : plants)
     {
         if (plant && !plant->isDead())
         {
-
             float COLLISION_OFFSET_X = 60.0f;
             float SIZE_CORRECTION = 180.0f;
             Rect zombieRect = this->getBoundingBox();
@@ -286,35 +282,16 @@ void Gargantuar::encounterPlant(const std::vector<Plant*>& plants)
     }
 }
 
-// Start eating a plant
-void Gargantuar::startEating(Plant* plant)
-{
-    _isSmashing = true;
-    _targetPlant = plant;
-    _currentSpeed = 0;
-    setState(ZombieState::SMASHING);
-}
-
-// Called when plant dies
-void Gargantuar::onPlantDied()
-{
-    _isSmashing = false;
-    _currentSpeed = MOVE_SPEED;
-    _targetPlant = nullptr;
-    setState(ZombieState::WALKING);
-    CCLOG("Zombie resume walking");
-}
 
 void Gargantuar::throwImp()
 {
     CCLOG("imp created");
     auto imp = Imp::createZombie();
-    imp->setState(Imp::ZombieState::FLYING);
-    cocos2d::AudioEngine::play2d("imp-pvz.mp3", false, 1.0f);
     auto pos = this->getPosition();
     imp->setPosition(pos + Vec2(-250, 35));
     auto gameWorld = dynamic_cast<GameWorld*>(Director::getInstance()->getRunningScene());
     gameWorld->addChild(imp, ENEMY_LAYER);
     gameWorld->addZombie(imp);
+    cocos2d::AudioEngine::play2d("imp-pvz.mp3", false, 1.0f);
 }
 

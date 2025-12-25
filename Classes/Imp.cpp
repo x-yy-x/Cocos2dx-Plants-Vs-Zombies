@@ -4,12 +4,9 @@
 
 USING_NS_CC;
 
-const float Imp::MOVE_SPEED = 40.0f;
-
 // Protected constructor
 Imp::Imp()
-    : _currentState(ZombieState::FLYING)
-    , _walkAction(nullptr)
+    : _walkAction(nullptr)
     , _eatAction(nullptr)
     , _flyAnimate(nullptr)
     , _hasBeenThrown(false)
@@ -52,7 +49,12 @@ Imp* Imp::createZombie()
         z->initWalkAnimation();
         z->initEatAnimation();
         z->initFlyAnimation();
-        z->runAction(Sequence::create(z->_flyAnimate, nullptr));
+        z->MOVE_SPEED = 40.0f;
+        z->_currentSpeed = z->MOVE_SPEED;
+        z->_currentHealth = 100;
+        z->_currentState = static_cast<int>(ZombieState::FLYING);
+        //z->runAction(z->_flyAnimate);
+        z->setAnimationForState();
         return z;
     }
     delete z;
@@ -84,23 +86,11 @@ void Imp::initFlyAnimation()
     _flyAnimate->retain();
 }
 
-// Set zombie state
-void Imp::setState(ZombieState newState)
-{
-    if (_currentState != newState)
-    {
-        _currentState = newState;
-        CCLOG("Zombie state changed.");
-        setAnimationForState(newState);
-    }
-}
-
-
 
 // Set animation corresponding to state
-void Imp::setAnimationForState(ZombieState state)
+void Imp::setAnimationForState()
 {
-    switch (state)
+    switch (static_cast<ZombieState>(_currentState))
     {
     case ZombieState::WALKING:
         CCLOG("Setting imp WALKING animation.");
@@ -116,18 +106,17 @@ void Imp::setAnimationForState(ZombieState state)
     {
         CCLOG("set state flying");
         this->_isFlying = true;
-        this->stopAction(_walkAction);
+        this->stopAllActions();
         this->runAction(Sequence::create(
-            MoveBy::create(1.2f, Vec2(0, -45.0f)),
             CallFunc::create([this]() {
                 this->_currentSpeed = 120.0f;
                 }), 
             _flyAnimate,          
-            MoveBy::create(0.0001f, Vec2(-20, -30)),
             CallFunc::create([this]() {
                 this->_isFlying = false;
                 this->_currentSpeed = MOVE_SPEED;
-                this->setState(ZombieState::WALKING);
+                this->setState(static_cast<int>(ZombieState::WALKING));
+                this->setPosition(this->getPosition() + Vec2(0, -20));
                 }),
             nullptr));
         break;
@@ -147,6 +136,59 @@ void Imp::setAnimationForState(ZombieState state)
     }
     default:
         break;
+    }
+}
+
+void Imp::update(float delta)
+{
+    if (_isDead || _isDying)
+    {
+        return;
+    }
+
+
+    // If zombie is not eating, continue walking left
+    if (!_isEating)
+    {
+        float newX = this->getPositionX() - _currentSpeed * delta;
+        this->setPositionX(newX);
+        if (_isFlying) {
+            float newY = this->getPositionY() - 50 * delta;
+            this->setPositionY(newY);
+        }
+
+        // Check if zombie reached the left edge (game over condition)
+        if (newX < -100)
+        {
+            // Zombie reached the house - game over
+            CCLOG("Zombie reached the house!");
+        }
+    }
+    else
+    {
+        if (!_targetPlant || _targetPlant->isDead()) {
+            onPlantDied();
+            return;
+        }
+        _accumulatedTime += delta;
+        // If eating, deal damage periodically
+        if (_accumulatedTime >= ATTACK_INTERVAL)
+        {
+            if (_targetPlant && !_targetPlant->isDead())
+            {
+                _targetPlant->takeDamage(ATTACK_DAMAGE);
+                cocos2d::AudioEngine::play2d("zombie_eating.mp3");
+                CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
+                _accumulatedTime = 0.0f;
+
+                // Check if plant died
+                if (_targetPlant->isDead())
+                {
+                    cocos2d::AudioEngine::play2d("zombie_gulp.mp3");
+                    onPlantDied();
+                }
+            }
+        }
     }
 }
 

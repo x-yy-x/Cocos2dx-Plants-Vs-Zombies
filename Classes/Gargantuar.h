@@ -21,9 +21,9 @@ public:
 
     enum class ZombieState
     {
-        WALKING,      // Walking state
-        SMASHING,       // Eating plant state
-        DYING,         // Dying state
+        DYING,
+        WALKING,
+        SMASHING,
         THROWING
     };
 
@@ -50,12 +50,6 @@ public:
      */
     virtual void update(float delta) override;
 
-
-    /**
-     * @brief Set zombie state
-     * @param newState New state
-     */
-    void setState(ZombieState newState);
 
 
     /**
@@ -90,27 +84,15 @@ protected:
      * @brief Set animation corresponding to state
      * @param state Target state
      */
-    void setAnimationForState(ZombieState state);
+    virtual void setAnimationForState() override;
 
     void throwImp();
-
-    virtual void startEating(Plant* plant) override;
-
-    virtual void onPlantDied() override;
-
-
-    static const float ATTACK_DAMAGE;
-    static const int MAX_HEALTH;
-    static const float ATTACK_INTERVAL;
-    ZombieState _currentState;       // Current state
-    
-
+  
     cocos2d::RepeatForever* _walkAction;
     cocos2d::Animate* _smashAction;
     cocos2d::Animate* _prethrowAction;
     cocos2d::Animate* _postthrowAction;
-
-    bool _isSmashing;                  
+              
     bool _isThrowing;
     bool _hasthrown;
 };

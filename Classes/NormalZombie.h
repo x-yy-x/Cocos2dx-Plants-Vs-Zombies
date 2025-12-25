@@ -20,6 +20,12 @@ class NormalZombie : public Zombie
 {
 public:
 
+    enum class ZombieState
+    {
+        DYING,
+        WALKING,
+        EATING
+    };
     /**
      * @brief NormalZombie initialization function
      */
@@ -39,11 +45,6 @@ public:
     cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos);
 
 
-    /**
-     * @brief Set zombie state
-     * @param newState New state
-     */
-    void setState(ZombieState newState);
     
 
 protected:
@@ -66,7 +67,7 @@ protected:
      * @brief Set animation corresponding to state
      * @param state Target state
      */
-    void setAnimationForState(ZombieState state);
+    virtual void setAnimationForState() override;
 
   
     // Animation actions

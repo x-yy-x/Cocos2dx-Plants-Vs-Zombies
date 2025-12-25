@@ -24,9 +24,9 @@ public:
      */
     enum class ZombieState
     {
+        DYING,
         WALKING,      // Walking state
         EATING,       // Eating plant state
-        DYING,         // Dying state
         FLYING
     };
 
@@ -44,13 +44,7 @@ public:
      */
     static Imp* createZombie();
 
-
-    /**
-     * @brief Set zombie state
-     * @param newState New state
-     */
-    void setState(ZombieState newState);
-
+    virtual void update(float delta) override;
 
 
 protected:
@@ -77,13 +71,13 @@ protected:
      * @brief Set animation corresponding to state
      * @param state Target state
      */
-    void setAnimationForState(ZombieState state);
+    virtual void setAnimationForState() override;
 
 
     // ----------------------------------------------------
     // Member variables
     // ----------------------------------------------------
-    ZombieState _currentState;       // Current state
+
     
     // Animation actions
     cocos2d::RepeatForever* _walkAction;
@@ -93,5 +87,5 @@ protected:
     bool _isFlying;
     bool _hasBeenThrown;
 
-    static const float MOVE_SPEED;
+
 };

@@ -20,6 +20,13 @@ class BucketHeadZombie : public Zombie
 {
 public:
 
+    enum class ZombieState
+    {
+        DYING,
+        WALKING,
+        EATING
+    };
+
     /**
      * @brief Zombie initialization function
      */
@@ -36,13 +43,6 @@ public:
 
     // 选卡展示静态图
     cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos) ;
-
-
-    /**
-     * @brief Set zombie state
-     * @param newState New state
-     */
-    void setState(ZombieState newState);
 
 
     /**
@@ -77,7 +77,7 @@ protected:
      * @brief Set animation corresponding to state
      * @param state Target state
      */
-    void setAnimationForState(ZombieState state);
+    virtual void setAnimationForState() override;
 
     void onBucketBroken();
 

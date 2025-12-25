@@ -20,13 +20,6 @@ class Zombie : public GameObject
 {
 public:
 
-    enum class ZombieState
-    {
-        WALKING,
-        EATING,
-        DYING
-    };
-
     virtual bool init() = 0;
 
     cocos2d::Animation* initAnimate(const std::string& fileName, float frameWidth,
@@ -34,7 +27,9 @@ public:
 
     virtual void update(float delta);
 
-    virtual void setState(ZombieState newState);
+    void setState(int newState);
+
+    virtual void setAnimationForState() = 0;
 
     virtual void takeDamage(float damage);
 
@@ -47,7 +42,10 @@ public:
     virtual void onPlantDied();
 
 
-    ZombieState _currentState;
+    int _currentState = 1;
+    //0 dying
+    //1 walking
+    //2 eating
     bool _isDying = false;
     bool _isDead = false;
     int _currentHealth = 200;
@@ -56,11 +54,10 @@ public:
     Plant* _targetPlant = nullptr;
     float _currentSpeed = 20.0f;
 
-    const float MOVE_SPEED = 20.0f;
-    const float ATTACK_DAMAGE = 10.0f;
-    const float ATTACK_RANGE = 50.0f;
-    const float ATTACK_INTERVAL = 0.5f;
-    const int MAX_HEALTH = 200;
-    const float X_CORRECTION = 40.0f;
-    const float SIZE_CORRECTION = 100.0f;
+    float MOVE_SPEED = 20.0f;
+    float ATTACK_DAMAGE = 10.0f;
+    float ATTACK_INTERVAL = 0.5f;
+    int MAX_HEALTH = 200;
+    float X_CORRECTION = 40.0f;
+    float SIZE_CORRECTION = 100.0f;
 };

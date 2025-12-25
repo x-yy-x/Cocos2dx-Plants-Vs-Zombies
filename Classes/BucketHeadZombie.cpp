@@ -80,19 +80,6 @@ void BucketHeadZombie::initEatAnimation()
 
 
 
-// Set zombie state
-void BucketHeadZombie::setState(ZombieState newState)
-{
-
-    if (_currentState != newState)
-    {
-        _currentState = newState;
-        CCLOG("Zombie state changed.");
-        setAnimationForState(newState);
-    }
-}
-
-
 // Take damage
 void BucketHeadZombie::takeDamage(float damage)
 {
@@ -106,47 +93,54 @@ void BucketHeadZombie::takeDamage(float damage)
         _bucketHealth -= damage;
         if (_bucketHealth <= 0) {
             _currentHealth += _bucketHealth;
-            onBucketBroken();
+            if (_currentHealth <= 0) {
+                this->_isDying = true;
+                this->_targetPlant = nullptr;
+                this->_isEating = false;
+                setState(static_cast<int>(ZombieState::DYING));
+            }
+            else
+                onBucketBroken();
         }
     }
     else
-        _currentHealth -= damage;
-
-
-    if (_currentHealth <= 0)
     {
-        _currentHealth = 0;
+        _currentHealth -= damage;
+        if (_currentHealth <= 0)
+        {
+            _currentHealth = 0;
 
-        // Mark as dying (playing death animation)
-        _isDying = true;
+            // Mark as dying (playing death animation)
+            _isDying = true;
 
-        // CRITICAL: Clear target plant pointer to prevent dangling pointer access
-        _targetPlant = nullptr;
-        _isEating = false;
+            // CRITICAL: Clear target plant pointer to prevent dangling pointer access
+            _targetPlant = nullptr;
+            _isEating = false;
 
-        setState(ZombieState::DYING);
+            setState(static_cast<int>(ZombieState::DYING));
+        }
     }
 }
 
 
 // Set animation corresponding to state
-void BucketHeadZombie::setAnimationForState(ZombieState state)
+void BucketHeadZombie::setAnimationForState()
 {
-    switch (state)
+    switch (static_cast<ZombieState>(_currentState))
     {
         case ZombieState::WALKING:
-            CCLOG("Setting WALKING animation.");
+            log("Setting WALKING animation.");
             this->stopAllActions();
             this->runAction(_walkAction);            
             break;
         case ZombieState::EATING:
-            CCLOG("Setting EATING animation.");
+            log("Setting EATING animation.");
             this->stopAllActions();
             this->runAction(_eatAction);
             break;
         case ZombieState::DYING:
         {
-            CCLOG("Setting DYING animation.");
+            log("Setting DYING animation.");
             this->stopAllActions();
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {

@@ -26,8 +26,7 @@ const int Zomboni::MAX_HEALTH = 1300;
 
 // Protected constructor
 Zomboni::Zomboni()
-    : _currentState(ZombieState::DRIVING)
-    , _driveAction(nullptr)
+    : _driveAction(nullptr)
     , _specialDieAction(nullptr)
     , _iceAccumulate(0.0f)
     , _iceIndex(0)
@@ -116,25 +115,26 @@ void Zomboni::update(float delta)
     {
         CCLOG("Zombie reached the house!");
     }
-}
 
-
-// Set zombie state
-void Zomboni::setState(ZombieState newState)
-{
-
-    if (_currentState != newState)
+    if (_isEating)
     {
-        _currentState = newState;
-        CCLOG("Zombie state changed.");
-        setAnimationForState(newState);
+        if(_targetPlant && !_targetPlant->isDead())
+        {
+            _targetPlant->takeDamage(10000.0f);
+            _isEating = false;
+            _targetPlant = nullptr;
+            this->_currentSpeed = MOVE_SPEED;
+        }
     }
 }
 
+
+
+
 // Set animation corresponding to state
-void Zomboni::setAnimationForState(ZombieState state)
+void Zomboni::setAnimationForState()
 {
-    switch (state)
+    switch (static_cast<ZombieState>(_currentState))
     {
     case ZombieState::DRIVING:
         CCLOG("Setting DRIVING animation.");
@@ -143,7 +143,7 @@ void Zomboni::setAnimationForState(ZombieState state)
         break;
     case ZombieState::DYING:
     {
-        CCLOG("Setting EATING animation.");
+        log("Setting dying animation.");
         this->stopAllActions();
         auto fadeOut = FadeOut::create(0.5f);
         auto markDead = CallFunc::create([this]() {
@@ -161,7 +161,7 @@ void Zomboni::setAnimationForState(ZombieState state)
         this->_isDying = true;
         this->runAction(Sequence::create(_specialDieAction, CallFunc::create([this]() {
             _isDying = true;
-            this->setState(ZombieState::DYING);
+            this->setState(static_cast<int>(ZombieState::DYING));
             }),nullptr));
         break;
     default:
@@ -196,6 +196,5 @@ void Zomboni::spawnIce()
 void Zomboni::setSpecialDeath()
 {
     this->_currentHealth -= 10000.0f;
-    this->setState(ZombieState::SPECIAL);
+    this->setState(static_cast<int>(ZombieState::SPECIAL));
 }
-

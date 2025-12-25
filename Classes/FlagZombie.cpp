@@ -51,6 +51,8 @@ FlagZombie* FlagZombie::createZombie()
         z->autorelease();
         z->initWalkAnimation();
         z->initEatAnimation();
+        z->X_CORRECTION = 120.0f;
+        z->SIZE_CORRECTION = 200.0f;
         z->runAction(z->_walkAction);
         return z;
     }
@@ -70,30 +72,18 @@ void FlagZombie::initWalkAnimation()
 // Initialize eating animation
 void FlagZombie::initEatAnimation()
 {
-    auto animation = initAnimate("flag_zombie_walk_spritesheet.png", 208.0f, 180.0f, 3, 5, 11, 0.1f);
+    auto animation = initAnimate("flag_zombie_eat_spritesheet.png", 208.0f, 180.0f, 3, 5, 11, 0.1f);
     auto animate = Animate::create(animation);
-    this->_walkAction = RepeatForever::create(animate);
-    _walkAction->retain();
+    this->_eatAction = RepeatForever::create(animate);
+    _eatAction->retain();
 }
 
-
-// Set zombie state
-void FlagZombie::setState(ZombieState newState)
-{
-
-    if (_currentState != newState)
-    {
-        _currentState = newState;
-        CCLOG("Zombie state changed.");
-        setAnimationForState(newState);
-    }
-}
 
 
 // Set animation corresponding to state
-void FlagZombie::setAnimationForState(ZombieState state)
+void FlagZombie::setAnimationForState()
 {
-    switch (state)
+    switch (static_cast<ZombieState>(_currentState))
     {
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");

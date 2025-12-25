@@ -24,13 +24,12 @@ bool Zombie::init()
 
 
 // Set zombie state
-void Zombie::setState(ZombieState newState)
+void Zombie::setState(int newState)
 {
-
     if (_currentState != newState)
     {
         _currentState = newState;
-        CCLOG("Zombie state changed.");
+        setAnimationForState();
     }
 }
 
@@ -45,7 +44,7 @@ void Zombie::takeDamage(float damage)
     }
 
     _currentHealth -= damage;
-    // CCLOG("Zombie took %d damage, remaining health: %d", damage, _currentHealth); // Reduced logging
+    log("Zombie took %f damage, remaining health: %d", damage, _currentHealth); // Reduced logging
 
     if (_currentHealth <= 0)
     {
@@ -58,7 +57,7 @@ void Zombie::takeDamage(float damage)
         _targetPlant = nullptr;
         _isEating = false;
         
-        setState(ZombieState::DYING);
+        setState(0);
     }
 }
 
@@ -86,6 +85,7 @@ void Zombie::encounterPlant(const std::vector<Plant*>& plants)
 
             if (zombieRect.intersectsRect(plant->getBoundingBox()))
             {
+                log("start eating");
                 startEating(plant);
                 return;
             }
@@ -99,7 +99,7 @@ void Zombie::startEating(Plant* plant)
     _isEating = true;
     _targetPlant = plant;
     _currentSpeed = 0;
-    setState(ZombieState::EATING);
+    setState(2);
     CCLOG("Zombie start eating plant!");
 
 }
@@ -110,7 +110,7 @@ void Zombie::onPlantDied()
     _isEating = false;
     _currentSpeed = MOVE_SPEED;
     _targetPlant = nullptr;
-    setState(ZombieState::WALKING);
+    setState(1);
     CCLOG("Zombie resume walking");
 }
 
@@ -161,6 +161,10 @@ void Zombie::update(float delta)
     }
     else
     {
+        if (!_targetPlant || _targetPlant->isDead()) {
+            onPlantDied();
+            return;
+        }
         _accumulatedTime += delta;
         // If eating, deal damage periodically
         if (_accumulatedTime >= ATTACK_INTERVAL)

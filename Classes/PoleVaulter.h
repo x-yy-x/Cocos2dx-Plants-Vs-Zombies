@@ -24,11 +24,11 @@ public:
      */
     enum  class ZombieState
     {
+        DYING,
+        WALKING,
+        EATING,
         RUNNING,
         JUMPING,
-        WALKING,      // Walking state
-        EATING,       // Eating plant state
-        DYING         // Dying state
     };
 
     /**
@@ -51,13 +51,15 @@ public:
      * @brief Update function called every frame for movement, attack, death, etc.
      * @param delta Time delta
      */
-    virtual void update(float delta) override;
+    //virtual void update(float delta) override;
 
     /**
      * @brief Set zombie state
      * @param newState New state
      */
-    void setState(ZombieState newState);
+   // void setState(int newState);
+
+    //void setState(ExtraState newState);
 
     /**
      * @brief Check and handle plant encounters
@@ -65,6 +67,11 @@ public:
      */
     virtual void encounterPlant(const std::vector<Plant*>& plants) override;
 
+   // virtual void onPlantDied() override;
+
+   // virtual void startEating(Plant* plant) override;
+
+    //virtual void takeDamage(float damage) override;
 
 protected:
     PoleVaulter();
@@ -79,13 +86,14 @@ protected:
 
     void initEatAnimation();
 
-    void setAnimationForState(ZombieState state);
+    virtual void setAnimationForState() override;
 
     void startJumping();
 
     static const float RUNNING_SPEED;
 
-    ZombieState _currentState;
+
+    //ExtraState _currentExtraState;
     
     cocos2d::RepeatForever* _walkAction;
     cocos2d::RepeatForever* _eatAction;
