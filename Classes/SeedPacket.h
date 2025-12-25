@@ -70,6 +70,16 @@ public:
     }
 
     /**
+     * @brief 静态配置表：在 SeedPacket.cpp 中初始化
+     */
+    static const std::map<PlantName, PlantConfig> CONFIG_TABLE;
+
+    /**
+     * @brief 统一创建接口
+     */
+    static SeedPacket* createFromConfig(PlantName name);
+
+    /**
      * @brief Initialization function
      */
     virtual bool init() override;

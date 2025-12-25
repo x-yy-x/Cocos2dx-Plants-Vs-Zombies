@@ -1,7 +1,8 @@
 #pragma once
 #include "cocos2d.h"
+#include "GameObject.h"
 
-class Mower : public cocos2d::Sprite
+class Mower : public GameObject
 {
 public:
     static Mower* create();

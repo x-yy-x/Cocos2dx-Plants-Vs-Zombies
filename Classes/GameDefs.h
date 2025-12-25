@@ -1,5 +1,7 @@
 #pragma once
 #include "cocos2d.h"
+#include <string>
+#include <functional>
 
 // Grid cell size
 const cocos2d::Size CELLSIZE = cocos2d::Size(130, 120);
@@ -49,4 +51,20 @@ enum class PlantName
     WALLNUT,
     POTATOMINE,
     UNKNOWN
+};
+
+class SeedPacket;
+/**
+ * @brief 工厂函数包装器
+ */
+typedef std::function<SeedPacket* (const std::string&, float, int, PlantName)> SeedPacketFactory;
+
+/**
+ * @brief 植物静态配置数据
+ */
+struct PlantConfig {
+    std::string packetImage;
+    float cooldown;
+    int sunCost;
+    SeedPacketFactory factory;
 };

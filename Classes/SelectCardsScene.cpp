@@ -7,26 +7,12 @@
 #include "Zomboni.h"
 #include "Gargantuar.h"
 #include "Imp.h"
+#include "BucketHeadZombie.h"
+#include "NormalZombie.h"
 #include "ui/CocosGUI.h"
 #include <algorithm>
 #include "SelectCard.h"
 #include "SeedPacket.h"
-#include "Sunflower.h"
-#include "Sunshroom.h"
-#include "PeaShooter.h"
-#include "Repeater.h"
-#include "ThreePeater.h"
-#include "Puffshroom.h"
-#include "Wallnut.h"
-#include "CherryBomb.h"
-#include "SpikeWeed.h"
-#include "Jalapeno.h"
-#include "TwinSunflower.h"
-#include "GatlingPea.h"
-#include "SpikeRock.h"
-#include "PotatoMine.h"
-#include "BucketHeadZombie.h"
-#include "NormalZombie.h"
 #include "audio/include/AudioEngine.h"
 #include "PlayerProfile.h"
 
@@ -301,141 +287,67 @@ void SelectCardsScene::spawnZombieShowcase()
 void SelectCardsScene::createSelectCards()
 {
     if (!_selectBG) return;
-    
-    // Create all plant seed packets (same as GameWorld)
-    struct PlantInfo {
-        const char* imageFile;
-        float cooldown;
-        int sunCost;
-        PlantName plantName;
-    };
-    
-    std::vector<PlantInfo> plants = {
-        {"seedpacket_sunflower.png", 3.0f, 50, PlantName::SUNFLOWER},
-        {"seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM},
-        {"seedpacket_potatoBomb.png", 30.0f, 25, PlantName::POTATOMINE},
-        {"seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER},
-        {"seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER},
-        {"Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER},
-        {"seedpacket_puffshroom.png", 3.0f, 0, PlantName::PUFFSHROOM},
-        {"seedpacket_wallnut.png", 30.0f, 50, PlantName::WALLNUT},
-        {"seedpacket_cherry_bomb.png", 1.0f, 150, PlantName::CHERRYBOMB},
-        {"seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED},
-        {"seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO},
-        {"seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER},
-        {"seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA},
-        {"seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK},
-    };
-    
-    // Create seed packets and select cards
-    for (const auto& plant : plants) {
-        SeedPacket* seedPacket = nullptr;
-        switch (plant.plantName) {
-            case PlantName::SUNFLOWER:
-                seedPacket = SeedPacket::create<Sunflower>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::SUNSHROOM:
-                seedPacket = SeedPacket::create<Sunshroom>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::PEASHOOTER:
-                seedPacket = SeedPacket::create<PeaShooter>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::REPEATER:
-                seedPacket = SeedPacket::create<Repeater>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::THREEPEATER:
-                seedPacket = SeedPacket::create<ThreePeater>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::PUFFSHROOM:
-                seedPacket = SeedPacket::create<Puffshroom>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::WALLNUT:
-                seedPacket = SeedPacket::create<Wallnut>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::CHERRYBOMB:
-                seedPacket = SeedPacket::create<CherryBomb>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::SPIKEWEED:
-                seedPacket = SeedPacket::create<SpikeWeed>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::JALAPENO:
-                seedPacket = SeedPacket::create<Jalapeno>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::TWINSUNFLOWER:
-                seedPacket = SeedPacket::create<TwinSunflower>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::GATLINGPEA:
-                seedPacket = SeedPacket::create<GatlingPea>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::POTATOMINE:
-                seedPacket = SeedPacket::create<PotatoMine>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            case PlantName::SPIKEROCK:
-                seedPacket = SeedPacket::create<SpikeRock>(plant.imageFile, plant.cooldown, plant.sunCost, plant.plantName);
-                break;
-            default:
-                break;
-        }
-        
+
+    // 1. 直接遍历全局配置表，自动创建所有定义的植物卡片
+    // 使用 C++11 兼容的迭代器遍历 SeedPacket::CONFIG_TABLE
+    for (std::map<PlantName, PlantConfig>::const_iterator it = SeedPacket::CONFIG_TABLE.begin();
+        it != SeedPacket::CONFIG_TABLE.end(); ++it)
+    {
+        PlantName name = it->first;
+        const PlantConfig& cfg = it->second;
+
+        // 利用之前写好的统一工厂接口
+        SeedPacket* seedPacket = SeedPacket::createFromConfig(name);
+
         if (seedPacket) {
-            // No need to retain - SeedPacket is managed by Cocos2d-x's autorelease pool
-            // We only use it to get the plant name, not to pass the pointer to GameWorld
-            auto selectCard = SelectCard::create(plant.imageFile, plant.plantName, seedPacket);
+            // 创建选择界面的卡片对象
+            auto selectCard = SelectCard::create(cfg.packetImage, name, seedPacket);
             if (selectCard) {
                 _allSelectCards.push_back(selectCard);
                 _selectBG->addChild(selectCard, 10);
             }
         }
     }
-    
-    // Layout cards: 8 per row, reference GameWorld spacing
+
+    // 2. 布局逻辑 (保持原样，但代码更整洁)
     const float cardSpacingX = 65.0f;
-    const float cardSpacingY = 85.0f;  // Increased vertical spacing to avoid overlap
-    const float cardStartX = 50.0f;  // Offset from selectBG left edge
-    const float cardStartY = _selectBG->getContentSize().height - 100.0f;  // Offset from top
-    
+    const float cardSpacingY = 85.0f;
+    const float cardStartX = 50.0f;
+    const float cardStartY = _selectBG->getContentSize().height - 100.0f;
+
     for (size_t i = 0; i < _allSelectCards.size(); ++i) {
-        if (_allSelectCards[i]) {
-            int row = i / 8;
-            int col = i % 8;
-            float x = cardStartX + col * cardSpacingX;
-            float y = cardStartY - row * cardSpacingY;
-            _allSelectCards[i]->setPosition(Vec2(x, y));
+        auto card = _allSelectCards[i];
+        if (!card) continue;
 
-            auto card = _allSelectCards[i];
+        // 计算网格位置：每行 8 个
+        int row = i / 8;
+        int col = i % 8;
+        card->setPosition(Vec2(cardStartX + col * cardSpacingX, cardStartY - row * cardSpacingY));
 
-            // Check if the plant is unlocked
-            if (!PlayerProfile::getInstance()->isPlantUnlocked(card->getPlantName())) {
-                card->setColor(Color3B(100, 100, 100)); // Gray out the card
-            }
-            
-            // Set callback for card selection
-            auto listener = EventListenerTouchOneByOne::create();
-            listener->setSwallowTouches(true);
-            listener->onTouchBegan = [this, card](Touch* touch, Event* event) -> bool {
-                if (!card || !card->getParent()) return false;
-                // Convert touch location to card's parent (selectBG) coordinate space
-                Vec2 locationInParent = card->getParent()->convertTouchToNodeSpace(touch);
-                // Get card's position in parent space
-                Vec2 cardPos = card->getPosition();
-                // Get card's content size
-                Size cardSize = card->getContentSize();
-                // Check if touch is within card bounds (considering anchor point)
-                Vec2 anchorOffset = Vec2(cardSize.width * card->getAnchorPoint().x, 
-                                         cardSize.height * card->getAnchorPoint().y);
-                Rect cardRect = Rect(cardPos.x - anchorOffset.x, 
-                                     cardPos.y - anchorOffset.y, 
-                                     cardSize.width, cardSize.height);
-                if (cardRect.containsPoint(locationInParent)) {
-                    this->onCardSelected(card);
-                    return true;
-                }
-                return false;
-            };
-            Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, card);
+        // 检查解锁状态
+        if (!PlayerProfile::getInstance()->isPlantUnlocked(card->getPlantName())) {
+            card->setColor(Color3B(100, 100, 100)); // 未解锁变暗
         }
+
+        // 3. 绑定触摸事件 (保持原逻辑)
+        auto listener = EventListenerTouchOneByOne::create();
+        listener->setSwallowTouches(true);
+        listener->onTouchBegan = [this, card](Touch* touch, Event* event) -> bool {
+            if (!card || !card->getParent()) return false;
+
+            Vec2 locationInParent = card->getParent()->convertTouchToNodeSpace(touch);
+            Rect cardRect = card->getBoundingBox(); // 使用 getBoundingBox 更简洁地获取位置和大小
+
+            if (cardRect.containsPoint(locationInParent)) {
+                this->onCardSelected(card);
+                return true;
+            }
+            return false;
+            };
+        Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, card);
     }
 }
+
 
 void SelectCardsScene::onCardSelected(SelectCard* card)
 {

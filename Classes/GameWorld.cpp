@@ -4,19 +4,11 @@
 #include "SunProducingPlant.h"
 #include "AttackingPlant.h"
 #include "BombPlant.h"
-#include "PeaShooter.h"
 #include "Repeater.h"
-#include "ThreePeater.h"
 #include "Sunflower.h"
-#include "Sunshroom.h"
-#include "Puffshroom.h"
-#include "Puff.h"
-#include "Wallnut.h"
-#include "CherryBomb.h"
 #include "Zombie.h"
 #include "Shovel.h"
 #include "Bullet.h"
-#include "Pea.h"
 #include "SeedPacket.h"
 #include "Sun.h"
 #include "PoleVaulter.h"
@@ -26,13 +18,7 @@
 #include "GameMenu.h"
 #include "SelectCardsScene.h"
 #include "Zomboni.h"
-#include "SpikeWeed.h"
-#include "Jalapeno.h"
 #include "IceTile.h"
-#include "TwinSunflower.h"
-#include "GatlingPea.h"
-#include "SpikeRock.h"
-#include "PotatoMine.h"
 #include "Rake.h"
 #include "Mower.h"
 #include "coin.h"
@@ -44,6 +30,7 @@
 #include "audio/include/AudioEngine.h"
 #include "base/ccUtils.h"
 #include "PlayerProfile.h"
+#include "map"
 
 // CCRANDOM
 #include "base/ccRandom.h"
@@ -99,6 +86,30 @@ static void problemLoading(const char* filename)
     printf("Depending on how you compiled you might have to add 'Resources/' in front of filenames in HelloWorldScene.cpp\n");
 }
 
+void GameWorld::initSeedPackets() {
+    float baseX = 187.0f;
+    float baseY = 667.0f;
+    float spacing = 65.0f;
+
+    // 修复报错：使用 C++11 兼容方式遍历 map
+    if (_initialPlantNames.empty()) {
+        for (std::map<PlantName, PlantConfig>::const_iterator it = SeedPacket::CONFIG_TABLE.begin();
+            it != SeedPacket::CONFIG_TABLE.end(); ++it)
+        {
+            _initialPlantNames.push_back(it->first); // it->first 是 PlantName
+        }
+    }
+
+    // 统一循环添加
+    for (size_t i = 0; i < _initialPlantNames.size(); ++i) {
+        SeedPacket* packet = SeedPacket::createFromConfig(_initialPlantNames[i]);
+        if (packet) {
+            packet->setPosition(Vec2(baseX + i * spacing, baseY));
+            this->addChild(packet, SEEDPACKET_LAYER);
+            _seedPackets.push_back(packet);
+        }
+    }
+}
 // On "init" you need to initialize your instance
 bool GameWorld::init()
 {
@@ -220,129 +231,7 @@ bool GameWorld::init()
     
 
     _elapsedTime = 0.0f;
-
-    // Use plant names from SelectCardsScene if provided, otherwise create default ones
-    if (!_initialPlantNames.empty())
-    {
-        // Create seed packets based on selected plant names
-        // Set positions for seed packets (more compact spacing)
-        float baseX = 187.0f;
-        float baseY = 667.0f;
-        float spacing = 65.0f;
-
-        for (size_t i = 0; i < _initialPlantNames.size(); ++i)
-        {
-            PlantName plantName = _initialPlantNames[i];
-            
-            // Create a new SeedPacket instance based on plant name
-            SeedPacket* newPacket = nullptr;
-            
-            // Create seed packet based on plant name
-            switch (plantName) {
-                case PlantName::SUNFLOWER:
-                    newPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50, PlantName::SUNFLOWER);
-                    break;
-                case PlantName::SUNSHROOM:
-                    newPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM);
-                    break;
-                case PlantName::PEASHOOTER:
-                    newPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 5.0f, 100, PlantName::PEASHOOTER);
-                    break;
-                case PlantName::REPEATER:
-                    newPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER);
-                    break;
-                case PlantName::THREEPEATER:
-                    newPacket = SeedPacket::create<ThreePeater>("Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER);
-                    break;
-                case PlantName::PUFFSHROOM:
-                    newPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0, PlantName::PUFFSHROOM);
-                    break;
-                case PlantName::WALLNUT:
-                    newPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 20.0f, 50, PlantName::WALLNUT);
-                    break;
-                case PlantName::CHERRYBOMB:
-                    newPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 3.0f, 150, PlantName::CHERRYBOMB);
-                    break;
-                case PlantName::SPIKEWEED:
-                    newPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 3.0f, 100, PlantName::SPIKEWEED);
-                    break;
-                case PlantName::JALAPENO:
-                    newPacket = SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 3.0f, 125, PlantName::JALAPENO);
-                    break;
-                case PlantName::TWINSUNFLOWER:
-                    newPacket = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 3.0f, 150, PlantName::TWINSUNFLOWER);
-                    break;
-                case PlantName::GATLINGPEA:
-                    newPacket = SeedPacket::create<GatlingPea>("seedpacket_gatlingpea.png", 3.0f, 250, PlantName::GATLINGPEA);
-                    break;
-                case PlantName::POTATOMINE:
-                    newPacket = SeedPacket::create<PotatoMine>("seedpacket_potatoBomb.png", 15.0f, 25, PlantName::POTATOMINE);
-                    break;
-                case PlantName::SPIKEROCK:
-                    newPacket = SeedPacket::create<SpikeRock>("seedpacket_spikerock.png", 3.0f, 125, PlantName::SPIKEROCK);
-                    break;
-                default:
-                    break;
-            }
-            
-            if (newPacket) {
-                newPacket->setPosition(Vec2(baseX + i * spacing, baseY));
-                this->addChild(newPacket, SEEDPACKET_LAYER);
-                _seedPackets.push_back(newPacket);
-            }
-        }
-    }
-    else
-    {
-        // Create default seed packets using template method (no need for separate subclasses!)
-        auto sunflowerPacket = SeedPacket::create<Sunflower>("seedpacket_sunflower.png", 3.0f, 50,PlantName::SUNFLOWER);
-        auto sunshroomPacket = SeedPacket::create<Sunshroom>("seedpacket_sunshroom.png", 3.0f, 25, PlantName::SUNSHROOM);
-        auto peashooterPacket = SeedPacket::create<PeaShooter>("seedpacket_peashooter.png", 7.5f, 100, PlantName::PEASHOOTER);
-        auto repeaterPacket = SeedPacket::create<Repeater>("seedpacket_repeater.png", 3.0f, 200, PlantName::REPEATER);
-        auto threepeaterPacket = SeedPacket::create<ThreePeater>("Threepeater_Seed_Packet_PC.png", 3.0f, 325, PlantName::THREEPEATER);
-        auto puffshroomPacket = SeedPacket::create<Puffshroom>("seedpacket_puffshroom.png", 3.0f, 0, PlantName::PUFFSHROOM);
-        auto wallnutPacket = SeedPacket::create<Wallnut>("seedpacket_wallnut.png", 30.0f, 50, PlantName::WALLNUT);
-        auto cherryBombPacket = SeedPacket::create<CherryBomb>("seedpacket_cherry_bomb.png", 1.0f, 150, PlantName::CHERRYBOMB);
-        auto spikeWeedPacket = SeedPacket::create<SpikeWeed>("seedpacket_spikeweed.png", 1.0f, 100, PlantName::SPIKEWEED);
-        auto jalapenoPacket= SeedPacket::create<Jalapeno>("seedpacket_jalapeno.png", 1.0f, 100, PlantName::JALAPENO);
-        auto twinSunflowerPacket = SeedPacket::create<TwinSunflower>("seedpacket_twinsunflower.png", 1.0f, 150, PlantName::TWINSUNFLOWER);
-        auto gatlingPeaPacket = SeedPacket::create<GatlingPea>("seedpacket_gatlingpea.png", 1.0f, 150, PlantName::GATLINGPEA);
-        auto potatoMinePacket= SeedPacket::create<PotatoMine>("seedpacket_potatoBomb.png", 30.0f, 25, PlantName::POTATOMINE);
-        auto spikeRockPacket = SeedPacket::create<SpikeRock>("seedpacket_spikerock.png", 1.0f, 150, PlantName::SPIKEROCK);
-
-        if (sunflowerPacket && sunshroomPacket && peashooterPacket && 
-            repeaterPacket && threepeaterPacket && puffshroomPacket && 
-            wallnutPacket && cherryBombPacket && spikeWeedPacket && 
-            jalapenoPacket && twinSunflowerPacket && gatlingPeaPacket &&
-            spikeRockPacket)
-        {
-            _seedPackets.push_back(sunflowerPacket);
-            _seedPackets.push_back(sunshroomPacket);
-            _seedPackets.push_back(peashooterPacket);
-            _seedPackets.push_back(repeaterPacket);
-            _seedPackets.push_back(threepeaterPacket);
-            _seedPackets.push_back(puffshroomPacket);
-            _seedPackets.push_back(wallnutPacket);
-            _seedPackets.push_back(potatoMinePacket);
-            _seedPackets.push_back(cherryBombPacket);
-            _seedPackets.push_back(spikeWeedPacket);
-            _seedPackets.push_back(jalapenoPacket);
-            _seedPackets.push_back(twinSunflowerPacket);
-            _seedPackets.push_back(gatlingPeaPacket);
-            _seedPackets.push_back(spikeRockPacket);
-
-            // Set positions for seed packets (more compact spacing)
-            float baseX = 187.0f;
-            float baseY = 667.0f;
-            float spacing = 65.0f;  // Reduced spacing for more compact layout
-
-            for (size_t i = 0; i < _seedPackets.size(); ++i)
-            {
-                _seedPackets[i]->setPosition(Vec2(baseX + i * spacing, baseY));
-                this->addChild(_seedPackets[i], SEEDPACKET_LAYER);
-            }
-        }
-    }
+	initSeedPackets();
 
     // Create sun counter label
     _sunCountLabel = Label::createWithSystemFont(std::to_string(_sunCount), "Arial", 20);
@@ -446,12 +335,12 @@ bool GameWorld::init()
         this->addChild(speedMenu, UI_LAYER);
     }
 
-
+    
     // debug mode
     bool debug = true;
     if (debug) {
         // DEBUG:rake
-        /*auto rake = Rake::create();
+        auto rake = Rake::create();
         if (rake)
         {
             float y = GRID_ORIGIN.y + 2 * CELLSIZE.height + CELLSIZE.height * 0.6f;
@@ -459,7 +348,7 @@ bool GameWorld::init()
             rake->setPosition(Vec2(x, y));
             this->addChild(rake, ENEMY_LAYER);
             _rakePerRow[2] = rake;
-        }*/
+        }
 
         // DEBUG: Spawn one zombie at start for testing
         // TODO: Remove this before final release
