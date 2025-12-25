@@ -1,8 +1,9 @@
 #pragma once
 #include "cocos2d.h"
+#include "GameObject.h"
 class Zombie;
 
-class Rake : public cocos2d::Sprite
+class Rake : public GameObject
 {
 public:
     static Rake* create();

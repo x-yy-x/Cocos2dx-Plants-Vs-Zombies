@@ -1,130 +1,62 @@
 #pragma once
 
 #include "cocos2d.h"
-#include "SunProducingPlant.h"
+#include "SunProducingPlant.h" // 包含 virtual public Plant
+#include "Mushroom.h"          // 包含 virtual public Plant
 #include "GameDefs.h"
 
-// Forward declaration
-class Sun;
-
-class Sunshroom : public SunProducingPlant
+class Sunshroom : public SunProducingPlant, public Mushroom
 {
 public:
-    // Sunshroom growth states
+    // 阳光菇特有的生长阶段
     enum class GrowthState
     {
-        SMALL_INIT,     // Just planted, small size, playing init animation
-        GROWING,        // Growing animation playing
-        GROWN,          // Fully grown, normal size
-        SLEEPING        // Daytime sleeping state
+        SMALL_INIT,     // 刚种下，小个子
+        GROWING,        // 正在长大
+        GROWN,          // 长大了
+        SLEEPING        // 睡觉中（此状态与 Mushroom::_activityState 联动）
     };
 
-    /**
-     * @brief Sunshroom initialization function
-     */
-    virtual bool init() override;
+    // 构造/析构
+    Sunshroom();
+    virtual ~Sunshroom() {}
 
-    // Implement the auto-generated static Sunshroom* create() function
+    // 标准 Cocos create 函数
     CREATE_FUNC(Sunshroom);
 
-    /**
-     * @brief Static planting function for Sunshroom.
-     * @param globalPos Touch position in global coordinates
-     * @return Sunshroom* Returns Sunshroom instance on success, nullptr on failure
-     */
-    static Sunshroom* plantAtPosition(const cocos2d::Vec2& globalPos);
-
-    /**
-     * @brief Override update function
-     * @param delta Time delta
-     */
+    virtual bool init() override;
     virtual void update(float delta) override;
 
-    /**
-     * @brief Produce sun if cooldown is finished (override from SunProducingPlant)
-     * @return Sun* Returns Sun instance if ready, nullptr otherwise
-     */
+    // 实现 SunProducingPlant 接口
     virtual std::vector<Sun*> produceSun() override;
 
-    /**
-     * @brief Check if it's daytime (sleeping state)
-     * @return true if daytime, false if nighttime
-     */
-    bool isDaytime() const;
-
-    /**
-     * @brief Update day/night mode from GameWorld
-     * @return true if mode changed, false otherwise
-     */
-    bool updateDayNightMode();
-
-    /**
-     * @brief Set the current growth state and update animation accordingly
-     * @param state New growth state
-     */
-    void setGrowthState(GrowthState state);
-
-    /**
-     * @brief Get current growth state
-     * @return Current growth state
-     */
-    GrowthState getGrowthState() const { return _growthState; }
+    // 静态种植函数
+    static Sunshroom* plantAtPosition(const cocos2d::Vec2& globalPos);
 
 protected:
-    // ----------------------------------------------------
-    // Static constants
-    // ----------------------------------------------------
+    // 实现 Mushroom 的虚函数
+    virtual void wakeUp() override;
+    virtual void sleep() override;
+
+    // 内部逻辑
+    void setGrowthState(GrowthState state);
+    void setAnimation() override; // 覆盖 Plant 的 setAnimation
+    void startGrowingSequence();
+    void onGrowthSequenceFinished();
+
+    // 静态常量
     static const std::string IMAGE_FILENAME;
     static const cocos2d::Rect INITIAL_PIC_RECT;
     static const cocos2d::Size OBJECT_SIZE;
-    static const float SUN_PRODUCTION_INTERVAL;  // Time between sun productions (24 seconds)
-    static const float GROWTH_TIME;             // Time to grow from small to grown (5 seconds)
-    static const float SMALL_SCALE;             // Scale factor for small Sunshroom (0.7f)
-    static const float GROWN_SCALE;             // Scale factor for grown Sunshroom (1.0f)
-    static const int SMALL_SUN_VALUE;           // Sun value for small Sunshroom (15)
-    static const int GROWN_SUN_VALUE;           // Sun value for grown Sunshroom (25)
+    static const float SUN_PRODUCTION_INTERVAL;
+    static const float GROWTH_TIME;
+    static const float SMALL_SCALE;
+    static const float GROWN_SCALE;
+    static const int SMALL_SUN_VALUE;
+    static const int GROWN_SUN_VALUE;
 
-    /**
-     * @brief Set up animation frames based on current state
-     */
-    virtual void setAnimation() override;
-
-    /**
-     * @brief Load animation frames from specified folder and filename pattern
-     * @param folderPath Folder path (e.g., "sunshroom/init")
-     * @param frameCount Number of frames to load
-     * @param scale Scale factor for the animation
-     * @return Animation* Created animation, nullptr if failed
-     */
-    cocos2d::Animation* loadAnimation(const std::string& folderPath, int frameCount, float scale = 1.0f);
-
-    /**
-     * @brief Wake up the Sunshroom (transition from sleeping to appropriate night state)
-     */
-    void wakeUp();
-
-    /**
-     * @brief Put the Sunshroom to sleep (daytime)
-     */
-    void sleep();
-
-    /**
-     * @brief Start the three-stage growing sequence
-     * Stage 1: Scale up animation (0.7 -> 1.0)
-     * Stage 2: Play grownup animation frames
-     * Stage 3: Switch to GROWN state
-     */
-    void startGrowingSequence();
-
-    // Protected constructor
-    Sunshroom();
-
-    void onGrowthSequenceFinished(); // <-- 【新增声明】
 private:
-    GrowthState _growthState;        // Current growth state
-    float _growthTimer;             // Timer for growth progression
-    float _currentScale;            // Current scale factor
-    cocos2d::Action* _currentAnimation;  // Current animation action
-    bool _isNightMode;              // Current day/night mode state
-    bool _isInitialized;            // Flag to track if initial state has been set
+    GrowthState _growthState;
+    float _growthTimer;
+    float _currentScale;
 };

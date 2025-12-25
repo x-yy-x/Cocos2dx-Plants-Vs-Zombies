@@ -39,6 +39,8 @@ public:
      */
     void toggleSpeedMode(cocos2d::Ref* sender);
 
+    void initSeedPackets();
+
     /**
      * @brief Show pause menu
      * @param sender The menu item that triggered this callback
