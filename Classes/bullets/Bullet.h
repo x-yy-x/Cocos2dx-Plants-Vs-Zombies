@@ -9,7 +9,7 @@
  * Represents a projectile fired by a plant.
  * Cannot be instantiated directly (abstract base class).
  */
-class Bullet : public GameObject
+    class Bullet : public GameObject
 {
 public:
     /**

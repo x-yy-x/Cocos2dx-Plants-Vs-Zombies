@@ -4,10 +4,10 @@
 #include "Bullet.h"
 
 /**
- * @brief Pea bullet class, inherits from Bullet.
- * Fired by PeaShooter.
+ * @brief Puff bullet class, inherits from Bullet.
+ * Fired by Puffshroom. Has limited lifetime.
  */
-class Pea : public Bullet
+    class Puff : public Bullet
 {
 public:
     /**
@@ -15,19 +15,18 @@ public:
      */
     virtual bool init() override;
 
-    // Implement CREATE_FUNC manually or use macro if constructor is public/protected match
-    // Since we need a custom create method for position, we can add a static create method
-    static Pea* create(const cocos2d::Vec2& startPos);
+    // Static create method with position
+    static Puff* create(const cocos2d::Vec2& startPos);
 
     // Implement standard CREATE_FUNC for consistency
-    CREATE_FUNC(Pea);
+    CREATE_FUNC(Puff);
 
 protected:
     // Protected constructor
-    Pea();
+    Puff();
 
     /**
-     * @brief Update movement logic (move forward)
+     * @brief Update movement logic (move forward with lifetime limit)
      * @param delta Time delta
      */
     virtual void updateMovement(float delta) override;
@@ -39,4 +38,10 @@ protected:
     static const cocos2d::Rect INITIAL_PIC_RECT;
     static const float DEFAULT_SPEED;
     static const int DEFAULT_DAMAGE;
+    static const float MAX_LIFETIME;  // Maximum lifetime in seconds (moves about 3 grid cells)
+
+    // ----------------------------------------------------
+    // Member variables
+    // ----------------------------------------------------
+    float _lifetime;  // Current lifetime counter
 };

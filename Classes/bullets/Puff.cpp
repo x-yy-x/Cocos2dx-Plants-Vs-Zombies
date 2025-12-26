@@ -1,25 +1,28 @@
-#include "Pea.h"
+#include "Puff.h"
 
 USING_NS_CC;
 
 // ----------------------------------------------------
 // Static constant definitions
 // ----------------------------------------------------
-const std::string Pea::IMAGE_FILENAME = "pea.png";
-const cocos2d::Rect Pea::INITIAL_PIC_RECT = Rect::ZERO;
+const std::string Puff::IMAGE_FILENAME = "puff.png";
+const cocos2d::Rect Puff::INITIAL_PIC_RECT = Rect::ZERO;
 // TODO: Adjust default speed here
-const float Pea::DEFAULT_SPEED = 400.0f; 
+const float Puff::DEFAULT_SPEED = 300.0f;
 // TODO: Adjust default damage here
-const int Pea::DEFAULT_DAMAGE = 20;
+const int Puff::DEFAULT_DAMAGE = 20;
+// Maximum lifetime: enough to travel about 3 grid cells (3 * 130 = 390 pixels)
+// At speed 300, time = distance/speed = 390/300 = 1.3 seconds
+const float Puff::MAX_LIFETIME = 1.3f;
 
 // Protected constructor
-Pea::Pea()
+Puff::Puff()
 {
-    CCLOG("Pea created.");
+    CCLOG("Puff created.");
 }
 
 // Initialization function
-bool Pea::init()
+bool Puff::init()
 {
     // Initialize parent Bullet
     if (!Bullet::init())
@@ -30,7 +33,7 @@ bool Pea::init()
     // Initialize sprite with image
     if (!Sprite::initWithFile(IMAGE_FILENAME))
     {
-        CCLOG("Failed to load pea image: %s", IMAGE_FILENAME.c_str());
+        CCLOG("Failed to load puff image: %s", IMAGE_FILENAME.c_str());
         return false;
     }
 
@@ -38,18 +41,20 @@ bool Pea::init()
     _damage = DEFAULT_DAMAGE;
     _currentSpeed = DEFAULT_SPEED;
     _hitboxSize = this->getContentSize();
+    _lifetime = 0.0f;
 
     return true;
 }
 
 // Static create method with position
-Pea* Pea::create(const Vec2& startPos)
+Puff* Puff::create(const Vec2& startPos)
 {
-    Pea* pRet = new(std::nothrow) Pea();
+    Puff* pRet = new(std::nothrow) Puff();
     if (pRet && pRet->init())
     {
         pRet->autorelease();
         pRet->setPosition(startPos);
+        pRet->setScale(0.5f); // Scale down if needed
         return pRet;
     }
     else
@@ -61,8 +66,19 @@ Pea* Pea::create(const Vec2& startPos)
 }
 
 // Update movement logic
-void Pea::updateMovement(float delta)
+void Puff::updateMovement(float delta)
 {
+    // Update lifetime
+    _lifetime += delta;
+
+    // Check if lifetime exceeded
+    if (_lifetime >= MAX_LIFETIME)
+    {
+        // Deactivate bullet when lifetime is exceeded
+        deactivate();
+        return;
+    }
+
     // Move forward (to the right)
     float newX = getPositionX() + _currentSpeed * delta;
     setPositionX(newX);
