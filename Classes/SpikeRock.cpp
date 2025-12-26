@@ -43,7 +43,13 @@ SpikeRock* SpikeRock::plantAtPosition(const Vec2& globalPos)
 void SpikeRock::setAnimation()
 {
     this->runAction(MoveBy::create(0.0001f, Vec2(0, -40)));
-    createAndRunAnimation(IMAGE_FILENAME_FIRST, 105, 54, 2, 4, 0.105f);
+    
+    auto animation = initAnimate(IMAGE_FILENAME_FIRST, 105.0f, 54.0f, 2, 4, 8, 0.105f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        auto repeatAction = RepeatForever::create(animate);
+        this->runAction(repeatAction);
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -62,10 +68,21 @@ void SpikeRock::update(float delta)
     if (_currentState != newState) {
         _currentState = newState;
         this->stopAllActions();
-        if (_currentState == DAMAGED)
-            this->createAndRunAnimation(IMAGE_FILENAME_SECOND, 105, 54, 3, 3, 0.105f);
-        else
-            this->createAndRunAnimation(IMAGE_FILENAME_THIRD, 105, 54, 3, 3, 0.105f);
+        if (_currentState == DAMAGED) {
+            auto animation = initAnimate(IMAGE_FILENAME_SECOND, 105.0f, 54.0f, 3, 3, 9, 0.105f);
+            if (animation) {
+                auto animate = Animate::create(animation);
+                auto repeatAction = RepeatForever::create(animate);
+                this->runAction(repeatAction);
+            }
+        } else {
+            auto animation = initAnimate(IMAGE_FILENAME_THIRD, 105.0f, 54.0f, 3, 3, 9, 0.105f);
+            if (animation) {
+                auto animate = Animate::create(animation);
+                auto repeatAction = RepeatForever::create(animate);
+                this->runAction(repeatAction);
+            }
+        }
     }
 
 }
@@ -75,7 +92,7 @@ void SpikeRock::update(float delta)
 // ------------------------------------------------------------------------
 std::vector<Bullet*> SpikeRock::checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow)
 {
-    std::vector<Bullet*> empty; // 地刺不发子弹
+    std::vector<Bullet*> empty; 
 
     _accumulatedTime += Director::getInstance()->getDeltaTime();
 
@@ -83,7 +100,7 @@ std::vector<Bullet*> SpikeRock::checkAndAttack(std::vector<Zombie*> allZombiesIn
         return empty;
     _accumulatedTime = 0.0f;
 
-    // 地刺所在格子的碰撞框
+
     Rect spikeRect = this->getBoundingBox();
     spikeRect.origin.x += 45;
     spikeRect.size.width -= 90;
@@ -92,11 +109,11 @@ std::vector<Bullet*> SpikeRock::checkAndAttack(std::vector<Zombie*> allZombiesIn
     {
         if (!zombie || zombie->isDead())
             continue;
-        // 僵尸是否踩在地刺上
+        
         if (spikeRect.intersectsRect(zombie->getBoundingBox()))
         {
             auto z = dynamic_cast<Zomboni*>(zombie);
-            if (z) {
+            if (z && !z->hasBeenAttackedBySpike()) {
                 z->setSpecialDeath();
                 this->takeDamage(1000);
             }
@@ -108,18 +125,4 @@ std::vector<Bullet*> SpikeRock::checkAndAttack(std::vector<Zombie*> allZombiesIn
         }
     }
     return empty;
-}
-
-SpikeRock* SpikeRock::upgrade(Plant* basePlant)
-{
-    auto pos = basePlant->getPosition();
-
-    basePlant->takeDamage(10000.0f);
-
-    return createPlantAtPosition<SpikeRock>(pos);
-}
-
-bool SpikeRock::canUpgrade(Plant* baseplant) const
-{
-    return dynamic_cast<SpikeWeed*>(baseplant) != nullptr;
 }

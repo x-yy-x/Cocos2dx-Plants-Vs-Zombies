@@ -44,6 +44,21 @@ public:
     bool isDead() const;
 
     /**
+     * @brief Check if the plant is a spike plant (SpikeWeed or SpikeRock).
+     * This function is used to avoid dynamic_cast usage.
+     * @return true if spike plant, false otherwise
+     */
+    virtual bool isSpike() const { return false; }
+
+    /**
+     * @brief Check if this plant can be upgraded to the specified plant type.
+     * This function is used to avoid dynamic_cast usage in upgrade checks.
+     * @param upgradePlantName The target plant type to upgrade to
+     * @return true if this plant can be upgraded to the target type
+     */
+    virtual bool canBeUpgradedTo(PlantName upgradePlantName) const { return false; }
+
+    /**
      * @brief Apply damage to the plant and reduce health.
      * @param damage Damage value
      */
@@ -100,21 +115,6 @@ protected:
                                int maxHealth, 
                                float cooldown);
 
-    /**
-     * @brief Create animation from sprite sheet
-     * @param imageFile Image file name
-     * @param frameWidth Width of each frame
-     * @param frameHeight Height of each frame
-     * @param rows Number of rows
-     * @param cols Number of columns
-     * @param frameDuration Duration per frame
-     * @param totalFrames Total frames (0 means rows*cols)
-     */
-    void createAndRunAnimation(const std::string& imageFile,
-                               float frameWidth, float frameHeight,
-                               int rows, int cols,
-                               float frameDuration = 0.07f,
-                               int totalFrames = 0);
 
     /**
      * @brief Set up animation frames. To be implemented by subclasses.

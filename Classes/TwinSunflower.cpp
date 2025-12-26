@@ -38,7 +38,12 @@ TwinSunflower* TwinSunflower::plantAtPosition(const Vec2& globalPos)
 // ------------------------------------------------------------------------
 void TwinSunflower::setAnimation()
 {
-    createAndRunAnimation(IMAGE_FILENAME, 103.75, 105, 4, 5);
+    auto animation = initAnimate(IMAGE_FILENAME, 103.75f, 105.0f, 4, 5, 20, 0.07f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        auto repeatAction = RepeatForever::create(animate);
+        this->runAction(repeatAction);
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -72,18 +77,3 @@ std::vector<Sun*> TwinSunflower::produceSun()
 
     return {};
 }
-
-bool TwinSunflower::canUpgrade(Plant* baseplant) const
-{
-    return dynamic_cast<Sunflower*>(baseplant) != nullptr;
-}
-
-TwinSunflower* TwinSunflower::upgrade(Plant* basePlant)
-{
-    auto pos = basePlant->getPosition();
-
-    basePlant->takeDamage(10000.0f);
-
-    return createPlantAtPosition<TwinSunflower>(pos);
-}
-

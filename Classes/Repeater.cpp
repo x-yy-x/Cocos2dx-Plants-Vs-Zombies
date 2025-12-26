@@ -28,7 +28,12 @@ bool Repeater::init()
 // ------------------------------------------------------------------------
 void Repeater::setAnimation()
 {
-    createAndRunAnimation(IMAGE_FILENAME, 100, 100, 4, 6);
+    auto animation = initAnimate(IMAGE_FILENAME, 100.0f, 100.0f, 4, 6, 24, 0.07f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        auto repeatAction = RepeatForever::create(animate);
+        this->runAction(repeatAction);
+    }
 }
 
 // ------------------------------------------------------------------------

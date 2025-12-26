@@ -151,12 +151,6 @@ private:
     bool getGridCoordinates(const cocos2d::Vec2& globalPos, int& outRow, int& outCol);
 
     /**
-     * @brief Spawn a wave of zombies
-     * @param waveNumber Current wave number
-     */
-    void spawnZombieWave(int waveNumber);
-
-    /**
      * @brief Update all zombies
      * @param delta Time delta
      */

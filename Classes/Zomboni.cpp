@@ -30,6 +30,7 @@ Zomboni::Zomboni()
     , _specialDieAction(nullptr)
     , _iceAccumulate(0.0f)
     , _iceIndex(0)
+    , _hasBeenAttackedBySpike(false)
 {
     CCLOG("Zombie created.");
 }
@@ -53,6 +54,7 @@ bool Zomboni::init()
     // Enable per-frame update
     cocos2d::AudioEngine::play2d("zomboni.mp3");
     this->_currentHealth = MAX_HEALTH;
+    this->_hasBeenAttackedBySpike = false; // Reset spike attack flag on initialization
     this->setScale(0.45f);
     this->scheduleUpdate();
 
@@ -157,6 +159,7 @@ void Zomboni::setAnimationForState()
     }
     case ZombieState::SPECIAL:
         CCLOG("settting special animation");
+        cocos2d::AudioEngine::play2d("Explosion.mp3");
         this->stopAllActions();
         this->_isDying = true;
         this->runAction(Sequence::create(_specialDieAction, CallFunc::create([this]() {
@@ -195,6 +198,8 @@ void Zomboni::spawnIce()
 
 void Zomboni::setSpecialDeath()
 {
+    // Mark that this zomboni has been attacked by spikeweed to prevent multiple damage
+    _hasBeenAttackedBySpike = true;
     this->_currentHealth -= 10000.0f;
     this->setState(static_cast<int>(ZombieState::SPECIAL));
 }

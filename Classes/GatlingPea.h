@@ -33,13 +33,16 @@ public:
      */
     virtual void update(float delta) override;
 
+    /**
+     * @brief Check if this plant can be upgraded to the specified plant type.
+     * @param upgradePlantName The target plant type to upgrade to
+     * @return false (GatlingPea cannot be upgraded further)
+     */
+    virtual bool canBeUpgradedTo(PlantName upgradePlantName) const override { 
+        return false; 
+    }
 
     virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
-
-
-    virtual bool canUpgrade(Plant* basePlant) const override;
-
-    virtual GatlingPea* upgrade(Plant* basePlant) override;
 
 protected:
     // ----------------------------------------------------

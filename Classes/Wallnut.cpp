@@ -59,31 +59,12 @@ void Wallnut::setAnimation()
     const float frameWidth = 100;
     const float frameHeight = 100;
 
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 6; row++)
-    {
-        for (int col = 0; col < 6; col++)
-        {
-            if (row == 5 && col == 2)
-                break;
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                IMAGE_FILENAME,
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
+    auto animation = initAnimate(IMAGE_FILENAME, frameWidth, frameHeight, 6, 6, 32, 0.07f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        this->normalAnimation = RepeatForever::create(animate);
+        normalAnimation->retain();
     }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
-    auto animate = Animate::create(animation);
-
-    this->normalAnimation = RepeatForever::create(animate);
-    normalAnimation->retain();
 }
 
 void Wallnut::setCrackedAnimation()
@@ -91,31 +72,12 @@ void Wallnut::setCrackedAnimation()
     const float frameWidth = 100;
     const float frameHeight = 100;
 
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 6; row++)
-    {
-        for (int col = 0; col < 6; col++)
-        {
-            if (row == 5 && col == 2)
-                break;
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                "wallnut_cracked_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
+    auto animation = initAnimate("wallnut_cracked_spritesheet.png", frameWidth, frameHeight, 6, 6, 32, 0.07f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        this->crackedAnimation = RepeatForever::create(animate);
+        crackedAnimation->retain();
     }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
-    auto animate = Animate::create(animation);
-
-    this->crackedAnimation = RepeatForever::create(animate);
-    crackedAnimation->retain();
 }
 
 // ------------------------------------------------------------------------

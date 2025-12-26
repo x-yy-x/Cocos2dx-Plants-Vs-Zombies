@@ -37,6 +37,11 @@ bool Coin::init(CoinType coinType)
         return false;
     }
 
+    if (!Sprite::initWithFile(IMAGE_FILENAME[_coinType]))
+    {
+        CCLOG("Failed to load coin image: %s", IMAGE_FILENAME[_coinType].c_str());
+        return false;
+    }
 
     // Apply custom scale
     this->setScale(_coinScale);

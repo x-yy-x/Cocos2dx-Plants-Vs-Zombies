@@ -38,7 +38,13 @@ GatlingPea* GatlingPea::plantAtPosition(const Vec2& globalPos)
 void GatlingPea::setAnimation()
 {
     this->setScale(0.2);
-    createAndRunAnimation(IMAGE_FILENAME, 530, 512, 5, 5);
+    
+    auto animation = initAnimate(IMAGE_FILENAME, 530.0f, 512.0f, 5, 5, 25, 0.07f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        auto repeatAction = RepeatForever::create(animate);
+        this->runAction(repeatAction);
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -51,20 +57,6 @@ void GatlingPea::update(float delta)
     // GameWorld will call produceSun() to check if sun is ready
 }
 
-
-bool GatlingPea::canUpgrade(Plant* baseplant) const
-{
-    return dynamic_cast<Repeater*>(baseplant) != nullptr;
-}
-
-GatlingPea* GatlingPea::upgrade(Plant* basePlant)
-{
-    auto pos = basePlant->getPosition();
-
-    basePlant->takeDamage(10000.0f);
-
-    return createPlantAtPosition<GatlingPea>(pos);
-}
 
 std::vector<Bullet*> GatlingPea::checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow)
 {

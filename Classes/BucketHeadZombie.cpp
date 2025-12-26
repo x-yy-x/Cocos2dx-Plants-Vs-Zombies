@@ -23,7 +23,6 @@ Sprite* BucketHeadZombie::createShowcaseSprite(const Vec2& pos)
 // Destructor
 BucketHeadZombie::~BucketHeadZombie()
 {
-
     CC_SAFE_RELEASE(_walkAction);
     CC_SAFE_RELEASE(_eatAction);
     CCLOG("Zombie destroyed.");
@@ -129,18 +128,18 @@ void BucketHeadZombie::setAnimationForState()
     switch (static_cast<ZombieState>(_currentState))
     {
         case ZombieState::WALKING:
-            log("Setting WALKING animation.");
+            CCLOG("Setting WALKING animation.");
             this->stopAllActions();
             this->runAction(_walkAction);            
             break;
         case ZombieState::EATING:
-            log("Setting EATING animation.");
+            CCLOG("Setting EATING animation.");
             this->stopAllActions();
             this->runAction(_eatAction);
             break;
         case ZombieState::DYING:
         {
-            log("Setting DYING animation.");
+            CCLOG("Setting DYING animation.");
             this->stopAllActions();
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
@@ -175,7 +174,6 @@ void BucketHeadZombie::onBucketBroken()
         auto animate = dynamic_cast<Animate*>(action->getInnerAction());
         frameIndex = animate->getCurrentFrameIndex();
     }
-    log("frameindex=%d", frameIndex);
     stopAllActions();
 
     if (_isEating) {
@@ -197,46 +195,12 @@ void BucketHeadZombie::onBucketBroken()
 
 RepeatForever* BucketHeadZombie::createNormalWalkActionFromFrame(int startFrame)
 {
-    const float w = 125.0f;
-    const float h = 173.8f;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int i = 0; i < 45; ++i)
-    {
-        int index = (startFrame + i) % 45;
-        int row = index / 10;
-        int col = index % 10;
-
-        frames.pushBack(SpriteFrame::create(
-            "zombie_walk_spritesheet.png",
-            Rect(col * w, row * h, w, h)
-        ));
-    }
-
-    auto anim = Animation::createWithSpriteFrames(frames, 0.05f);
-    return RepeatForever::create(Animate::create(anim));
+    auto animation = initAnimateForCycle("zombie_walk_spritesheet.png", 125.0f, 173.8f, 5, 10, startFrame, 46, 0.05f);
+    return RepeatForever::create(Animate::create(animation));
 }
 
 RepeatForever* BucketHeadZombie::createNormalEatActionFromFrame(int startFrame)
 {
-    const float w = 125.0f;
-    const float h = 173.8f;
-
-    Vector<SpriteFrame*> frames;
-
-    for (int i = 0; i < 39; ++i)
-    {
-        int index = (startFrame + i) % 39;
-        int row = index / 10;
-        int col = index % 10;
-
-        frames.pushBack(SpriteFrame::create(
-            "zombie_eat_spritesheet.png",
-            Rect(col * w, row * h, w, h)
-        ));
-    }
-
-    auto anim = Animation::createWithSpriteFrames(frames, 0.03f);
-    return RepeatForever::create(Animate::create(anim));
+    auto animation = initAnimateForCycle("zombie_eat_spritesheet.png", 125.0f, 173.8f, 4, 10, startFrame, 39, 0.03f);
+    return RepeatForever::create(Animate::create(animation));
 }

@@ -51,10 +51,21 @@ public:
      */
     virtual void update(float delta) override;
 
+    /**
+     * @brief Get coin drop bonus multiplier for this zombie type
+     * @return Coin drop bonus multiplier (1.5f for Zomboni)
+     */
+    virtual float getCoinDropBonus() const override { return 1.5f; }
+
+    /**
+     * @brief Check if this zombie should play metal hit sound effect when hit by bullet
+     * @return true for Zomboni (metal construction vehicle)
+     */
+    virtual bool playsMetalHitSound() const override { return true; }
 
     void setSpecialDeath();
 
-
+    inline bool hasBeenAttackedBySpike() { return _hasBeenAttackedBySpike; }
 protected:
     // Protected constructor
     Zomboni();
@@ -94,5 +105,8 @@ protected:
     // Animation actions
     cocos2d::RepeatForever* _driveAction;
     cocos2d::Animate* _specialDieAction;
+
+    // Mark if this zomboni has been attacked by spikeweed to prevent multiple damage
+    bool _hasBeenAttackedBySpike;
     
 };

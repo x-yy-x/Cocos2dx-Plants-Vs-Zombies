@@ -29,7 +29,13 @@ void ThreePeater::setAnimation()
 {
     // 6 columns x 3 rows, but last column only has 1 frame (total 16 frames)
     const int totalFrames = 16;
-    createAndRunAnimation(IMAGE_FILENAME, 91.0f, 100.0f, 4, 5, 0.09f, totalFrames);
+    
+    auto animation = initAnimate(IMAGE_FILENAME, 91.0f, 100.0f, 4, 5, totalFrames, 0.09f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        auto repeatAction = RepeatForever::create(animate);
+        this->runAction(repeatAction);
+    }
 }
 
 // ------------------------------------------------------------------------

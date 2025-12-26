@@ -47,9 +47,20 @@ public:
      */
     virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
 
-    virtual bool canUpgrade(Plant* basePlant) const override;
+    /**
+     * @brief Check if the plant is a spike plant.
+     * @return true for spike plants
+     */
+    virtual bool isSpike() const override { return true; }
 
-    virtual SpikeRock* upgrade(Plant* basePlant) override;
+    /**
+     * @brief Check if this plant can be upgraded to the specified plant type.
+     * @param upgradePlantName The target plant type to upgrade to
+     * @return false (SpikeRock cannot be upgraded further)
+     */
+    virtual bool canBeUpgradedTo(PlantName upgradePlantName) const override { 
+        return false; 
+    }
 
 protected:
     // ----------------------------------------------------

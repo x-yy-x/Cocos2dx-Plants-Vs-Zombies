@@ -48,7 +48,7 @@ public:
      * @brief Update function called every frame for movement, attack, death, etc.
      * @param delta Time delta
      */
-    virtual void update(float delta) override;
+    //virtual void update(float delta) override;
 
 
 
@@ -57,6 +57,12 @@ public:
      * @param plants Vector of all plants in the scene
      */
     virtual void encounterPlant(const std::vector<Plant*>& plants) override;
+
+    /**
+     * @brief Get coin drop bonus multiplier for this zombie type
+     * @return Coin drop bonus multiplier (2.0f for Gargantuar)
+     */
+    virtual float getCoinDropBonus() const override { return 2.0f; }
 
 
 protected:
@@ -79,6 +85,9 @@ protected:
 
     void initThrowAnimation();
 
+    virtual void updateMoving(float delta) override;
+
+    virtual void updateEating(float delta) override;
 
     /**
      * @brief Set animation corresponding to state

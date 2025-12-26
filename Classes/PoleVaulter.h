@@ -67,6 +67,12 @@ public:
      */
     virtual void encounterPlant(const std::vector<Plant*>& plants) override;
 
+    /**
+     * @brief Get coin drop bonus multiplier for this zombie type
+     * @return Coin drop bonus multiplier (1.2f for PoleVaulter)
+     */
+    virtual float getCoinDropBonus() const override { return 1.2f; }
+
    // virtual void onPlantDied() override;
 
    // virtual void startEating(Plant* plant) override;

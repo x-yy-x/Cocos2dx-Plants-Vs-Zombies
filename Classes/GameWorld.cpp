@@ -24,6 +24,7 @@
 #include "coin.h"
 #include "BucketHeadZombie.h"
 #include "NormalZombie.h"
+#include "UpgradedPlant.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
@@ -138,7 +139,7 @@ bool GameWorld::init()
     _shovelSelected = false;
     _shovel = nullptr;
     _shovelBack = nullptr;
-    _sunCount = 200000; // Initial sun count
+    _sunCount = 200; // Initial sun count
     _sunCountLabel = nullptr;
 
     // Initialize timed batch spawning (方案D)
@@ -340,7 +341,7 @@ bool GameWorld::init()
     bool debug = true;
     if (debug) {
         // DEBUG:rake
-        auto rake = Rake::create();
+        /*auto rake = Rake::create();
         if (rake)
         {
             float y = GRID_ORIGIN.y + 2 * CELLSIZE.height + CELLSIZE.height * 0.6f;
@@ -348,7 +349,7 @@ bool GameWorld::init()
             rake->setPosition(Vec2(x, y));
             this->addChild(rake, ENEMY_LAYER);
             _rakePerRow[2] = rake;
-        }
+        }*/
 
         // DEBUG: Spawn one zombie at start for testing
         // TODO: Remove this before final release
@@ -463,7 +464,7 @@ void GameWorld::setupUserInteraction()
                 if (packet->isReady() && _sunCount >= packet->getSunCost())
                 {
                     // Play button click sound
-                    cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
+                    int audioId = cocos2d::AudioEngine::play2d("planting.mp3", false);
 
                     _plantSelected = true;
                     _selectedSeedPacketIndex = i;
@@ -520,7 +521,7 @@ void GameWorld::setupUserInteraction()
 
             if (removed)
             {
-                int audioId = cocos2d::AudioEngine::play2d("planting.mp3", false);
+                int audioId = cocos2d::AudioEngine::play2d("planted.mp3", false, 0.3f);
                 CCLOG("Plant removed!");
             }
             else
@@ -554,7 +555,7 @@ void GameWorld::setupUserInteraction()
                     // Deduct sun
                     _sunCount -= selectedPacket->getSunCost();
                     updateSunDisplay();
-                    int audioId = cocos2d::AudioEngine::play2d("planting.mp3", false);
+                    int audioId = cocos2d::AudioEngine::play2d("planted.mp3", false);
                     // Start cooldown
                     selectedPacket->startCooldown();
         }
@@ -593,27 +594,42 @@ bool GameWorld::tryPlantAtPosition(const Vec2& globalPos, SeedPacket* seedPacket
         return false;
     }
 
-    if (seedPacket->getPlantName() == PlantName::TWINSUNFLOWER) {
-        if (dynamic_cast<Sunflower*>(_plantGrid[row][col]) == nullptr)
+    PlantName plantName = seedPacket->getPlantName();
+    
+    // Check if we need to upgrade an existing plant
+    if (plantName == PlantName::TWINSUNFLOWER || 
+        plantName == PlantName::GATLINGPEA || 
+        plantName == PlantName::SPIKEROCK) {
+        if (!_plantGrid[row][col]) return false;
+        // Use the UpgradedPlant interface to check if we can upgrade
+        if (!UpgradedPlant::canUpgradeByName(plantName, _plantGrid[row][col])) {
             return false;
+        }
+        
+        // 先移除基础植物
+        Plant* basePlant = _plantGrid[row][col];
+        if (basePlant) {
+            this->removeChild(basePlant);
+            _plantGrid[row][col] = nullptr;
+        }        
+        
+        // 现在种植升级植物
+        Plant* plant = seedPacket->plantAt(globalPos);
+        if (plant)
+        {
+            this->addChild(plant, PLANT_LAYER);
+            _plantGrid[row][col] = plant;
+            return true;
+        }
+        
+        return false;
     }
-    else if (seedPacket->getPlantName() == PlantName::GATLINGPEA) {
-        if (dynamic_cast<Repeater*>(_plantGrid[row][col]) == nullptr)
-            return false;
-    }
-    else if (seedPacket->getPlantName() == PlantName::SPIKEROCK) {
-        if (dynamic_cast<SpikeWeed*>(_plantGrid[row][col]) == nullptr)
-            return false;
+    else if (_plantGrid[row][col] != nullptr) {
+        // If there's already a plant in this position and it's not an upgrade case
+        return false;
     }
 
-    else if (_plantGrid[row][col] != nullptr) return false;
-
-    // Use seed packet to create plant
-    if (_plantGrid[row][col]) {
-        Plant* plant = _plantGrid[row][col];
-        this->removeChild(plant);
-        _plantGrid[row][col] = nullptr;
-    }
+    // Use seed packet to create regular plant
     Plant* plant = seedPacket->plantAt(globalPos);
     if (plant)
     {
@@ -763,41 +779,6 @@ void GameWorld::update(float delta)
     }
 }
 
-void GameWorld::spawnZombieWave(int waveNumber)
-{
-    int zombieCount = static_cast<int>(5 + 3 * waveNumber);
-
-    auto visibleSize = Director::getInstance()->getVisibleSize();
-
-    for (int i = 0; i < zombieCount; ++i)
-    {
-        auto normalZombie = NormalZombie::createZombie();
-        auto pole_vaulter = PoleVaulter::createZombie();
-        if (normalZombie &&pole_vaulter)
-        {
-            int row = rand() % MAX_ROW;
-            int type = rand() % 2;
-            const float ZOMBIE_Y_OFFSET = 0.7f;
-            float y = GRID_ORIGIN.y + row * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
-            float x = visibleSize.width + 10;
-
-            if (type == 0) {
-                CCLOG("normal zombie created");
-                normalZombie->setPosition(Vec2(x, y));
-                this->addChild(normalZombie, ENEMY_LAYER);
-                _zombiesInRow[row].push_back(normalZombie);
-            }
-            else if (type == 1) {
-                CCLOG("pole vaulter created");
-                pole_vaulter->setPosition(Vec2(x, y));
-                this->addChild(pole_vaulter, ENEMY_LAYER);
-                _zombiesInRow[row].push_back(pole_vaulter);
-            }
-            
-        }
-    }
-}
-
 void GameWorld::updatePlants(float delta)
 {
     for (int row = 0; row < MAX_ROW; ++row)
@@ -897,11 +878,14 @@ void GameWorld::updateBullets(float delta)
                                 // Hit!
                                 zombie->takeDamage(bullet->getDamage());
                                 bullet->deactivate();
-                                auto zomboni = dynamic_cast<Zomboni*>(zombie);
-                                auto bucketheadzombie = dynamic_cast<BucketHeadZombie*>(zombie);
-                                if (!zomboni && !bucketheadzombie || bucketheadzombie && !bucketheadzombie->hasBucketHead())
+                                
+                                // Use virtual function to determine sound effect instead of dynamic_cast
+                                if (!zombie->playsMetalHitSound())
+                                {
                                     cocos2d::AudioEngine::play2d("bullet_hit.mp3");
-                                else {
+                                }
+                                else 
+                                {
                                     int r = cocos2d::random(1, 3);
                                     switch (r) {
                                         case 1:
@@ -1815,21 +1799,11 @@ void GameWorld::spawnCoinAfterZombieDeath(Zombie* zombie)
 {
     if (!zombie)
         return;
-    float possibilityBonus = 1.0f;
-    if (dynamic_cast<Gargantuar*>(zombie) != nullptr)
-        possibilityBonus = 2.0f;
-    else if (dynamic_cast<Zomboni*>(zombie) != nullptr)
-        possibilityBonus = 1.5f;
-    else if (dynamic_cast<BucketHeadZombie*>(zombie) != nullptr)
-        possibilityBonus = 1.4f;
-    else if (dynamic_cast<PoleVaulter*>(zombie) != nullptr)
-        possibilityBonus = 1.2f;
-    else if (dynamic_cast<Imp*>(zombie) != nullptr)
-        possibilityBonus = 1.2f;
-    else
-        possibilityBonus = 1.0f;
-
+    
+    // Use virtual function to get coin drop bonus instead of dynamic_cast
+    float possibilityBonus = zombie->getCoinDropBonus();
     float r = CCRANDOM_0_1();
+
     float silver = 0.4f, gold = 0.2f, diamond = 0.05f;
     if (r <= possibilityBonus * diamond) {
         auto coin = Coin::create(Coin::CoinType::DIAMOND);

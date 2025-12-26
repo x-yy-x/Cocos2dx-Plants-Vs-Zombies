@@ -2,13 +2,6 @@
 
 USING_NS_CC;
 
-// ----------------------------------------------------
-// Static constant definitions (base class defaults)
-// Note: Subclasses can redefine these in their own .cpp files
-// ----------------------------------------------------
-const std::string GameObject::IMAGE_FILENAME = "";
-const Rect GameObject::INITIAL_PIC_RECT = Rect::ZERO;
-const Size GameObject::OBJECT_SIZE = Size::ZERO;
 
 // Protected constructor implementation
 GameObject::GameObject()
@@ -23,24 +16,55 @@ GameObject::~GameObject()
     CCLOG("GameObject destroyed.");
 }
 
-// Initialization function implementation
-bool GameObject::init()
+
+
+cocos2d::Animation* GameObject::initAnimate(const std::string& fileName, float frameWidth, float frameHeight,
+    int row, int col, int frameCount, float delay)
 {
-    // 1. Call parent class initialization
-    // If IMAGE_FILENAME is empty, use Sprite::init()
-    if (IMAGE_FILENAME.empty())
+    Vector<SpriteFrame*> frames;
+    int currentFrameCount = 0;
+    for (int currentRow = 0; currentRow < row; currentRow++)
     {
-        if (!Sprite::init())
+        for (int currentCol = 0; currentCol < col; currentCol++)
         {
-            return false;
+            float x = currentCol * frameWidth;
+            float y = currentRow * frameHeight;
+            auto frame = SpriteFrame::create(fileName, Rect(x, y, frameWidth, frameHeight));
+            frames.pushBack(frame);
+            if (++currentFrameCount >= frameCount)
+                break;
         }
     }
-    else
-    {
-        if (!Sprite::initWithFile(IMAGE_FILENAME, INITIAL_PIC_RECT))
-        {
-            return false;
-        }
+    return  Animation::createWithSpriteFrames(frames, delay);
+}
+
+cocos2d::Animation* GameObject::initAnimate(const std::string& fileName, float frameWidth, float frameHeight,
+    int row, int col, int startIndex, int endIndex, float delay)
+{
+    Vector<SpriteFrame*> frames;
+    for (int i = startIndex; i <= endIndex; ++i) {
+        int currentRow = i / col;
+        int currentCol = i % col;
+        float x = currentCol * frameWidth;
+        float y = currentRow * frameHeight;
+        auto frame = SpriteFrame::create(fileName, Rect(x, y, frameWidth, frameHeight));
+        frames.pushBack(frame);
     }
-    return true;
+    return Animation::createWithSpriteFrames(frames, delay);
+}
+
+cocos2d::Animation* GameObject::initAnimateForCycle(const std::string& fileName, float frameWidth, float frameHeight,
+    int row, int col, int startIndex, int totoalFrameCount, float delay)
+{
+    Vector<SpriteFrame*> frames;
+    for (int i = 0; i < totoalFrameCount; ++i) {
+        int index = (startIndex + i) % totoalFrameCount;
+        int currentRow = index / col;
+        int currentCol = index % col;
+        float x = currentCol * frameWidth;
+        float y = currentRow * frameHeight;
+        auto frame = SpriteFrame::create(fileName, Rect(x, y, frameWidth, frameHeight));
+        frames.pushBack(frame);
+    }
+    return Animation::createWithSpriteFrames(frames, delay);
 }

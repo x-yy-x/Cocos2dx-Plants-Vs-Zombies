@@ -37,7 +37,13 @@ SpikeWeed* SpikeWeed::plantAtPosition(const Vec2& globalPos)
 void SpikeWeed::setAnimation()
 {
     this->runAction(MoveBy::create(0.0001f, Vec2(0, -40)));
-    createAndRunAnimation(IMAGE_FILENAME, 106.2, 43.5, 4, 5,0.07,19);
+    
+    auto animation = initAnimate(IMAGE_FILENAME, 106.2f, 43.5f, 4, 5, 19, 0.07f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        auto repeatAction = RepeatForever::create(animate);
+        this->runAction(repeatAction);
+    }
 }
 
 // ------------------------------------------------------------------------
@@ -55,7 +61,7 @@ void SpikeWeed::update(float delta)
 // ------------------------------------------------------------------------
 std::vector<Bullet*> SpikeWeed::checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow)
 {
-    std::vector<Bullet*> empty; // 地刺不发子弹
+    std::vector<Bullet*> empty; 
 
     _accumulatedTime += Director::getInstance()->getDeltaTime();
 
@@ -63,7 +69,7 @@ std::vector<Bullet*> SpikeWeed::checkAndAttack(std::vector<Zombie*> allZombiesIn
         return empty;
     _accumulatedTime = 0.0f;
 
-    // 地刺所在格子的碰撞框
+    
     Rect spikeRect = this->getBoundingBox();
     spikeRect.origin.x += 45;
     spikeRect.size.width -= 90;
@@ -72,7 +78,7 @@ std::vector<Bullet*> SpikeWeed::checkAndAttack(std::vector<Zombie*> allZombiesIn
     {
         if (!zombie || zombie->isDead())
             continue;
-        // 僵尸是否踩在地刺上
+        
         if (spikeRect.intersectsRect(zombie->getBoundingBox()))
         {
             auto z = dynamic_cast<Zomboni*>(zombie);

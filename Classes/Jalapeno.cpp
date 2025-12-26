@@ -1,4 +1,4 @@
-﻿#include "Jalapeno.h"
+#include "Jalapeno.h"
 #include "Zombie.h"
 #include "Sun.h"
 #include "GameWorld.h";
@@ -75,40 +75,13 @@ void Jalapeno::setAnimation()
     const float frameWidth = 85;
     const float frameHeight = 110;
 
-    Vector<SpriteFrame*> frames;
     _idleAnimationDuration = 8 * 0.07f;
-    for (int row = 0; row < 2; row++)
-    {
-        for (int col = 0; col < 4; col++)
-        {
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                "jalapeno_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
-            );
-            if (frame == nullptr) {
-                CCLOG("SpriteFrame::create failed for jalapeno_spritesheet.png at (%.1f, %.1f)", x, y);
-                continue;
-            }
-            frames.pushBack(frame);
-        }
+    
+    auto animation = initAnimate("jalapeno_spritesheet.png", frameWidth, frameHeight, 2, 4, 8, 0.07f);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        this->runAction(animate);
     }
-
-    if (frames.empty()) {
-        CCLOG("No valid frames for Jalapeno idle animation!");
-        return;
-    }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
-    if (!animation) {
-        CCLOG("Animation::createWithSpriteFrames failed!");
-        return;
-    }
-    auto animate = Animate::create(animation);
-
-    this->runAction(animate);
 }
 
 // ------------------------------------------------------------------------
@@ -177,38 +150,24 @@ void Jalapeno::playExplosionAnimation()
     auto explosionSprite = Sprite::create("fire_spritesheet.png");
     if (explosionSprite)
     {
-        explosionSprite->setPosition(this->getPosition());
-        if (this->getParent())
-        {
-            this->getParent()->addChild(explosionSprite, this->getLocalZOrder() + 1);
-        }
-
         const float frameWidth = 950;
         const float frameHeight = 165;
-        Vector<SpriteFrame*> frames;
-        for (int row = 0; row < 2; row++)
-        {
-            for (int col = 0; col < 4; col++)
-            {
-                float x = col * frameWidth;
-                float y = row * frameHeight;
-                auto frame = SpriteFrame::create(
-                    "fire_spritesheet.png",
-                    Rect(x, y, frameWidth, frameHeight)
-                );
-                if (frame) frames.pushBack(frame);
-            }
-        }
-        if (!frames.empty())
-        {
-            auto targetpos = Vec2(650, this->getPositionY());
+        const int row = 2;
+        const int col = 4;
+        const int frameCount = 8;
+        const float delay = 0.07f;
 
-            auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
+        auto animation = initAnimate("fire_spritesheet.png", frameWidth, frameHeight, row, col, frameCount, delay);
+        if (animation)
+        {
             auto animate = Animate::create(animation);
-
+            auto targetpos = Vec2(650, this->getPositionY());
             explosionSprite->setScaleX(1.28);
+            explosionSprite->setPosition(targetpos);
+            if (this->getParent())
+                this->getParent()->addChild(explosionSprite, this->getLocalZOrder() + 1);
+
             auto sequence = Sequence::create(
-                MoveTo::create(0.0001f, targetpos),
                 animate,
                 FadeOut::create(0.5f),
                 RemoveSelf::create(),
@@ -218,15 +177,11 @@ void Jalapeno::playExplosionAnimation()
             explosionSprite->runAction(sequence);
         }
         else
-        {
             explosionSprite->runAction(RemoveSelf::create());
-        }
         this->_isDead = true;
     }
     else
-    {
         this->_isDead = true;
-    }
 
     CCLOG("Jalapeno explosion animation played!");
 }

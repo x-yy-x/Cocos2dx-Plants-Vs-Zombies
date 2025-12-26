@@ -37,6 +37,15 @@ public:
      */
     virtual std::vector<Sun*> produceSun() override;
 
+    /**
+     * @brief Check if this plant can be upgraded to the specified plant type.
+     * @param upgradePlantName The target plant type to upgrade to
+     * @return true if this plant can be upgraded to TwinSunflower
+     */
+    virtual bool canBeUpgradedTo(PlantName upgradePlantName) const override { 
+        return upgradePlantName == PlantName::TWINSUNFLOWER; 
+    }
+
 
 protected:
     // ----------------------------------------------------

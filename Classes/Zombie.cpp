@@ -1,8 +1,6 @@
 
 #include "Zombie.h"
 #include "Plant.h"
-#include "SpikeWeed.h"
-#include "SpikeRock.h"
 #include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
@@ -44,7 +42,7 @@ void Zombie::takeDamage(float damage)
     }
 
     _currentHealth -= damage;
-    log("Zombie took %f damage, remaining health: %d", damage, _currentHealth); // Reduced logging
+    CCLOG("Zombie took %f damage, remaining health: %d", damage, _currentHealth); // Reduced logging
 
     if (_currentHealth <= 0)
     {
@@ -71,11 +69,8 @@ void Zombie::encounterPlant(const std::vector<Plant*>& plants)
     {
         if (plant && !plant->isDead())
         {
-            auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
-            if (spikeweed)
-                continue;
-            auto spikerock = dynamic_cast<SpikeRock*>(plant);
-            if (spikerock)
+            // Use virtual function instead of dynamic_cast to check if it's a spike plant
+            if (plant->isSpike())
                 continue;
 
             Rect zombieRect = this->getBoundingBox();
@@ -84,11 +79,7 @@ void Zombie::encounterPlant(const std::vector<Plant*>& plants)
             zombieRect.size.width -= SIZE_CORRECTION;
 
             if (zombieRect.intersectsRect(plant->getBoundingBox()))
-            {
-                log("start eating");
-                startEating(plant);
-                return;
-            }
+                startEating(plant);            
         }
     }
 }
@@ -114,75 +105,41 @@ void Zombie::onPlantDied()
     CCLOG("Zombie resume walking");
 }
 
-cocos2d::Animation* Zombie::initAnimate(const std::string &fileName,float frameWidth,float frameHeight,int row,int col,int frameCount,float delay)
-{
-
-    Vector<SpriteFrame*> frames;
-
-    int currentFrameCount = 0;
-    for (int currentRow = 0; currentRow < row; currentRow++)
-    {
-        for (int currentCol = 0; currentCol < col; currentCol++)
-        {
-            
-            float x = currentCol * frameWidth;
-            float y = currentRow * frameHeight;
-
-            auto frame = SpriteFrame::create( fileName,Rect(x, y, frameWidth, frameHeight));
-
-            frames.pushBack(frame);
-            if (++currentFrameCount >= frameCount)
-                break;
-        }
-    }
-
-    return  Animation::createWithSpriteFrames(frames, delay);
-}
-
 void Zombie::update(float delta)
 {
     if (_isDead || _isDying)
-    {
+        return;   
+    if (_isEating)
+        updateEating(delta);
+    else 
+        updateMoving(delta);      
+}
+
+void Zombie::updateMoving(float delta)
+{
+    float newX = this->getPositionX() - _currentSpeed * delta;
+    this->setPositionX(newX);
+}
+
+void Zombie::updateEating(float delta)
+{
+    if (!_targetPlant || _targetPlant->isDead()) {
+        onPlantDied();
         return;
     }
-
-    // If zombie is not eating, continue walking left
-    if (!_isEating)
+    _accumulatedTime += delta;
+    // If eating, deal damage periodically
+    if (_accumulatedTime >= ATTACK_INTERVAL)
     {
-        float newX = this->getPositionX() - _currentSpeed * delta;
-        this->setPositionX(newX);
+        _targetPlant->takeDamage(ATTACK_DAMAGE);
+        cocos2d::AudioEngine::play2d("zombie_eating.mp3");
+        _accumulatedTime = 0.0f;
 
-        // Check if zombie reached the left edge (game over condition)
-        if (newX < -100)
+        // Check if plant died
+        if (_targetPlant->isDead())
         {
-            // Zombie reached the house - game over
-            CCLOG("Zombie reached the house!");
-        }
-    }
-    else
-    {
-        if (!_targetPlant || _targetPlant->isDead()) {
+            cocos2d::AudioEngine::play2d("zombie_gulp.mp3");
             onPlantDied();
-            return;
-        }
-        _accumulatedTime += delta;
-        // If eating, deal damage periodically
-        if (_accumulatedTime >= ATTACK_INTERVAL)
-        {
-            if (_targetPlant && !_targetPlant->isDead())
-            {
-                _targetPlant->takeDamage(ATTACK_DAMAGE);
-                cocos2d::AudioEngine::play2d("zombie_eating.mp3");
-                CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
-                _accumulatedTime = 0.0f;
-
-                // Check if plant died
-                if (_targetPlant->isDead())
-                {
-                    cocos2d::AudioEngine::play2d("zombie_gulp.mp3");
-                    onPlantDied();
-                }
-            }
         }
     }
 }

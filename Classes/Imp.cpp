@@ -146,7 +146,7 @@ void Imp::update(float delta)
         return;
     }
 
-
+    _accumulatedTime += delta;
     // If zombie is not eating, continue walking left
     if (!_isEating)
     {
@@ -170,7 +170,6 @@ void Imp::update(float delta)
             onPlantDied();
             return;
         }
-        _accumulatedTime += delta;
         // If eating, deal damage periodically
         if (_accumulatedTime >= ATTACK_INTERVAL)
         {

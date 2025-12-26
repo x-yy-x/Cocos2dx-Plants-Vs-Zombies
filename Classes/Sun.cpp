@@ -173,37 +173,20 @@ bool Sun::shouldRemove() const
     return _isCollected || (_lifeTime >= LIFETIME);
 }
 
-// Set animation (placeholder)
+// Set animation
 void Sun::setAnimation()
 {
-    // TODO: Implement sun animation here
-    // For now, just use static image
     const float frameWidth = 100;
     const float frameHeight = 100;
+    const int row = 2;
+    const int col = 6;
+    const int frameCount = 12;
+    const float delay = 0.07f;
 
-    Vector<SpriteFrame*> frames;
-
-    for (int row = 0; row < 2; row++)
-    {
-        for (int col = 0; col < 6; col++)
-        {
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                IMAGE_FILENAME,
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            frames.pushBack(frame);
-        }
+    auto animation = initAnimate(IMAGE_FILENAME, frameWidth, frameHeight, row, col, frameCount, delay);
+    if (animation) {
+        auto animate = Animate::create(animation);
+        auto repeatAction = RepeatForever::create(animate);
+        this->runAction(repeatAction);
     }
-
-    auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
-    auto animate = Animate::create(animation);
-
-    this->runAction(RepeatForever::create(animate));
-
-
-    CCLOG("Sun::setAnimation() - not implemented yet");
 }

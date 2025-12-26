@@ -1,4 +1,4 @@
-﻿
+
 #include "PoleVaulter.h"
 #include "Plant.h"
 #include "audio/include/AudioEngine.h"
@@ -377,11 +377,8 @@ void PoleVaulter::encounterPlant(const std::vector<Plant*>& plants)
     {
         if (plant && !plant->isDead())
         {
-            auto spikeweed = dynamic_cast<SpikeWeed*>(plant);
-            if (spikeweed)
-                continue;
-            auto spikerock = dynamic_cast<SpikeRock*>(plant);
-            if (spikerock)
+            // Use virtual function instead of dynamic_cast to check if it's a spike plant
+            if (plant->isSpike())
                 continue;
             // Create a slightly offset collision box for the zombie
             // This allows the zombie to eat the plant when it's slightly overlapping

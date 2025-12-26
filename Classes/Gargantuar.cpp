@@ -96,98 +96,41 @@ void Gargantuar::initSmashAnimation()
 
 void Gargantuar::initThrowAnimation()
 {
-
-    const float frameWidth = 469.0f;
-    const float frameHeight = 400.0f;
-
-    Vector<SpriteFrame*> framesforpre;
-    Vector<SpriteFrame*> framesforpost;
-
-    int count = 0;
-    for (int row = 0; row < 4; row++)
-    {
-        for (int col = 0; col < 10; col++)
-        {
-            ++count;
-            if (row == 3 && col == 8)
-                break;
-
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                "gargantuar_throw_spritesheet.png",
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            if (count <= 31)
-                framesforpre.pushBack(frame);
-            else
-                framesforpost.pushBack(frame);
-        }
-    }
-
-    auto preanimation = Animation::createWithSpriteFrames(framesforpre, 0.08f);
-    this->_prethrowAction = Animate::create(preanimation);
+    auto preThrowAnimation = initAnimate("gargantuar_throw_spritesheet.png", 469.0f, 400.0f, 4, 10, 0,30, 0.08f);
+    this->_prethrowAction= Animate::create(preThrowAnimation);
     _prethrowAction->retain();
 
-    auto postanimation = Animation::createWithSpriteFrames(framesforpost, 0.08f);
-    this->_postthrowAction = Animate::create(postanimation);
+    auto postThrowAnimation= initAnimate("gargantuar_throw_spritesheet.png", 469.0f, 400.0f, 4, 10, 30, 37, 0.08f);
+    this->_postthrowAction = Animate::create(postThrowAnimation);
     _postthrowAction->retain();
 }
 
-// Update every frame
-void Gargantuar::update(float delta)
+
+void Gargantuar::updateMoving(float delta)
 {
-    if (_isDead || _isDying)
-    {
+    if (_isThrowing)
+        return;
+    if (_currentHealth <= 1500 && _currentHealth > 0 && _hasthrown == false && this->getPositionX() >= 500) {
+        this->_currentSpeed = 0;
+        this->_isThrowing = true;
+        setState(static_cast<int>(ZombieState::THROWING));
         return;
     }
-
-    // If zombie is not eating, continue walking left
-    if (!_isEating && !_isThrowing)
-    {
-        if (_currentHealth <= 1500 && _currentHealth > 0 && _hasthrown == false && this->getPositionX() >= 500) {
-            this->_currentSpeed = 0;
-            this->_isThrowing = true;
-            setState(static_cast<int>(ZombieState::THROWING));
-        }
-        float newX = this->getPositionX() - _currentSpeed * delta;
-        this->setPositionX(newX);
-
-        // Check if zombie reached the left edge (game over condition)
-        if (newX < -100)
-        {
-            // Zombie reached the house - game over
-            CCLOG("Zombie reached the house!");
-        }
-    }
-    else if (_isEating)
-    {
-        _accumulatedTime += delta;
-        // If eating, deal damage periodically
-        if (_accumulatedTime >= ATTACK_INTERVAL)
-        {
-            _accumulatedTime = 0.0f;
-            if (_targetPlant && !_targetPlant->isDead())
-            {
-                _targetPlant->takeDamage((int)ATTACK_DAMAGE);
-                cocos2d::AudioEngine::play2d("gargantuar-thump.mp3", false, 1.0f);
-                CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
-
-                // Check if plant died
-                if (_targetPlant->isDead())
-                {
-                    onPlantDied();
-                }
-            }
-            else
-                onPlantDied();
-        }
-    }
+    float newX = this->getPositionX() - _currentSpeed * delta;
+    this->setPositionX(newX);
 }
 
-
+void Gargantuar::updateEating(float delta)
+{
+    _accumulatedTime += delta;
+    // If eating, deal damage periodically
+    if (_accumulatedTime >= ATTACK_INTERVAL)
+    {
+        _targetPlant->takeDamage(ATTACK_DAMAGE);
+        cocos2d::AudioEngine::play2d("gargantuar-thump.mp3");
+        _accumulatedTime = 0.0f;
+    }
+}
 
 // Set animation corresponding to state
 void Gargantuar::setAnimationForState()
@@ -215,15 +158,14 @@ void Gargantuar::setAnimationForState()
             ));
             break;
         case ZombieState::THROWING:
-            CCLOG("setting throwing animation");
+            CCLOG("setting throwing animation");           
             this->stopAllActions();
-            _currentSpeed = 0;
             this->runAction(
                 Sequence::create(
                     MoveBy::create(0, Vec2(-46, 35)),
                     _prethrowAction,
                     CallFunc::create([this]() {
-                        log("throw");
+                        CCLOG("throw");
                         this->throwImp();
                         }),
                     _postthrowAction,
@@ -240,7 +182,7 @@ void Gargantuar::setAnimationForState()
             break;
         case ZombieState::DYING:
         {
-            log("Setting DYING animation.");
+            CCLOG("Setting DYING animation.");
             this->stopAllActions();
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
@@ -294,4 +236,3 @@ void Gargantuar::throwImp()
     gameWorld->addZombie(imp);
     cocos2d::AudioEngine::play2d("imp-pvz.mp3", false, 1.0f);
 }
-

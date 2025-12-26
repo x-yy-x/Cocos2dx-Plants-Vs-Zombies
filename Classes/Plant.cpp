@@ -117,45 +117,6 @@ bool Plant::initPlantWithSettings(const std::string& imageFile,
     return true;
 }
 
-// Create animation from sprite sheet
-void Plant::createAndRunAnimation(const std::string& imageFile,
-                                  float frameWidth, float frameHeight,
-                                  int rows, int cols,
-                                  float frameDuration,
-                                  int totalFrames)
-{
-    Vector<SpriteFrame*> frames;
-    int maxFrames = (totalFrames > 0) ? totalFrames : (rows * cols);
-    int frameCount = 0;
-
-    for (int row = 0; row < rows && frameCount < maxFrames; row++)
-    {
-        for (int col = 0; col < cols && frameCount < maxFrames; col++)
-        {
-            float x = col * frameWidth;
-            float y = row * frameHeight;
-
-            auto frame = SpriteFrame::create(
-                imageFile,
-                Rect(x, y, frameWidth, frameHeight)
-            );
-
-            if (frame)
-            {
-                frames.pushBack(frame);
-                frameCount++;
-            }
-        }
-    }
-
-    if (!frames.empty())
-    {
-        auto animation = Animation::createWithSpriteFrames(frames, frameDuration);
-        auto animate = Animate::create(animation);
-        this->runAction(RepeatForever::create(animate));
-    }
-}
-
 // Set animation (to be implemented by subclasses)
 void Plant::setAnimation()
 {

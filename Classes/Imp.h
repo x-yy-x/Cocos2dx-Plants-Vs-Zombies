@@ -35,7 +35,13 @@ public:
      */
     virtual bool init() override;
 
-    // Implement the auto-generated static Zombie* create() function
+    /**
+     * @brief Get coin drop bonus multiplier for this zombie type
+     * @return Coin drop bonus multiplier (1.2f for Imp)
+     */
+    virtual float getCoinDropBonus() const override { return 1.2f; }
+
+    // Implement the static create() function
     CREATE_FUNC(Imp);
 
     /**

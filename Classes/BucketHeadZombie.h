@@ -51,6 +51,17 @@ public:
      */
     virtual void takeDamage(float damage) override;
 
+    /**
+     * @brief Get coin drop bonus multiplier for this zombie type
+     * @return Coin drop bonus multiplier (1.4f for BucketHeadZombie)
+     */
+    virtual float getCoinDropBonus() const override { return 1.4f; }
+
+    /**
+     * @brief Check if this zombie should play metal hit sound effect when hit by bullet
+     * @return true only if this zombie still has bucket head
+     */
+    virtual bool playsMetalHitSound() const override { return hasBucketHead(); }
 
     inline bool hasBucketHead() const { return !_useNormalZombie; }
 

@@ -22,10 +22,11 @@ public:
 
     virtual bool init() = 0;
 
-    cocos2d::Animation* initAnimate(const std::string& fileName, float frameWidth,
-        float frameHeight, int row, int col, int frameCount, float delay);
-
     virtual void update(float delta);
+
+    virtual void updateEating(float delta);
+
+    virtual void updateMoving(float delta);
 
     void setState(int newState);
 
@@ -41,11 +42,23 @@ public:
 
     virtual void onPlantDied();
 
+    /**
+     * @brief Get coin drop bonus multiplier for this zombie type
+     * @return Coin drop bonus multiplier (default 1.0f)
+     */
+    virtual float getCoinDropBonus() const { return 1.0f; }
 
-    int _currentState = 1;
+    /**
+     * @brief Check if this zombie should play metal hit sound effect when hit by bullet
+     * @return true if metal hit sound should be played, false for regular hit sound
+     */
+    virtual bool playsMetalHitSound() const { return false; }
+
     //0 dying
     //1 walking
     //2 eating
+    int _currentState = 1;
+
     bool _isDying = false;
     bool _isDead = false;
     int _currentHealth = 200;
@@ -53,7 +66,6 @@ public:
     bool _isEating = false;
     Plant* _targetPlant = nullptr;
     float _currentSpeed = 20.0f;
-
     float MOVE_SPEED = 20.0f;
     float ATTACK_DAMAGE = 10.0f;
     float ATTACK_INTERVAL = 0.5f;

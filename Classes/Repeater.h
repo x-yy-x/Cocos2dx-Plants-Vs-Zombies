@@ -35,6 +35,15 @@ public:
      */
     virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
 
+    /**
+     * @brief Check if this plant can be upgraded to the specified plant type.
+     * @param upgradePlantName The target plant type to upgrade to
+     * @return true if this plant can be upgraded to GatlingPea
+     */
+    virtual bool canBeUpgradedTo(PlantName upgradePlantName) const override { 
+        return upgradePlantName == PlantName::GATLINGPEA; 
+    }
+
 protected:
     // ----------------------------------------------------
     // Static constants

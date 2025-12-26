@@ -73,23 +73,8 @@ void CherryBomb::setAnimation()
     // Calculate animation duration
     _idleAnimationDuration = totalFrames * 0.07f;  // 1.12 seconds
 
-    // Create animation frames
-    Vector<SpriteFrame*> frames;
-    for (int i = 0; i < totalFrames; i++)
-    {
-        int row = i / 4;
-        int col = i % 4;
-        float x = col * frameWidth;
-        float y = row * frameHeight;
-
-        auto frame = SpriteFrame::create(IMAGE_FILENAME, Rect(x, y, frameWidth, frameHeight));
-        if (frame) frames.pushBack(frame);
-    }
-
-    // Play animation once (not repeat)
-    if (!frames.empty())
-    {
-        auto animation = Animation::createWithSpriteFrames(frames, 0.07f);
+    auto animation = initAnimate(IMAGE_FILENAME, frameWidth, frameHeight, 4, 4, totalFrames, 0.07f);
+    if (animation) {
         auto animate = Animate::create(animation);
         this->runAction(animate);
     }

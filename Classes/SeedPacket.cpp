@@ -20,20 +20,20 @@ USING_NS_CC;
 
 // 初始化静态配置表
 const std::map<PlantName, PlantConfig> SeedPacket::CONFIG_TABLE = {
-    {PlantName::SUNFLOWER,    {"seedpacket_sunflower.png", 3.0f, 50,    [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Sunflower>(i,c,s,n); }}},
-    {PlantName::SUNSHROOM,    {"seedpacket_sunshroom.png", 3.0f, 25,    [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Sunshroom>(i,c,s,n); }}},
+    {PlantName::SUNFLOWER,    {"seedpacket_sunflower.png", 7.5f, 50,    [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Sunflower>(i,c,s,n); }}},
+    {PlantName::SUNSHROOM,    {"seedpacket_sunshroom.png", 7.5f, 25,    [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Sunshroom>(i,c,s,n); }}},
     {PlantName::PEASHOOTER,   {"seedpacket_peashooter.png", 7.5f, 100,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<PeaShooter>(i,c,s,n); }}},
-    {PlantName::REPEATER,     {"seedpacket_repeater.png", 3.0f, 200,   [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Repeater>(i,c,s,n); }}},
-    {PlantName::THREEPEATER,  {"Threepeater_Seed_Packet_PC.png", 3.0f, 325, [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<ThreePeater>(i,c,s,n); }}},
-    {PlantName::PUFFSHROOM,   {"seedpacket_puffshroom.png", 3.0f, 0,    [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Puffshroom>(i,c,s,n); }}},
+    {PlantName::REPEATER,     {"seedpacket_repeater.png", 7.5f, 200,   [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Repeater>(i,c,s,n); }}},
+    {PlantName::THREEPEATER,  {"Threepeater_Seed_Packet_PC.png", 7.5f, 325, [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<ThreePeater>(i,c,s,n); }}},
+    {PlantName::PUFFSHROOM,   {"seedpacket_puffshroom.png", 7.5f, 0,    [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Puffshroom>(i,c,s,n); }}},
     {PlantName::WALLNUT,      {"seedpacket_wallnut.png", 30.0f, 50,   [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Wallnut>(i,c,s,n); }}},
-    {PlantName::CHERRYBOMB,   {"seedpacket_cherry_bomb.png", 1.0f, 150, [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<CherryBomb>(i,c,s,n); }}},
-    {PlantName::SPIKEWEED,    {"seedpacket_spikeweed.png", 1.0f, 100,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<SpikeWeed>(i,c,s,n); }}},
-    {PlantName::JALAPENO,     {"seedpacket_jalapeno.png", 1.0f, 125,   [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Jalapeno>(i,c,s,n); }}},
-    {PlantName::TWINSUNFLOWER,{"seedpacket_twinsunflower.png", 1.0f, 150, [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<TwinSunflower>(i,c,s,n); }}},
-    {PlantName::GATLINGPEA,   {"seedpacket_gatlingpea.png", 1.0f, 250,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<GatlingPea>(i,c,s,n); }}},
-    {PlantName::POTATOMINE,   {"seedpacket_potatoBomb.png", 15.0f, 25,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<PotatoMine>(i,c,s,n); }}},
-    {PlantName::SPIKEROCK,    {"seedpacket_spikerock.png", 1.0f, 125,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<SpikeRock>(i,c,s,n); }}}
+    {PlantName::CHERRYBOMB,   {"seedpacket_cherry_bomb.png", 50.0f, 150, [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<CherryBomb>(i,c,s,n); }}},
+    {PlantName::SPIKEWEED,    {"seedpacket_spikeweed.png", 7.5f, 100,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<SpikeWeed>(i,c,s,n); }}},
+    {PlantName::JALAPENO,     {"seedpacket_jalapeno.png", 50.0f, 125,   [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<Jalapeno>(i,c,s,n); }}},
+    {PlantName::TWINSUNFLOWER,{"seedpacket_twinsunflower.png", 50.0f, 150, [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<TwinSunflower>(i,c,s,n); }}},
+    {PlantName::GATLINGPEA,   {"seedpacket_gatlingpea.png", 50.0f, 250,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<GatlingPea>(i,c,s,n); }}},
+    {PlantName::POTATOMINE,   {"seedpacket_potatoBomb.png", 30.0f, 25,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<PotatoMine>(i,c,s,n); }}},
+    {PlantName::SPIKEROCK,    {"seedpacket_spikerock.png", 50.0f, 125,  [](const std::string& i, float c, int s, PlantName n) {return SeedPacket::create<SpikeRock>(i,c,s,n); }}}
 };
 
 SeedPacket* SeedPacket::createFromConfig(PlantName name) {
