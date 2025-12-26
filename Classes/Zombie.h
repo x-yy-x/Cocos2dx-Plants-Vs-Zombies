@@ -54,6 +54,24 @@ public:
      */
     virtual bool playsMetalHitSound() const { return false; }
 
+    /**
+     * @brief Check if this zombie is a Zomboni type
+     * @return true if this is a Zomboni zombie, false otherwise
+     */
+    virtual bool isZomboni() const { return false; }
+
+    /**
+     * @brief Check if this zombie has been attacked by spikeweed/rock
+     * @return true if already attacked, false otherwise
+     */
+    virtual bool hasBeenAttackedBySpike() const { return false; }
+
+    /**
+     * @brief Set special death state for certain zombie types (like Zomboni)
+     */
+    virtual void setSpecialDeath() { /* Default implementation does nothing */ }
+
+protected:
     //0 dying
     //1 walking
     //2 eating

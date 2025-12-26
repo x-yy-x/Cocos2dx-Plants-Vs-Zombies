@@ -8,7 +8,7 @@ class PlayerProfile
 public:
     static PlayerProfile* getInstance();
 
-    // 禁止拷贝和赋值
+    // Prohibit copy and assignment
     PlayerProfile(const PlayerProfile&) = delete;
     PlayerProfile& operator=(const PlayerProfile&) = delete;
 
@@ -19,7 +19,7 @@ public:
     void unlockPlant(PlantName plantName);
     bool isPlantUnlocked(PlantName plantName) const;
 
-    // 购买类-道具（耙子/小推车）
+    // Purchaseable items (rake/mower)
     void enableRake(bool enable = true);
     bool isRakeEnabled() const;
     void enableMower(bool enable = true);

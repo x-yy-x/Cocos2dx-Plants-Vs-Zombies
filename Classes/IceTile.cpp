@@ -1,4 +1,4 @@
-﻿#include "IceTile.h"
+#include "IceTile.h"
 
 USING_NS_CC;
 
@@ -34,9 +34,9 @@ void IceTile::update(float dt)
     }
 }
 
-float IceTile::getRow()
+int IceTile::getRow()
 {
-    int row = (this->getPositionY() + 30 - GRID_ORIGIN.y - CELLSIZE.height * 0.7)/ CELLSIZE.height;
+    int row = static_cast<int>((this->getPositionY() + 30 - GRID_ORIGIN.y - CELLSIZE.height * 0.7f) / CELLSIZE.height);
     CCLOG("current ice row=%d", row);
     return row;
 }

@@ -100,23 +100,29 @@ void Imp::setAnimationForState()
     case ZombieState::EATING:
         CCLOG("Setting EATING animation.");
         this->stopAllActions();
+        // --- 新增代码 ---
+        this->_isFlying = false;          // 停止飞行逻辑
+        this->_currentSpeed = MOVE_SPEED; // 恢复正常行走速度
+        // ----------------
         this->runAction(_eatAction);
         break;
     case ZombieState::FLYING:
     {
-        CCLOG("set state flying");
         this->_isFlying = true;
         this->stopAllActions();
         this->runAction(Sequence::create(
             CallFunc::create([this]() {
-                this->_currentSpeed = 120.0f;
-                }), 
-            _flyAnimate,          
+                this->_currentSpeed = 120.0f; // 飞行速度
+                }),
+            _flyAnimate,
             CallFunc::create([this]() {
-                this->_isFlying = false;
+                this->_isFlying = false;     // 落地
                 this->_currentSpeed = MOVE_SPEED;
                 this->setState(static_cast<int>(ZombieState::WALKING));
-                this->setPosition(this->getPosition() + Vec2(0, -20));
+
+                // 确保回到行走的基准线上（根据你的网格调整）
+                // 如果之前 update 里减了 Y，这里可以设回固定行高度
+                // 或者：this->setPositionY(original_row_y); 
                 }),
             nullptr));
         break;
@@ -150,10 +156,13 @@ void Imp::update(float delta)
     // If zombie is not eating, continue walking left
     if (!_isEating)
     {
+        // 只有不在吃东西时才移动
         float newX = this->getPositionX() - _currentSpeed * delta;
         this->setPositionX(newX);
+
+        // 只有明确在飞行状态时才计算纵向位移
         if (_isFlying) {
-            float newY = this->getPositionY() - 50 * delta;
+            float newY = this->getPositionY() - 50.0f * delta; // 这里的50可以根据需要调整
             this->setPositionY(newY);
         }
 
@@ -189,5 +198,29 @@ void Imp::update(float delta)
             }
         }
     }
+
 }
 
+void Imp::encounterPlant(const std::vector<Plant*>& plants)
+{
+    // 如果正在飞行，或者已经死亡，或者正在吃，直接返回
+    if (_isFlying || _isEating || _isDead || _isDying)
+    {
+        return;
+    }
+
+    // 以下是正常的碰撞逻辑
+    for (auto plant : plants)
+    {
+        if (plant && !plant->isDead())
+        {
+            // 这里的判定范围可以根据 Imp 的体型微调
+            Rect zombieRect = this->getBoundingBox();
+            if (zombieRect.intersectsRect(plant->getBoundingBox()))
+            {
+                startEating(plant);
+                return;
+            }
+        }
+    }
+}

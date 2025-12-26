@@ -38,6 +38,9 @@ public:
      * @return Sun* Returns Sun instance if ready, nullptr otherwise
      */
     virtual std::vector<Sun*> produceSun() override;
+    
+    // Explicit override to avoid C4250 inheritance dominance warning
+    virtual PlantCategory getCategory() const override { return PlantCategory::SUN_PRODUCING; }
 
     /**
      * @brief Check if this plant can be upgraded to the specified plant type.

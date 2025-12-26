@@ -9,7 +9,7 @@ public:
     static Rake* create();
     bool init() override;
 
-    // 激活（与僵尸碰撞时调用）
+    // Activate (called when colliding with zombies)
     void trigger(Zombie* z);
 
     bool isUsed() const { return _used; }

@@ -29,12 +29,10 @@ Sunshroom::Sunshroom()
 
 bool Sunshroom::init()
 {
-    // 调用 Plant 的初始化逻辑
     if (!initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 80, SUN_PRODUCTION_INTERVAL))
     {
         return false;
     }
-    // Mushroom 的数据已经在构造函数中初始化，具体状态将在 update 第一帧设定
     return true;
 }
 

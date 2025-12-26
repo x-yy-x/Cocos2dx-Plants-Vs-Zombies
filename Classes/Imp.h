@@ -52,6 +52,7 @@ public:
 
     virtual void update(float delta) override;
 
+    void encounterPlant(const std::vector<Plant*>& plants) override;
 
 protected:
     // Protected constructor

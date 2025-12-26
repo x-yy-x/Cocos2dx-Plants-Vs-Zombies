@@ -104,13 +104,13 @@ void Zomboni::update(float delta)
     float newX = this->getPositionX() - dx;
     this->setPositionX(newX);
 
-    // 累积移动距离
+    // Accumulate movement distance
     _iceAccumulate += dx;
 
     if (_iceAccumulate >= ICE_STEP)
     {
         _iceAccumulate -= ICE_STEP;
-        spawnIce();   // 铺一块冰
+        spawnIce();   // Lay a piece of ice
     }
 
     if (newX < -100)
@@ -176,23 +176,23 @@ void Zomboni::setAnimationForState()
 
 void Zomboni::spawnIce()
 {    
-    // 计算裁剪区域（从右往左）
+    // Calculate clipping area (from right to left)
     float rectX = ICE_LENGTH - (_iceIndex + 1) * ICE_STEP;
-    Rect iceRect(rectX, 0, ICE_STEP, 90.0f); // 90 = 冰图片高度
+    Rect iceRect(rectX, 0, ICE_STEP, 90.0f); // 90 = ice image height
 
-    // 创建冰 sprite
+    // Create ice sprite
     auto ice = IceTile::create(this->getPosition(), _iceIndex);
     if (!ice) return;
 
 
-    // 交给 GameWorld 管理
-    auto gameWorld = dynamic_cast<GameWorld*>(this->getParent());
+    // Hand over to GameWorld management
+    auto gameWorld = static_cast<GameWorld*>(this->getParent());
     if (gameWorld)
     {
         gameWorld->addIceTile(ice);
     }
 
-    // index 循环
+    // Index loop
     _iceIndex = (_iceIndex + 1) % ICE_COUNT;
 }
 
@@ -200,6 +200,6 @@ void Zomboni::setSpecialDeath()
 {
     // Mark that this zomboni has been attacked by spikeweed to prevent multiple damage
     _hasBeenAttackedBySpike = true;
-    this->_currentHealth -= 10000.0f;
+    this->_currentHealth -= static_cast<int>(10000.0f);
     this->setState(static_cast<int>(ZombieState::SPECIAL));
 }

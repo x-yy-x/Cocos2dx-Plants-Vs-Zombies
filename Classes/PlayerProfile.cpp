@@ -12,9 +12,9 @@ PlayerProfile* PlayerProfile::getInstance()
 }
 
 PlayerProfile::PlayerProfile()
-    : _coins(10000) // 初始金币为10000，用于调试
+    : _coins(10000) // Initial coins set to 10000 for debugging
 {
-    // 默认解锁一些基础植物，升级植物需要购买
+    // Default unlock some basic plants; plant upgrades need to be purchased
     _unlockedPlants.insert(PlantName::SUNFLOWER);
     _unlockedPlants.insert(PlantName::SUNSHROOM);
     _unlockedPlants.insert(PlantName::PEASHOOTER);
@@ -54,7 +54,7 @@ void PlayerProfile::unlockPlant(PlantName plantName)
 
 bool PlayerProfile::isPlantUnlocked(PlantName plantName) const
 {
-    // 对于非升级植物，默认总是解锁的
+    // Non-upgraded plants are unlocked by default
     switch (plantName)
     {
         case PlantName::TWINSUNFLOWER:
@@ -62,7 +62,7 @@ bool PlayerProfile::isPlantUnlocked(PlantName plantName) const
         case PlantName::SPIKEROCK:
             return _unlockedPlants.count(plantName) > 0;
         default:
-            return true; // 其他植物默认解锁
+            return true; // Other plants are unlocked by default
     }
 }
 

@@ -122,7 +122,7 @@ void CherryBomb::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, 
     {
         if (zombie && !zombie->isDead())
         {
-            zombie->takeDamage(_explosionDamage);
+            zombie->takeDamage(static_cast<float>(_explosionDamage));
             CCLOG("CherryBomb dealt %d damage to zombie!", _explosionDamage);
         }
     }

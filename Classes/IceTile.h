@@ -12,7 +12,7 @@ public:
 
     bool isExpired() const { return _expired; }
 
-    float getRow();
+    int getRow();
 
     void markAsExpired();
 

@@ -20,12 +20,12 @@ Puffshroom::Puffshroom()
 
 bool Puffshroom::init()
 {
-    // 初始化植物基本属性
+    // Initialize basic plant properties
     if (!initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 80, ATTACK_COOLDOWN))
     {
         return false;
     }
-    // 状态初始化交给 Mushroom 在 update 第一帧处理
+    // State initialization is handled by Mushroom in the first update frame
     return true;
 }
 
@@ -40,10 +40,10 @@ void Puffshroom::update(float delta)
 
     if (!this->getParent()) return;
 
-    // 使用 Mushroom 基类逻辑检查环境变化
+    // Use Mushroom base class logic to check for environment changes
     bool envChanged = checkDayNightChange();
 
-    // 如果环境变化，触发响应
+    // If environment changes, trigger response
     if (envChanged)
     {
         if (_isNightMode) wakeUp();
@@ -76,11 +76,11 @@ void Puffshroom::setAnimation()
 
     Animation* animation = nullptr;
 
-    // 复用 Mushroom::loadAnimation，传入之前的裁剪参数
+    // Reuse Mushroom::loadAnimation with previous cropping parameters
     if (_activityState == ActivityState::SLEEPING)
     {
         this->setTexture("puffshroom/sleep/1 (1).png");
-        // sleep动画: 17帧, 不缩放, 裁剪宽度减去33
+        // Sleep animation: 17 frames, no scaling, crop width minus 33
         animation = loadAnimation("puffshroom/sleep", 17, 1.0f,
             OBJECT_SIZE.width, OBJECT_SIZE.height, // 原始尺寸
             0.0f, 0.0f, OBJECT_SIZE.width - 33.0f, OBJECT_SIZE.height); // 裁剪参数
@@ -88,7 +88,7 @@ void Puffshroom::setAnimation()
     else
     {
         this->setTexture("puffshroom/init/1 (1).png");
-        // active动画: 14帧, Y偏移7, 裁剪宽度减去33
+        // Active animation: 14 frames, Y offset 7, crop width minus 33
         animation = loadAnimation("puffshroom/init", 14, 1.0f,
             OBJECT_SIZE.width, OBJECT_SIZE.height, // 原始尺寸
             0.0f, 7.0f, OBJECT_SIZE.width - 33.0f, OBJECT_SIZE.height); // 裁剪参数
@@ -105,13 +105,13 @@ void Puffshroom::setAnimation()
 
 std::vector<Bullet*> Puffshroom::checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow)
 {
-    // 白天睡觉不攻击
+    // Don't attack when sleeping during day
     if (isDaytime())
     {
         return {};
     }
 
-    // 复用之前的攻击逻辑
+    // Reuse previous attack logic
     float plantX = this->getPositionX();
     float maxRange = plantX + (CELLSIZE.width * DETECTION_RANGE);
     bool zombieDetected = false;

@@ -13,10 +13,19 @@ public:
     CREATE_FUNC(ShopScene);
 
 private:
+    enum class ShopItemID {
+        MOWER,
+        RAKE,
+        TWIN_SUNFLOWER,
+        GATLING_PEA,
+        SPIKE_ROCK,
+        UNKNOWN
+    };
+
     void setupUI();
     void setupDaveAnimation();
     void setupShopItems();
-    void createShopItem(const std::string& image, const std::string& name, int price, const cocos2d::Vec2& position, PlantName plantName = PlantName::UNKNOWN);
+    void createShopItem(const std::string& image, ShopItemID itemId, int price, const cocos2d::Vec2& position, PlantName plantName = PlantName::UNKNOWN);
     void updateCoinLabel();
 
     // callbacks

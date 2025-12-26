@@ -41,7 +41,7 @@ void Zombie::takeDamage(float damage)
         return;
     }
 
-    _currentHealth -= damage;
+    _currentHealth -= static_cast<int>(damage);
     CCLOG("Zombie took %f damage, remaining health: %d", damage, _currentHealth); // Reduced logging
 
     if (_currentHealth <= 0)

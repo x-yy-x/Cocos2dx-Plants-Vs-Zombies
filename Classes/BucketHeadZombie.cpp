@@ -91,7 +91,7 @@ void BucketHeadZombie::takeDamage(float damage)
     {
         _bucketHealth -= damage;
         if (_bucketHealth <= 0) {
-            _currentHealth += _bucketHealth;
+            _currentHealth += static_cast<int>(_bucketHealth);
             if (_currentHealth <= 0) {
                 this->_isDying = true;
                 this->_targetPlant = nullptr;
@@ -104,7 +104,7 @@ void BucketHeadZombie::takeDamage(float damage)
     }
     else
     {
-        _currentHealth -= damage;
+        _currentHealth -= static_cast<int>(damage);
         if (_currentHealth <= 0)
         {
             _currentHealth = 0;
@@ -163,7 +163,7 @@ void BucketHeadZombie::onBucketBroken()
     _useNormalZombie = true;
 
     int frameIndex = -1;
-    // 保持当前帧 index
+    // Maintain current frame index
     if (_isEating){
         auto action = dynamic_cast<RepeatForever*>(_eatAction);
         auto animate = dynamic_cast<Animate*>(action->getInnerAction());

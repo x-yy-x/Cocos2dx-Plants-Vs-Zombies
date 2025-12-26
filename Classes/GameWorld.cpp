@@ -92,16 +92,16 @@ void GameWorld::initSeedPackets() {
     float baseY = 667.0f;
     float spacing = 65.0f;
 
-    // 修复报错：使用 C++11 兼容方式遍历 map
+    // Fix error: Use C++11 compatible way to iterate map
     if (_initialPlantNames.empty()) {
         for (std::map<PlantName, PlantConfig>::const_iterator it = SeedPacket::CONFIG_TABLE.begin();
             it != SeedPacket::CONFIG_TABLE.end(); ++it)
         {
-            _initialPlantNames.push_back(it->first); // it->first 是 PlantName
+            _initialPlantNames.push_back(it->first); // it->first is PlantName
         }
     }
 
-    // 统一循环添加
+    // Add in a unified loop
     for (size_t i = 0; i < _initialPlantNames.size(); ++i) {
         SeedPacket* packet = SeedPacket::createFromConfig(_initialPlantNames[i]);
         if (packet) {
@@ -142,9 +142,9 @@ bool GameWorld::init()
     _sunCount = 200; // Initial sun count
     _sunCountLabel = nullptr;
 
-    // Initialize timed batch spawning (方案D)
+    // Initialize timed batch spawning (Version D)
     _currentWave = 0; // legacy
-    _nextBatchTimeSec = 8.0f; // 首批在8秒左右
+    _nextBatchTimeSec = 8.0f; // First batch around 8 seconds
     _finalWaveTriggered = false;
     _gameStarted = true;
 
@@ -152,7 +152,7 @@ bool GameWorld::init()
     _sunSpawnTimer = 0.0f;
     _zombieGroanTimer = 3.0f;
 
-    // 初始化 Rake/Mower 槽
+    // Initialize Rake/Mower slots
     for (int r = 0; r < MAX_ROW; ++r) { _rakePerRow[r] = nullptr; _mowerPerRow[r] = nullptr; }
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -243,7 +243,7 @@ bool GameWorld::init()
         this->addChild(_sunCountLabel, UI_LAYER);
     }
 
-   //金币系统
+   //Coin system
     _moneyCountLabel = Label::createWithSystemFont(std::to_string(PlayerProfile::getInstance()->getCoins()), "Arial", 20);
     if (_moneyCountLabel)
     {
@@ -477,7 +477,7 @@ void GameWorld::setupUserInteraction()
                         this->addChild(_previewPlant, UI_LAYER);
                     }
 
-                    CCLOG("Seed packet %d selected", (int)i);
+                    CCLOG("Seed packet %d selected", static_cast<int>(i));
                     return true;
                 }
                 else
@@ -540,7 +540,7 @@ void GameWorld::setupUserInteraction()
         if (_plantSelected)
         {
             SeedPacket* selectedPacket = nullptr;
-            if (_selectedSeedPacketIndex >= 0 && _selectedSeedPacketIndex < (int)_seedPackets.size())
+            if (_selectedSeedPacketIndex >= 0 && _selectedSeedPacketIndex < static_cast<int>(_seedPackets.size()))
             {
                 selectedPacket = _seedPackets[_selectedSeedPacketIndex];
             }
@@ -606,14 +606,14 @@ bool GameWorld::tryPlantAtPosition(const Vec2& globalPos, SeedPacket* seedPacket
             return false;
         }
         
-        // 先移除基础植物
+        // First remove the base plant
         Plant* basePlant = _plantGrid[row][col];
         if (basePlant) {
             this->removeChild(basePlant);
             _plantGrid[row][col] = nullptr;
         }        
         
-        // 现在种植升级植物
+        // Now plant the upgraded plant
         Plant* plant = seedPacket->plantAt(globalPos);
         if (plant)
         {
@@ -641,7 +641,7 @@ bool GameWorld::tryPlantAtPosition(const Vec2& globalPos, SeedPacket* seedPacket
     return false;
 }
 
-bool GameWorld::getGridCoordinates(const Vec2& globalPos, int& outRow, int& outCol)
+bool GameWorld::getGridCoordinates(const Vec2& globalPos, int& outRow, int& outCol) const
 {
     int col = static_cast<int>((globalPos.x - GRID_ORIGIN.x) / CELLSIZE.width);
     int row = static_cast<int>((globalPos.y - GRID_ORIGIN.y) / CELLSIZE.height);
@@ -693,7 +693,6 @@ void GameWorld::update(float delta)
     }
 
 
-    // 方案D：按时间脚本触发批次
     float t = _elapsedTime / TOTAL_GAME_TIME;
     if (t > 1.0f) t = 1.0f;
 
@@ -701,7 +700,7 @@ void GameWorld::update(float delta)
     {
         _finalWaveTriggered = true;
         spawnFinalWave();
-        _nextBatchTimeSec = 1e9f; // 停止常规批次
+        _nextBatchTimeSec = 1e9f; // Stop regular batches
     }
     else if (!_finalWaveTriggered && _elapsedTime >= _nextBatchTimeSec)
     {
@@ -733,7 +732,7 @@ void GameWorld::update(float delta)
     updateSuns(delta);
     maybePlayZombieGroan(delta);
 
-    // 金币系统更新
+    // Coin system update
     updateCoins(delta);
 
 
@@ -748,7 +747,7 @@ void GameWorld::update(float delta)
     removeExpiredIceTiles();
     removeExpiredCoins();
 
-    // 清理离屏 Mower
+    // Clean up off-screen Mowers
     {
         auto vs = Director::getInstance()->getVisibleSize();
         for (int r = 0; r < MAX_ROW; ++r) {
@@ -760,8 +759,8 @@ void GameWorld::update(float delta)
         }
     }
 
-    // 胜利判定：最终波已触发并且所有子批已排程完成，且场上无“存活中的”僵尸
-    // 不要求容器为空，允许仍存在已死亡/正在死亡动画中的僵尸对象
+    // Victory condition: Final wave has been triggered, all sub-batches have been scheduled, and no "alive" zombies on the field
+    // Container doesn't need to be empty, allows dead/dying zombies with animations
     if (!_winShown && _finalWaveTriggered && _finalWaveSpawningDone)
     {
         bool anyAlive = false;
@@ -876,7 +875,7 @@ void GameWorld::updateBullets(float delta)
                             if (bullet->getBoundingBox().intersectsRect(zombie->getBoundingBox()))
                             {
                                 // Hit!
-                                zombie->takeDamage(bullet->getDamage());
+                                zombie->takeDamage(static_cast<float>(bullet->getDamage()));
                                 bullet->deactivate();
                                 
                                 // Use virtual function to determine sound effect instead of dynamic_cast
@@ -1095,30 +1094,7 @@ void GameWorld::removeExpiredCoins()
     );
 }
 
-/*
-// 根据阳光数量刷新种子卡片颜色（冷却结束但阳光不足时保持 50% 灰度）
-void GameWorld::refreshSeedPacketColors()
-{
-    for (auto packet : _seedPackets)
-    {
-        if (!packet) continue;
 
-        // 只有在冷却结束后才根据阳光数量亮/灰
-        if (packet->isReady())
-        {
-            if (_sunCount >= packet->getSunCost())
-            {
-                packet->setColor(cocos2d::Color3B::WHITE); // 亮色
-            }
-            else
-            {
-                packet->setColor(cocos2d::Color3B(128,128,128)); // 50% 灰
-            }
-        }
-        // 冷却中的卡片颜色由 SeedPacket 自己控制
-    }
-}
-*/
 void GameWorld::updateSunDisplay()
 {
     if (_sunCountLabel)
@@ -1148,8 +1124,8 @@ int GameWorld::applyNightFactor(int baseCount, bool allowZero)
 {
     if (!_isNightMode) return baseCount;
     if (baseCount <= 0) return 0;
-    float scaled = baseCount * 0.75f; // 夜间整体减少
-    int c = (int)std::round(scaled);
+    float scaled = baseCount * 0.75f; // Reduce overall at night
+    int c = static_cast<int>(std::round(scaled));
     if (!allowZero) c = std::max(1, c);
     return std::max(0, c);
 }
@@ -1205,15 +1181,15 @@ void GameWorld::spawnSubBatch(int normalCnt, int poleCnt, int bucketHeadCnt, int
 
 void GameWorld::spawnTimedBatch(float normalizedTime)
 {
-    // 阶段划分
+    // Phase division
     bool p0 = normalizedTime <= 0.25f;
     bool p1 = (normalizedTime > 0.25f && normalizedTime <= 0.60f);
     bool p2 = (normalizedTime > 0.60f && normalizedTime < 0.999f);
 
-    // 阶段参数
+    // Phase parameters
     int normalMin=1, normalMax=2;
     float poleProb = 0.0f;
-    float bucketHeadProb = 0.0f; // 新增铁桶概率
+    float bucketHeadProb = 0.0f; // New bucket head probability
     float zamboniProb = 0.0f;
     float gargantuarProb = 0.0f;
     float intervalSec = 10.0f;
@@ -1228,28 +1204,28 @@ void GameWorld::spawnTimedBatch(float normalizedTime)
         intervalSec = 10.0f;
     } else if (p1) {
         normalMin = 3; normalMax = 5;
-        poleProb = 0.12f;         // 降低撑杆概率
-        bucketHeadProb = 0.12f;   // 新增铁桶概率
-        zamboniProb = 0.10f;      // 降低冰车概率
-        gargantuarProb = 0.03f;   // 小概率出现巨人
+        poleProb = 0.12f;         // Reduce pole vaulter probability
+        bucketHeadProb = 0.12f;   // New bucket head probability
+        zamboniProb = 0.10f;      // Reduce zamboni probability
+        gargantuarProb = 0.03f;   // Small probability for gargantuar
         intervalSec = 10.0f;
     } else if (p2) {
         normalMin = 3; normalMax = 5;
-        poleProb = 0.20f;         // 降低撑杆概率
-        bucketHeadProb = 0.25f;   // 提高铁桶概率
-        zamboniProb = 0.25f;      // 降低冰车概率
-        gargantuarProb = 0.08f;   // 略提高巨人概率
+        poleProb = 0.20f;         // Reduce pole vaulter probability
+        bucketHeadProb = 0.25f;   // Increase bucket head probability
+        zamboniProb = 0.25f;      // Reduce zamboni probability
+        gargantuarProb = 0.08f;   // Slightly increase gargantuar probability
         intervalSec = 12.0f;
     }
 
-    // 夜间调整概率
+    // Adjust probability at night
     float probScale = _isNightMode ? 0.8f : 1.0f;
     poleProb *= probScale;
     bucketHeadProb *= probScale;
     zamboniProb *= probScale;
     gargantuarProb *= probScale;
 
-    // 生成这一批的数量
+    // Generate count for this batch
     int normalCnt = randRange(normalMin, normalMax);
     normalCnt = applyNightFactor(normalCnt, false);
 
@@ -1263,9 +1239,9 @@ void GameWorld::spawnTimedBatch(float normalizedTime)
     if (CCRANDOM_0_1() < bucketHeadProb) bucketHeadCnt = 1;
 
     int gargantuarCnt = 0;
-    if (CCRANDOM_0_1() < gargantuarProb) gargantuarCnt = 1; // 常规阶段最多1个巨人
+    if (CCRANDOM_0_1() < gargantuarProb) gargantuarCnt = 1; // Maximum 1 gargantuar in regular phases
 
-    // 分发到子批
+    // Distribute to sub-batches
     int nRemain = normalCnt, pRemain = poleCnt, bRemain = bucketHeadCnt, zRemain = zamboniCnt, gRemain = gargantuarCnt;
     float startDelay = 0.0f;
 
@@ -1288,13 +1264,13 @@ void GameWorld::spawnTimedBatch(float normalizedTime)
         spawnSubBatch(nThis, pThis, bThis, zThis, gThis, startDelay + i * subDelay);
     }
 
-    // 下一批时间
+    // Next batch time
     _nextBatchTimeSec = _elapsedTime + intervalSec;
 }
 
 void GameWorld::spawnFinalWave()
 {
-    // 提示图（字幕显示4秒）
+    // Banner (subtitle displays for 4 seconds)
     auto visibleSize = Director::getInstance()->getVisibleSize();
     auto banner = Sprite::create("LargeWave.png");
     AudioEngine::play2d("plants-vs-zombies-wave.mp3");
@@ -1307,16 +1283,16 @@ void GameWorld::spawnFinalWave()
             CallFunc::create([banner](){ banner->removeFromParent(); }), nullptr));
     }
 
-    float baseDelay = 4.0f; // 字幕播放4秒后再开始生成
+    float baseDelay = 4.0f; // Start spawning after subtitle plays for 4 seconds
 
-    // 夜间数量调整
-    int gCount = applyNightFactor(2, false); // 两个巨人（夜间保持至少1）
+    // Adjust count at night
+    int gCount = applyNightFactor(2, false); // Two gargantuars (keep at least 1 at night)
 
-    // 几个子批的配置
+    // Configuration for several sub-batches
     int normal2 = applyNightFactor(randRange(3,5), false);
     int pole2 = (CCRANDOM_0_1() < (_isNightMode ? 0.18f : 0.28f)) ? 1 : 0;
 
-    int zambo3 = applyNightFactor(1, true); // 可能为0（夜间减少）
+    int zambo3 = applyNightFactor(1, true); // May be 0 (reduced at night)
     int normal3 = applyNightFactor(randRange(2,3), false);
 
     int normal4 = applyNightFactor(randRange(3,4), false);
@@ -1325,7 +1301,7 @@ void GameWorld::spawnFinalWave()
     int zambo5 = applyNightFactor(1, true);
     int normal5 = applyNightFactor(randRange(2,3), false);
 
-    // 旗帜僵尸
+    // Flag zombie
     auto z = FlagZombie::createZombie();
     const float ZOMBIE_Y_OFFSET = 0.7f;
     float y = GRID_ORIGIN.y + 3 * CELLSIZE.height + CELLSIZE.height * ZOMBIE_Y_OFFSET;
@@ -1333,11 +1309,11 @@ void GameWorld::spawnFinalWave()
     z->setPosition(Vec2(x, y));
     this->addChild(z, ENEMY_LAYER);
     _zombiesInRow[3].push_back(z);
-    // 最终波加入铁桶僵尸
+    // Add bucket head zombies in final wave
     int bucket2 = (CCRANDOM_0_1() < (_isNightMode ? 0.25f : 0.35f)) ? 1 : 0;
     int bucket4 = (CCRANDOM_0_1() < (_isNightMode ? 0.20f : 0.30f)) ? 1 : 0;
 
-    // 子批：0s巨人、1.2s普通+撑杆+铁桶、2.4s冰车+普通、3.6s普通+撑杆+铁桶、4.8s冰车+普通（都整体延后4秒）
+    // Sub-batches: 0s gargantuar, 1.2s normal+pole+bucket, 2.4s zamboni+normal, 3.6s normal+pole+bucket, 4.8s zamboni+normal (all delayed by 4 seconds)
     spawnSubBatch(0, 0, 0, 0, gCount, baseDelay + 0.0f);
     AudioEngine::play2d("zombies.mp3");
     spawnSubBatch(normal2, pole2, bucket2, 0, 0, baseDelay + 1.2f);
@@ -1345,7 +1321,7 @@ void GameWorld::spawnFinalWave()
     spawnSubBatch(normal4, pole4, bucket4, 0, 0, baseDelay + 3.6f);
     spawnSubBatch(normal5, 0, 0, zambo5, 0, baseDelay + 4.8f);
 
-    // 在最后一批计划完毕后，标记最终波已全部释放完成（再稍微延迟一点点，确保排程添加完成）
+    // After the last batch is scheduled, mark final wave as all released (delay a little more to ensure scheduling is complete)
     this->runAction(Sequence::create(
         DelayTime::create(baseDelay + 5.0f),
         CallFunc::create([this](){ _finalWaveSpawningDone = true; }),
@@ -1440,7 +1416,7 @@ void GameWorld::showGameOver()
 
 void GameWorld::showWinTrophy()
 {
-    if (_winShown) return; // 防止重复调用
+    if (_winShown) return; // Prevent duplicate calls
     _winShown = true;
 
     auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -1454,11 +1430,11 @@ void GameWorld::showWinTrophy()
     _trophySprite->setScale(1.0f);
     this->addChild(_trophySprite, UI_LAYER + 30);
 
-    // 放大到适中尺寸
+    // Scale to appropriate size
     float targetScale = 0.7f;
     _trophySprite->runAction(ScaleTo::create(0.6f, targetScale));
 
-    // 独立的点击监听，确保可点击
+    // Independent click listener to ensure clickability
     auto listener = EventListenerTouchOneByOne::create();
     listener->setSwallowTouches(true);
 
@@ -1468,7 +1444,7 @@ void GameWorld::showWinTrophy()
         return _trophySprite->getBoundingBox().containsPoint(p);
     };
     listener->onTouchEnded = [this](Touch* touch, Event* event){
-        // 点击奖杯后回到主菜单
+        // Return to main menu after clicking trophy
         returnToMenu(nullptr);
     };
 
@@ -1767,7 +1743,7 @@ void GameWorld::removeExpiredIceTiles()
     );
 }
 
-bool GameWorld::hasIceAt(int row,int col)
+bool GameWorld::hasIceAt(int row,int col) const
 {
     for (auto ice : _iceTiles)
     {

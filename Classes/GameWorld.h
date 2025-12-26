@@ -111,14 +111,14 @@ public:
 	int getSunCount() const { return _sunCount; }
 
 private:
-    /** 脚本式分阶段批次生成（方案D） */
+    /** Scripted phased batch generation (Scheme D) */
     void spawnTimedBatch(float normalizedTime);
     void spawnFinalWave();
     void spawnSubBatch(int normalCnt, int poleCnt, int bucketHeadCnt, int zamboniCnt, int gargantuarCnt, float delaySec);
     int randRange(int a, int b);
     int applyNightFactor(int baseCount, bool allowZero = false);
 
-    // 胜利流程
+    // Victory process
     void showWinTrophy();
 
     /**
@@ -148,7 +148,7 @@ private:
      * @param outCol Output parameter for column
      * @return true if the position is within valid grid bounds
      */
-    bool getGridCoordinates(const cocos2d::Vec2& globalPos, int& outRow, int& outCol);
+    bool getGridCoordinates(const cocos2d::Vec2& globalPos, int& outRow, int& outCol) const;
 
     /**
      * @brief Update all zombies
@@ -217,7 +217,7 @@ private:
     
     void removeExpiredIceTiles();
 
-    bool hasIceAt(int row,int col);
+    bool hasIceAt(int row,int col) const;
 
     void spawnCoinAfterZombieDeath(Zombie* zombie);
   
@@ -241,7 +241,7 @@ private:
 
     // Flag meter moving icon (right end follows progress)
     cocos2d::Sprite* _flagIconRight{ nullptr };
-    // --- 进度条 ---
+    // --- Progress Bar ---
     cocos2d::ui::LoadingBar* _progressBar;
     cocos2d::Sprite* _progressBarFull;
     float _elapsedTime = 0.0f;
@@ -252,7 +252,7 @@ private:
     int _sunCount;
     cocos2d::Label* _sunCountLabel;
 
-    // 金币系统
+    // Coin system
     cocos2d::Label* _moneyCountLabel;
 
     // Containers for game objects
@@ -266,10 +266,10 @@ private:
     Rake* _rakePerRow[MAX_ROW];
     Mower* _mowerPerRow[MAX_ROW];
 
-    // Timed batch spawning (方案D)
-    int _currentWave;                // (legacy, unused by 方案D but kept)
-    float _nextBatchTimeSec;         // 下一次脚本批次触发时间（秒）
-    bool _finalWaveTriggered{ false }; // 是否已触发最终大波
+    // Timed batch spawning (Version D)
+    int _currentWave;                // (legacy, unused by Version D but kept)
+    float _nextBatchTimeSec;         // Time for next scripted batch (seconds)
+    bool _finalWaveTriggered{ false }; // Whether final wave has been triggered
 
     // Win flow
     bool _finalWaveSpawningDone{ false };

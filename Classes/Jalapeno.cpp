@@ -1,7 +1,7 @@
 #include "Jalapeno.h"
 #include "Zombie.h"
 #include "Sun.h"
-#include "GameWorld.h";
+#include "GameWorld.h"
 #include "audio/include/AudioEngine.h"
 
 USING_NS_CC;
@@ -126,7 +126,7 @@ void Jalapeno::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, in
     {
         if (zombie && !zombie->isDead())
         {
-            zombie->takeDamage(_explosionDamage);
+            zombie->takeDamage(static_cast<float>(_explosionDamage));
             CCLOG("Jalapeno dealt %d damage to zombie!", _explosionDamage);
         }
     }
@@ -134,7 +134,7 @@ void Jalapeno::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, in
     // Play explosion animation
     playExplosionAnimation();
 
-    auto gameWorld = dynamic_cast<GameWorld*>(this->getParent());
+    auto gameWorld = static_cast<GameWorld*>(this->getParent());
     if (!gameWorld) return;
 
     gameWorld->removeIceInRow(plantRow);
@@ -162,7 +162,7 @@ void Jalapeno::playExplosionAnimation()
         {
             auto animate = Animate::create(animation);
             auto targetpos = Vec2(650, this->getPositionY());
-            explosionSprite->setScaleX(1.28);
+            explosionSprite->setScaleX(1.28f);
             explosionSprite->setPosition(targetpos);
             if (this->getParent())
                 this->getParent()->addChild(explosionSprite, this->getLocalZOrder() + 1);

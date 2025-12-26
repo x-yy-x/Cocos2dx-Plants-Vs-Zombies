@@ -38,6 +38,11 @@ public:
      * @param upgradePlantName The target plant type to upgrade to
      * @return false (GatlingPea cannot be upgraded further)
      */
+    
+    /**
+     * @brief Get plant category (explicit override to resolve inheritance dominance warning)
+     */
+    virtual PlantCategory getCategory() const override { return PlantCategory::ATTACKING; }
     virtual bool canBeUpgradedTo(PlantName upgradePlantName) const override { 
         return false; 
     }

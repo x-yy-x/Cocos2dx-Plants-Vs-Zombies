@@ -1,8 +1,8 @@
 #pragma once
 
 #include "cocos2d.h"
-#include "AttackingPlant.h" // ╟Э╨╛ virtual public Plant
-#include "Mushroom.h"       // ╟Э╨╛ virtual public Plant
+#include "AttackingPlant.h" // О©╫О©╫О©╫О©╫ virtual public Plant
+#include "Mushroom.h"       // О©╫О©╫О©╫О©╫ virtual public Plant
 #include "Zombie.h"
 
 class Puffshroom : public AttackingPlant, public Mushroom
@@ -16,18 +16,21 @@ public:
     virtual bool init() override;
     virtual void update(float delta) override;
 
-    // й╣ож AttackingPlant ╫с©з
+    // й╣О©╫О©╫ AttackingPlant О©╫с©О©╫
     virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
+    
+    // Explicit override to avoid C4250 inheritance dominance warning
+    virtual PlantCategory getCategory() const override { return PlantCategory::ATTACKING; }
 
     static Puffshroom* plantAtPosition(const cocos2d::Vec2& globalPos);
 
 protected:
-    // й╣ож Mushroom ╫с©з
+    // й╣О©╫О©╫ Mushroom О©╫с©О©╫
     virtual void wakeUp() override;
     virtual void sleep() override;
     virtual void setAnimation() override;
 
-    // ╬╡л╛Ёёа©
+    // О©╫О©╫л╛О©╫О©╫О©╫О©╫
     static const std::string IMAGE_FILENAME;
     static const cocos2d::Rect INITIAL_PIC_RECT;
     static const cocos2d::Size OBJECT_SIZE;

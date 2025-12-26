@@ -37,7 +37,7 @@ GatlingPea* GatlingPea::plantAtPosition(const Vec2& globalPos)
 // ------------------------------------------------------------------------
 void GatlingPea::setAnimation()
 {
-    this->setScale(0.2);
+    this->setScale(0.2f);
     
     auto animation = initAnimate(IMAGE_FILENAME, 530.0f, 512.0f, 5, 5, 25, 0.07f);
     if (animation) {
@@ -73,7 +73,7 @@ std::vector<Bullet*> GatlingPea::checkAndAttack(std::vector<Zombie*> allZombiesI
     std::vector<Pea*> pea(4);
     std::vector<Vec2>spawnPos(4);
     for (int i = 0; i < 4; ++i) {
-        spawnPos[i] = this->getPosition() + Vec2(30.0f, 20.0f) + i * Vec2(20.0f, 0);
+        spawnPos[i] = this->getPosition() + Vec2(30.0f, 20.0f) + static_cast<float>(i) * Vec2(20.0f, 0.0f);
         pea[i] = Pea::create(spawnPos[i]);
         if (pea[i])
             bullets.push_back(pea[i]);
@@ -81,7 +81,7 @@ std::vector<Bullet*> GatlingPea::checkAndAttack(std::vector<Zombie*> allZombiesI
 
     if (!bullets.empty())
     {
-        CCLOG("GatlingPea fired %d peas", (int)bullets.size());
+        CCLOG("GatlingPea fired %d peas", static_cast<int>(bullets.size()));
     }
 
     return bullets;

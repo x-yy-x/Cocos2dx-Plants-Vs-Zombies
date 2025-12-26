@@ -71,7 +71,7 @@ std::vector<Bullet*> Repeater::checkAndAttack(std::vector<Zombie*> allZombiesInR
     
     if (!bullets.empty())
     {
-        CCLOG("Repeater fired %d peas", (int)bullets.size());
+        CCLOG("Repeater fired %d peas", static_cast<int>(bullets.size()));
     }
     
     return bullets;

@@ -63,9 +63,11 @@ public:
      */
     virtual bool playsMetalHitSound() const override { return true; }
 
-    void setSpecialDeath();
+    virtual void setSpecialDeath() override;
 
-    inline bool hasBeenAttackedBySpike() { return _hasBeenAttackedBySpike; }
+    virtual bool isZomboni() const override { return true; }
+    
+    virtual bool hasBeenAttackedBySpike() const override { return _hasBeenAttackedBySpike; }
 protected:
     // Protected constructor
     Zomboni();

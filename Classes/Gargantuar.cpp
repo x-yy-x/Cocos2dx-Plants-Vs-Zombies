@@ -66,7 +66,7 @@ Gargantuar* Gargantuar::createZombie()
         z->initWalkAnimation();
         z->initSmashAnimation();
         z->initThrowAnimation();
-        z->_currentHealth = 3000.0f;
+        z->_currentHealth = static_cast<int>(3000.0f);
         z->ATTACK_DAMAGE = 1000.0f;
         z->ATTACK_INTERVAL = 2.64f;
         z->runAction(z->_walkAction);
@@ -231,7 +231,7 @@ void Gargantuar::throwImp()
     auto imp = Imp::createZombie();
     auto pos = this->getPosition();
     imp->setPosition(pos + Vec2(-250, 35));
-    auto gameWorld = dynamic_cast<GameWorld*>(Director::getInstance()->getRunningScene());
+    auto gameWorld = static_cast<GameWorld*>(Director::getInstance()->getRunningScene());
     gameWorld->addChild(imp, ENEMY_LAYER);
     gameWorld->addZombie(imp);
     cocos2d::AudioEngine::play2d("imp-pvz.mp3", false, 1.0f);

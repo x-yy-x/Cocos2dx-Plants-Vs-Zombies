@@ -16,7 +16,7 @@ const cocos2d::Rect SpikeRock::INITIAL_PIC_RECT = Rect(0.0f, 512.0f - 128.0f, 85
 // Protected constructor
 SpikeRock::SpikeRock()
 {
-    this->_currentState = COMPLETE;
+    this->_currentState = SpikeRockState::COMPLETE;
     this->_currentHealth = 3000;
     CCLOG("SpikeRock created.");
 }
@@ -60,15 +60,15 @@ void SpikeRock::update(float delta)
     Plant::update(delta);
     // Plant::update handles cooldown logic
     // GameWorld will call attack() when conditions are met
-    SpikeRockState newState = COMPLETE;
+    SpikeRockState newState = SpikeRockState::COMPLETE;
     if (_currentHealth <= 2000 && _currentHealth > 1000)
-        newState = DAMAGED;
+        newState = SpikeRockState::DAMAGED;
     else if (_currentHealth <= 1000)
-        newState = BROKEN;
+        newState = SpikeRockState::BROKEN;
     if (_currentState != newState) {
         _currentState = newState;
         this->stopAllActions();
-        if (_currentState == DAMAGED) {
+        if (_currentState == SpikeRockState::DAMAGED) {
             auto animation = initAnimate(IMAGE_FILENAME_SECOND, 105.0f, 54.0f, 3, 3, 9, 0.105f);
             if (animation) {
                 auto animate = Animate::create(animation);
@@ -112,9 +112,8 @@ std::vector<Bullet*> SpikeRock::checkAndAttack(std::vector<Zombie*> allZombiesIn
         
         if (spikeRect.intersectsRect(zombie->getBoundingBox()))
         {
-            auto z = dynamic_cast<Zomboni*>(zombie);
-            if (z && !z->hasBeenAttackedBySpike()) {
-                z->setSpecialDeath();
+            if (zombie->isZomboni() && !zombie->hasBeenAttackedBySpike()) {
+                zombie->setSpecialDeath();
                 this->takeDamage(1000);
             }
             else {

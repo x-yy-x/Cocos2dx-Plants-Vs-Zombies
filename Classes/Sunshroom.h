@@ -1,50 +1,53 @@
 #pragma once
 
 #include "cocos2d.h"
-#include "SunProducingPlant.h" // °üº¬ virtual public Plant
-#include "Mushroom.h"          // °üº¬ virtual public Plant
+#include "SunProducingPlant.h" // ï¿½ï¿½ï¿½ï¿½ virtual public Plant
+#include "Mushroom.h"          // ï¿½ï¿½ï¿½ï¿½ virtual public Plant
 #include "GameDefs.h"
 
 class Sunshroom : public SunProducingPlant, public Mushroom
 {
 public:
-    // Ñô¹â¹½ÌØÓÐµÄÉú³¤½×¶Î
+    // ï¿½ï¿½ï¿½â¹½ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×¶ï¿½
     enum class GrowthState
     {
-        SMALL_INIT,     // ¸ÕÖÖÏÂ£¬Ð¡¸ö×Ó
-        GROWING,        // ÕýÔÚ³¤´ó
-        GROWN,          // ³¤´óÁË
-        SLEEPING        // Ë¯¾õÖÐ£¨´Ë×´Ì¬Óë Mushroom::_activityState Áª¶¯£©
+        SMALL_INIT,     // ï¿½ï¿½ï¿½ï¿½ï¿½Â£ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½
+        GROWING,        // ï¿½ï¿½ï¿½Ú³ï¿½ï¿½ï¿½
+        GROWN,          // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        SLEEPING        // Ë¯ï¿½ï¿½ï¿½Ð£ï¿½ï¿½ï¿½×´Ì¬ï¿½ï¿½ Mushroom::_activityState ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
     };
 
-    // ¹¹Ôì/Îö¹¹
+    // ï¿½ï¿½ï¿½ï¿½/ï¿½ï¿½ï¿½ï¿½
     Sunshroom();
     virtual ~Sunshroom() {}
 
-    // ±ê×¼ Cocos create º¯Êý
+    // ï¿½ï¿½×¼ Cocos create ï¿½ï¿½ï¿½ï¿½
     CREATE_FUNC(Sunshroom);
 
     virtual bool init() override;
     virtual void update(float delta) override;
 
-    // ÊµÏÖ SunProducingPlant ½Ó¿Ú
+    // Êµï¿½ï¿½ SunProducingPlant ï¿½Ó¿ï¿½
     virtual std::vector<Sun*> produceSun() override;
+    
+    // Explicit override to avoid C4250 inheritance dominance warning
+    virtual PlantCategory getCategory() const override { return PlantCategory::SUN_PRODUCING; }
 
-    // ¾²Ì¬ÖÖÖ²º¯Êý
+    // ï¿½ï¿½Ì¬ï¿½ï¿½Ö²ï¿½ï¿½ï¿½ï¿½
     static Sunshroom* plantAtPosition(const cocos2d::Vec2& globalPos);
 
 protected:
-    // ÊµÏÖ Mushroom µÄÐéº¯Êý
+    // Êµï¿½ï¿½ Mushroom ï¿½ï¿½ï¿½éº¯ï¿½ï¿½
     virtual void wakeUp() override;
     virtual void sleep() override;
 
-    // ÄÚ²¿Âß¼­
+    // ï¿½Ú²ï¿½ï¿½ß¼ï¿½
     void setGrowthState(GrowthState state);
-    void setAnimation() override; // ¸²¸Ç Plant µÄ setAnimation
+    void setAnimation() override; // ï¿½ï¿½ï¿½ï¿½ Plant ï¿½ï¿½ setAnimation
     void startGrowingSequence();
     void onGrowthSequenceFinished();
 
-    // ¾²Ì¬³£Á¿
+    // ï¿½ï¿½Ì¬ï¿½ï¿½ï¿½ï¿½
     static const std::string IMAGE_FILENAME;
     static const cocos2d::Rect INITIAL_PIC_RECT;
     static const cocos2d::Size OBJECT_SIZE;

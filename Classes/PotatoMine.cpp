@@ -4,15 +4,15 @@
 
 USING_NS_CC;
 
-// ---------- 静态常量 ----------
-const float       PotatoMine::DEFAULT_ARMING_TIME = 12.0f; // 地下准备时间
-const int         PotatoMine::EXPLOSION_DAMAGE   = 1800;   // 爆炸伤害
-const int         PotatoMine::EXPLOSION_RADIUS   = 0;      // 同格子
+// ---------- Static constants ----------
+const float       PotatoMine::DEFAULT_ARMING_TIME = 12.0f; // Underground preparation time
+const int         PotatoMine::EXPLOSION_DAMAGE   = 1800;   // Explosion damage
+const int         PotatoMine::EXPLOSION_RADIUS   = 0;      // Same grid
 const std::string PotatoMine::ARMING_IMAGE       = "potato_mine/arming.png";
-const std::string PotatoMine::READY_FRAME_DIR    = "potato_mine/ready/"; // 帧目录
+const std::string PotatoMine::READY_FRAME_DIR    = "potato_mine/ready/"; // Frame directory
 const std::string PotatoMine::TRIGGERED_IMAGE    = "potato_mine/triggered.png";
 
-// ---------- 构造 ----------
+// ---------- Constructor ----------
 PotatoMine::PotatoMine()
     : BombPlant()
     , _state(MineState::ARMING)
@@ -31,11 +31,11 @@ bool PotatoMine::init()
     if (!Sprite::initWithFile(ARMING_IMAGE))
         return false;
 
-    // 生命值设定（易被僵尸吃）
-    _maxHealth      = 300;
-    _currentHealth  = 300;
+    // Set health value (easy to be eaten by zombies)
+    _maxHealth      = 80;
+    _currentHealth  = 80;
 
-    // 地雷不需要冷却
+    // Mine doesn't need cooldown
     _cooldownInterval = 0.0f;
     _accumulatedTime  = 0.0f;
 
@@ -71,7 +71,6 @@ void PotatoMine::switchToReadyState()
 {
     _state = MineState::READY;
 
-    // 播放破土动画 + 就绪循环动画
     Vector<SpriteFrame*> frames;
     for (int i = 1; i <= 8; ++i)
     {
@@ -98,7 +97,7 @@ void PotatoMine::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, 
     if (_state != MineState::READY || _hasExploded)
         return;
 
-    // 检测当前行僵尸碰撞
+    // Detect zombie collision in current row
     auto& zombies = allZombiesInRow[plantRow];
     bool triggered = false;
     for (auto zombie : zombies)
@@ -107,7 +106,7 @@ void PotatoMine::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, 
         {
             if (this->getBoundingBox().intersectsRect(zombie->getBoundingBox()))
             {
-                zombie->takeDamage(_explosionDamage);
+                zombie->takeDamage(static_cast<float>(_explosionDamage));
                 triggered = true;
             }
         }
@@ -124,18 +123,18 @@ void PotatoMine::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, 
 // ---------- playExplosionAnimation ----------
 void PotatoMine::playExplosionAnimation()
 {
-    // 停止一切动作，并切换为爆炸贴图
+    // Stop all actions and switch to explosion texture
     this->stopAllActions();
     this->setTexture(TRIGGERED_IMAGE);
 
-    // 播放音效
+    // Play sound effect
     cocos2d::AudioEngine::play2d("mine.mp3", false);
 
-    // 爆炸闪烁 + 渐隐后死亡
+    // Explosion blink + fade out then die
     auto blink = Blink::create(0.3f, 4);
     auto fade  = FadeOut::create(0.4f);
     auto die   = CallFunc::create([this]() {
-        this->_isDead = true; // 标记死亡，GameWorld 会清理
+        this->_isDead = true;
     });
 
     this->runAction(Sequence::create(blink, fade, die, nullptr));
@@ -144,7 +143,7 @@ void PotatoMine::playExplosionAnimation()
 // ---------- setAnimation ----------
 void PotatoMine::setAnimation()
 {
-    // 初始埋地阶段无需动画（单帧）
+    // No animation needed for initial underground phase (single frame)
 }
 
 // ---------- plantAtPosition ----------

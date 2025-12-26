@@ -89,7 +89,7 @@ std::vector<Bullet*> ThreePeater::checkAndAttack(std::vector<Zombie*> allZombies
 
     if (!bullets.empty())
     {
-        CCLOG("ThreePeater fired %d peas in multiple lanes", (int)bullets.size());
+        CCLOG("ThreePeater fired %d peas in multiple lanes", static_cast<int>(bullets.size()));
     }
 
     return bullets;

@@ -37,9 +37,9 @@ bool Coin::init(CoinType coinType)
         return false;
     }
 
-    if (!Sprite::initWithFile(IMAGE_FILENAME[_coinType]))
+    if (!Sprite::initWithFile(IMAGE_FILENAME[static_cast<int>(_coinType)]))
     {
-        CCLOG("Failed to load coin image: %s", IMAGE_FILENAME[_coinType].c_str());
+        CCLOG("Failed to load coin image: %s", IMAGE_FILENAME[static_cast<int>(_coinType)].c_str());
         return false;
     }
 
@@ -95,7 +95,7 @@ void Coin::collect(const std::function<void(int)>& onfinished)
     auto move = MoveTo::create(0.8f, Vec2(50, 20));
     auto fadeOut = FadeOut::create(0.2f);
     auto addCoinValue = CallFunc::create([this, onfinished]() {
-        onfinished(COIN_VALUE[_coinType]);
+        onfinished(COIN_VALUE[static_cast<int>(_coinType)]);
         });
     auto markCollected = CallFunc::create([this]() {
         this->_isCollected = true;
@@ -104,7 +104,7 @@ void Coin::collect(const std::function<void(int)>& onfinished)
     auto sequence = Sequence::create(move, fadeOut, addCoinValue, markCollected, nullptr);
     this->runAction(sequence);
 
-    CCLOG("Coin collected! Value: %d", COIN_VALUE[_coinType]);
+    CCLOG("Coin collected! Value: %d", COIN_VALUE[static_cast<int>(_coinType)]);
     return;
 }
 

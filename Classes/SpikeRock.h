@@ -10,7 +10,7 @@
 class SpikeRock : public AttackingPlant,public UpgradedPlant
 {
 public:
-    enum SpikeRockState
+    enum class SpikeRockState
     {
         COMPLETE,
         DAMAGED,
@@ -38,6 +38,11 @@ public:
      * @param delta Time delta
      */
     virtual void update(float delta) override;
+    
+    /**
+     * @brief Get plant category (explicit override to resolve inheritance dominance warning)
+     */
+    virtual PlantCategory getCategory() const override { return PlantCategory::ATTACKING; }
 
     /**
      * @brief Check for zombies and attack if possible (override from AttackingPlant)

@@ -70,8 +70,8 @@ void Plant::takeDamage(float damage)
         return;
     }
 
-    _currentHealth -= damage;
-    CCLOG("Plant took %d damage, remaining health: %d", damage, _currentHealth);
+    _currentHealth -= static_cast<int>(damage);
+    CCLOG("Plant took %d damage, remaining health: %d", static_cast<int>(damage), _currentHealth);
 
     if (_currentHealth <= 0)
     {

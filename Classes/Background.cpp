@@ -1,6 +1,6 @@
 #include "BackGround.h"
 #include "GameDefs.h"
-#include "cocos2d.h" // ȷ������ cocos2d ͷ�ļ�
+#include "cocos2d.h" // Ensure cocos2d header file is included
 
 USING_NS_CC;
 
@@ -11,20 +11,24 @@ const std::string BackGround::DAY_IMAGE = "background.png";
 const std::string BackGround::NIGHT_IMAGE = "background2.png";
 
 // =================================================================
-// SeedBank Sprite ���ò����������޸ģ�
+// SeedBank Sprite configuration - do not modify
 // =================================================================
 namespace
 {
-    // X ����ƫ�ƣ������ԭ�㿪ʼ�ľ��룬ռ��Ļ���ȵı�����
+    // X position offset, distance from origin, ratio of screen width
+
     const float SEED_BANK_POS_X_RATIO = 0.245f;
 
-    // Y ����ƫ�ƣ��Ӷ�����ʼ�ľ��룬ռ��Ļ�߶ȵı�����1.0f �Ƕ�����0.0f �ǵײ���
+    // Y position offset, distance from origin, ratio of screen height (1.0f is top, 0.0f is bottom)
+
     const float SEED_BANK_POS_Y_RATIO = 0.96f;
 
-    // �Ŵ���
+    // Scaling factor
+
     const float SEED_BANK_SCALE_FACTOR = 1.04f;
 
-    // ͼƬ�ļ���
+    // Image filename
+
     const std::string SEED_BANK_IMAGE = "seedBank.png";
 }
 
@@ -73,26 +77,26 @@ bool BackGround::init()
     this->setScale(scaleX, scaleY);
 
     // =================================================================
-    // 5. ���� SeedBank Sprite ��������
+    // 5. Initialize SeedBank Sprite
     // =================================================================
     auto seedBankSprite = Sprite::create(SEED_BANK_IMAGE);
 
     if (seedBankSprite)
     {
-        // ���� SeedBank ������λ��
-        // X: ��Ļ���� * ���� + ԭ��X
+        // Set SeedBank position
+        // X: Screen width * ratio + origin X
         float finalX = visibleSize.width * SEED_BANK_POS_X_RATIO + origin.x;
 
-        // Y: ��Ļ�߶� * ���� + ԭ��Y
+        // Y: Screen height * ratio + origin Y
         float finalY = visibleSize.height * SEED_BANK_POS_Y_RATIO + origin.y;
 
         seedBankSprite->setPosition(Vec2(finalX, finalY));
 
-        // ���÷Ŵ���
+        // Set scaling factor
         seedBankSprite->setScale(SEED_BANK_SCALE_FACTOR);
 
-        // Z-order: ȷ�����ڱ���֮��
-        // ע�⣺�� seedBankSprite ����Ϊ BackGround �������ӽڵ� (this)
+        // Z-order: Ensure it's above the background
+        // Note: Add seedBankSprite as a child of BackGround (this)
         this->addChild(seedBankSprite, 1);
 
         CCLOG("SeedBank Sprite initialized successfully.");

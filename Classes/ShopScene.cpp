@@ -3,11 +3,10 @@
 #include "PlayerProfile.h"
 #include "ui/CocosGUI.h"
 #include "audio/include/AudioEngine.h"
-#include "ccRandom.h"
 
 USING_NS_CC;
 
-// ================= 参数（可调） =================
+// ================= 参数 =================
 static const float SHELF_1_Y_RATIO = 0.80f;
 static const float SHELF_2_Y_RATIO = 0.40f;
 static const float ITEM_START_X_RATIO = 0.40f;
@@ -27,20 +26,11 @@ Scene* ShopScene::createScene()
     return ShopScene::create();
 }
 
-void ShopScene::onBackToMenu(cocos2d::Ref* sender)
-{
-    cocos2d::AudioEngine::play2d("buttonclick.mp3");
-    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameMenu::createScene()));
-}
-
 bool ShopScene::init()
 {
-    if (!Scene::init())
-    {
-        return false;
-    }
+    if (!Scene::init()) return false;
 
-    cocos2d::AudioEngine::play2d("title.mp3", true);
+    AudioEngine::play2d("title.mp3", true);
     setupUI();
     setupDaveAnimation();
     setupShopItems();
@@ -48,12 +38,17 @@ bool ShopScene::init()
     return true;
 }
 
+void ShopScene::onBackToMenu(cocos2d::Ref* sender)
+{
+    AudioEngine::play2d("buttonclick.mp3");
+    Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameMenu::createScene()));
+}
+
 void ShopScene::setupUI()
 {
     auto visibleSize = Director::getInstance()->getVisibleSize();
     Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
-    // 背景
     auto background = Sprite::create("shop_background.png");
     if (background)
     {
@@ -64,7 +59,6 @@ void ShopScene::setupUI()
         this->addChild(background, 0);
     }
 
-    // 返回按钮
     auto backItem = MenuItemImage::create("btn_Menu.png", "btn_Menu2.png", CC_CALLBACK_1(ShopScene::onBackToMenu, this));
     if (backItem) {
         backItem->setScale(0.8f);
@@ -74,7 +68,6 @@ void ShopScene::setupUI()
         this->addChild(backMenu, 100);
     }
 
-    // 金币显示
     Sprite* coinBank = Sprite::create("CoinBank.png");
     Vec2 coinPos(100 + origin.x, visibleSize.height - 40.0f + origin.y);
     if (coinBank)
@@ -103,35 +96,26 @@ void ShopScene::setupDaveAnimation()
     _daveSprite->setPosition(Vec2(150 + origin.x, 150 + origin.y));
     this->addChild(_daveSprite, 1);
 
-    // idling 动画
     auto idleAnimation = Animation::create();
-    for (int i = 1; i <= 17; ++i) {
+    for (int i = 1; i <= 17; ++i)
         idleAnimation->addSpriteFrameWithFile(StringUtils::format("dave/idling/1 (%d).png", i));
-    }
     idleAnimation->setDelayPerUnit(DAVE_FRAME_DELAY);
 
-    // speaking 动画
     auto speakingAnimation = Animation::create();
-    for (int i = 1; i <= 13; ++i) {
+    for (int i = 1; i <= 13; ++i)
         speakingAnimation->addSpriteFrameWithFile(StringUtils::format("dave/speaking/1 (%d).png", i));
-    }
     speakingAnimation->setDelayPerUnit(DAVE_FRAME_DELAY);
 
-    // 随机声音 Lambda
     auto playRandomDaveSound = CallFunc::create([]() {
         int randNum = cocos2d::random(1, 4);
-        std::string soundFile = cocos2d::StringUtils::format("dave%d.mp3", randNum);
-        cocos2d::AudioEngine::play2d(soundFile, false, 1.0f);
+        AudioEngine::play2d(StringUtils::format("dave%d.mp3", randNum));
         });
 
-    auto idleOnce = Animate::create(idleAnimation);
-    auto idleRepeat = Repeat::create(idleOnce, DAVE_IDLE_LOOPS);
-    auto speakOnce = Animate::create(speakingAnimation);
-
-    // 组合序列
-    auto cycle = Sequence::create(idleRepeat, playRandomDaveSound, speakOnce, nullptr);
+    auto idleRepeat = Repeat::create(Animate::create(idleAnimation), DAVE_IDLE_LOOPS);
+    auto cycle = Sequence::create(idleRepeat, playRandomDaveSound, Animate::create(speakingAnimation), nullptr);
     _daveSprite->runAction(RepeatForever::create(cycle));
 }
+
 void ShopScene::setupShopItems()
 {
     auto visibleSize = Director::getInstance()->getVisibleSize();
@@ -141,15 +125,18 @@ void ShopScene::setupShopItems()
     float start_x = visibleSize.width * ITEM_START_X_RATIO;
     float spacing_x = visibleSize.width * ITEM_SPACING_X_RATIO;
 
-    createShopItem("mower.png", "Mower", PRICE_MOWER, Vec2(start_x, shelf1_y));
-    createShopItem("rake.png", "Rake", PRICE_RAKE, Vec2(start_x + spacing_x, shelf1_y));
+    // 第一排：道具 (不传 PlantName，传 ShopItemID)
+    createShopItem("mower.png", ShopItemID::MOWER, PRICE_MOWER, Vec2(start_x, shelf1_y));
+    createShopItem("rake.png", ShopItemID::RAKE, PRICE_RAKE, Vec2(start_x + spacing_x, shelf1_y));
 
-    createShopItem("seedpacket_twinsunflower.png", "Twin Sunflower", PRICE_TWIN_SUNFLOWER, Vec2(start_x, shelf2_y), PlantName::TWINSUNFLOWER);
-    createShopItem("seedpacket_gatlingpea.png", "Gatling Pea", PRICE_GATLING_PEA, Vec2(start_x + spacing_x, shelf2_y), PlantName::GATLINGPEA);
-    createShopItem("seedpacket_spikerock.png", "Spike Rock", PRICE_SPIKE_ROCK, Vec2(start_x + spacing_x * 2, shelf2_y), PlantName::SPIKEROCK);
+    // 第二排：植物 (传入 PlantName 且传入对应的 ShopItemID)
+    createShopItem("seedpacket_twinsunflower.png", ShopItemID::TWIN_SUNFLOWER, PRICE_TWIN_SUNFLOWER, Vec2(start_x, shelf2_y), PlantName::TWINSUNFLOWER);
+    createShopItem("seedpacket_gatlingpea.png", ShopItemID::GATLING_PEA, PRICE_GATLING_PEA, Vec2(start_x + spacing_x, shelf2_y), PlantName::GATLINGPEA);
+    createShopItem("seedpacket_spikerock.png", ShopItemID::SPIKE_ROCK, PRICE_SPIKE_ROCK, Vec2(start_x + spacing_x * 2, shelf2_y), PlantName::SPIKEROCK);
 }
+// ShopScene.cpp
 
-void ShopScene::createShopItem(const std::string& image, const std::string& name, int price, const Vec2& position, PlantName plantName)
+void ShopScene::createShopItem(const std::string& image, ShopItemID itemId, int price, const Vec2& position, PlantName plantName)
 {
     auto itemSprite = Sprite::create(image);
     if (!itemSprite) return;
@@ -157,84 +144,85 @@ void ShopScene::createShopItem(const std::string& image, const std::string& name
     itemSprite->setPosition(position);
     this->addChild(itemSprite, 10);
 
-    // 价格标签
     auto priceLabel = Label::createWithSystemFont("$ " + std::to_string(price), "Arial", 24);
     priceLabel->setPosition(Vec2(position.x, position.y - itemSprite->getContentSize().height / 2 - 20));
     this->addChild(priceLabel, 11);
 
-    // SOLD OUT 标签
     auto soldOutLabel = Label::createWithSystemFont("SOLD OUT", "Arial", 28);
     soldOutLabel->setColor(Color3B::RED);
     soldOutLabel->setPosition(itemSprite->getPosition());
     soldOutLabel->setVisible(false);
     this->addChild(soldOutLabel, 12);
 
-    // 购买逻辑
-    bool isPlant = (plantName != PlantName::UNKNOWN);
-    bool isRakeItem = (name == std::string("Rake"));
-    bool isMowerItem = (name == std::string("Mower"));
-    bool isSold = false;
-    if (isPlant) {
-        isSold = PlayerProfile::getInstance()->isPlantUnlocked(plantName);
-    } else if (isRakeItem) {
-        isSold = PlayerProfile::getInstance()->isRakeEnabled();
-    } else if (isMowerItem) {
-        isSold = PlayerProfile::getInstance()->isMowerEnabled();
-    }
+    // 获取玩家数据实例
+    auto profile = PlayerProfile::getInstance();
 
-    if (isSold)
-    {
+    // 判定逻辑
+    auto checkOwned = [=]() -> bool {
+        switch (itemId) {
+            case ShopItemID::MOWER:          return profile->isMowerEnabled();
+            case ShopItemID::RAKE:           return profile->isRakeEnabled();
+            case ShopItemID::TWIN_SUNFLOWER:
+            case ShopItemID::GATLING_PEA:
+            case ShopItemID::SPIKE_ROCK:     return profile->isPlantUnlocked(plantName);
+            default: return false;
+        }
+        };
+
+    if (checkOwned()) {
         soldOutLabel->setVisible(true);
     }
-    else
-    {
+    else {
         auto listener = EventListenerTouchOneByOne::create();
         listener->setSwallowTouches(true);
         listener->onTouchBegan = [=](Touch* touch, Event* event) mutable {
             auto target = static_cast<Node*>(event->getCurrentTarget());
-            // 命中区域：商品图本身 + 价格文字区域（提高易点性）
-            Rect hitRect = itemSprite->getBoundingBox();
+            Rect hitRect = target->getBoundingBox();
+
+            // 扩大点击判定范围
             if (priceLabel) {
                 Rect priceRect = priceLabel->getBoundingBox();
                 hitRect.merge(priceRect);
             }
+
             Vec2 pInParent = target->getParent()->convertToNodeSpace(touch->getLocation());
-            if (!hitRect.containsPoint(pInParent)) {
+            if (!hitRect.containsPoint(pInParent)) return false;
+
+            // 再次检查是否已拥有
+            if (checkOwned()) {
+                AudioEngine::play2d("buzzer.mp3");
                 return false;
             }
 
-            if (isPlant && PlayerProfile::getInstance()->isPlantUnlocked(plantName)) {
-                cocos2d::AudioEngine::play2d("buzzer.mp3");
-                return false;
-            }
-            if (PlayerProfile::getInstance()->spendCoins(price))
-            {
-                cocos2d::AudioEngine::play2d("buttonclick.mp3");
-                if (isPlant) {
-                    PlayerProfile::getInstance()->unlockPlant(plantName);
-                } else if (isRakeItem) {
-                    PlayerProfile::getInstance()->enableRake(true);
-                } else if (isMowerItem) {
-                    PlayerProfile::getInstance()->enableMower(true);
+            // 购买处理
+            if (profile->spendCoins(price)) {
+                AudioEngine::play2d("buttonclick.mp3");
+
+                switch (itemId) {
+                    case ShopItemID::MOWER:          profile->enableMower(true); break;
+                    case ShopItemID::RAKE:           profile->enableRake(true); break;
+                    case ShopItemID::TWIN_SUNFLOWER:
+                    case ShopItemID::GATLING_PEA:
+                    case ShopItemID::SPIKE_ROCK:     profile->unlockPlant(plantName); break;
+                    default: break;
                 }
+
                 soldOutLabel->setVisible(true);
-                updateCoinLabel();
-                listener->setEnabled(false);
+                this->updateCoinLabel(); // 注意这里要用 this-> 访问成员函数
+                event->getCurrentTarget()->getEventDispatcher()->removeEventListener(listener);
             }
-            else
-            {
-                cocos2d::AudioEngine::play2d("buzzer.mp3");
+            else {
+                AudioEngine::play2d("buzzer.mp3");
             }
             return true;
-        };
+            };
         _eventDispatcher->addEventListenerWithSceneGraphPriority(listener, itemSprite);
     }
 }
 
 void ShopScene::updateCoinLabel()
 {
-    if (_coinLabel)
-    {
+    if (_coinLabel) {
         _coinLabel->setString(std::to_string(PlayerProfile::getInstance()->getCoins()));
     }
 }
