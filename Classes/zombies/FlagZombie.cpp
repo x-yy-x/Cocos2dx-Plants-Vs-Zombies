@@ -83,7 +83,7 @@ void FlagZombie::initEatAnimation()
 // Set animation corresponding to state
 void FlagZombie::setAnimationForState()
 {
-    switch (static_cast<ZombieState>(_currentState))
+    switch (static_cast<ZombieState>(current_state))
     {
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");
@@ -101,7 +101,7 @@ void FlagZombie::setAnimationForState()
             this->stopAllActions();
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
-                _isDead = true;
+                is_dead = true;
                 _isDying = false;
                 });
             auto sequence = Sequence::create(fadeOut, markDead, nullptr);

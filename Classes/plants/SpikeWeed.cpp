@@ -63,11 +63,11 @@ std::vector<Bullet*> SpikeWeed::checkAndAttack(std::vector<Zombie*> allZombiesIn
 {
     std::vector<Bullet*> empty; 
 
-    _accumulatedTime += Director::getInstance()->getDeltaTime();
+    accumulated_time += Director::getInstance()->getDeltaTime();
 
-    if (_accumulatedTime < _cooldownInterval)
+    if (accumulated_time < cooldown_interval)
         return empty;
-    _accumulatedTime = 0.0f;
+    accumulated_time = 0.0f;
 
     
     Rect spikeRect = this->getBoundingBox();

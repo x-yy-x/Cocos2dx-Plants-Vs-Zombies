@@ -69,9 +69,9 @@ std::vector<Bullet*> PeaShooter::checkAndAttack(std::vector<Zombie*> allZombiesI
     }
 
     // Check if cooldown is ready
-    if (_accumulatedTime >= _cooldownInterval)
+    if (accumulated_time >= cooldown_interval)
     {
-        _accumulatedTime = 0.0f; // Reset cooldown
+        accumulated_time = 0.0f; // Reset cooldown
         
         // Create a new Pea bullet at the plant's position
         // Offset slightly to spawn from the "mouth"

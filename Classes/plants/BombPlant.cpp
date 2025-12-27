@@ -5,34 +5,44 @@
 
 USING_NS_CC;
 
+// ---------------------------------------------------------
+// Explosion Range Logic
+// ---------------------------------------------------------
+
 std::vector<Zombie*> BombPlant::getZombiesInRange(std::vector<Zombie*> allZombiesInRow[5], int centerRow, int centerCol)
 {
     std::vector<Zombie*> zombiesInRange;
 
-    // Check rows within explosion radius
-    int minRow = std::max(0, centerRow - _explosionRadius);
-    int maxRow = std::min(MAX_ROW - 1, centerRow + _explosionRadius);
+    // Define the boundaries of the explosion based on the grid radius
+    int minRow = std::max(0, centerRow - explosion_radius);
+    int maxRow = std::min(MAX_ROW - 1, centerRow + explosion_radius);
 
+    // Iterate through all rows affected by the blast
     for (int row = minRow; row <= maxRow; ++row)
     {
-        // CRITICAL FIX: Use iterator to avoid invalidation during iteration
         auto& zombiesInThisRow = allZombiesInRow[row];
+
+        // Use iterators to safely traverse the list of zombies in the row
         for (auto it = zombiesInThisRow.begin(); it != zombiesInThisRow.end(); ++it)
         {
             Zombie* zombie = *it;
-            // Check pointer validity and skip dead/dying zombies
+
+            // Validate the zombie is alive and present
             if (zombie && !zombie->isDead())
             {
-                // Calculate zombie's grid position
+                // Convert world position back to grid coordinates for collision checking
                 Vec2 zombiePos = zombie->getPosition();
                 int zombieCol = static_cast<int>((zombiePos.x - GRID_ORIGIN.x) / CELLSIZE.width);
                 int zombieRow = static_cast<int>((zombiePos.y - GRID_ORIGIN.y) / CELLSIZE.height);
 
-                // Check if zombie is within explosion radius
+                // Calculate the grid-based distance from the explosion center
                 int colDist = std::abs(zombieCol - centerCol);
                 int rowDist = std::abs(zombieRow - centerRow);
 
-                if (colDist <= _explosionRadius && rowDist <= _explosionRadius)
+                /** * A zombie is hit if it falls within the square radius.
+                 * For a Cherry Bomb, radius is 1, creating a 3x3 grid of effect.
+                 */
+                if (colDist <= explosion_radius && rowDist <= explosion_radius)
                 {
                     zombiesInRange.push_back(zombie);
                 }
@@ -42,4 +52,3 @@ std::vector<Zombie*> BombPlant::getZombiesInRange(std::vector<Zombie*> allZombie
 
     return zombiesInRange;
 }
-

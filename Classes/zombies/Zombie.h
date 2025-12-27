@@ -36,7 +36,7 @@ public:
 
     virtual void encounterPlant(const std::vector<Plant*>& plants);
 
-    bool isDead() const { return _isDead && !_isDying; }
+    bool isDead() const { return is_dead && !_isDying; }
 
     virtual void startEating(Plant* plant);
 
@@ -75,15 +75,15 @@ protected:
     //0 dying
     //1 walking
     //2 eating
-    int _currentState = 1;
+    int current_state = 1;
 
     bool _isDying = false;
-    bool _isDead = false;
-    int _currentHealth = 200;
-    float _accumulatedTime = 0.0f;
+    bool is_dead = false;
+    int current_health = 200;
+    float accumulated_time = 0.0f;
     bool _isEating = false;
     Plant* _targetPlant = nullptr;
-    float _currentSpeed = 20.0f;
+    float current_speed = 20.0f;
     float MOVE_SPEED = 20.0f;
     float ATTACK_DAMAGE = 10.0f;
     float ATTACK_INTERVAL = 0.5f;

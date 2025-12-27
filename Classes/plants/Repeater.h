@@ -44,7 +44,7 @@ public:
         return upgradePlantName == PlantName::GATLINGPEA; 
     }
 
-protected:
+private:
     // ----------------------------------------------------
     // Static constants
     // ----------------------------------------------------

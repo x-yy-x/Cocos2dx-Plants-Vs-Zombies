@@ -1,87 +1,107 @@
 #include "PlayerProfile.h"
+#include <cocos2d.h>
 
-PlayerProfile* PlayerProfile::_instance = nullptr;
+PlayerProfile* PlayerProfile::instance = nullptr;
 
 PlayerProfile* PlayerProfile::getInstance()
 {
-    if (!_instance)
+    if (!instance)
     {
-        _instance = new (std::nothrow) PlayerProfile();
+        // Using std::nothrow to ensure the app doesn't crash on allocation failure
+        instance = new (std::nothrow) PlayerProfile();
     }
-    return _instance;
+    return instance;
 }
 
 PlayerProfile::PlayerProfile()
-    : _coins(10000) // Initial coins set to 10000 for debugging
+    : coins(10000) // Starting coins (elevated for debugging/testing)
 {
-    // Default unlock some basic plants; plant upgrades need to be purchased
-    _unlockedPlants.insert(PlantName::SUNFLOWER);
-    _unlockedPlants.insert(PlantName::SUNSHROOM);
-    _unlockedPlants.insert(PlantName::PEASHOOTER);
-    _unlockedPlants.insert(PlantName::REPEATER);
-    _unlockedPlants.insert(PlantName::THREEPEATER);
-    _unlockedPlants.insert(PlantName::PUFFSHROOM);
-    _unlockedPlants.insert(PlantName::WALLNUT);
-    _unlockedPlants.insert(PlantName::CHERRYBOMB);
-    _unlockedPlants.insert(PlantName::SPIKEWEED);
-    _unlockedPlants.insert(PlantName::JALAPENO);
+    /**
+     * Initialize with default starting plants.
+     * Note: In a production version, these would be loaded from a save file.
+     */
+    unlocked_plants.insert(PlantName::SUNFLOWER);
+    unlocked_plants.insert(PlantName::SUNSHROOM);
+    unlocked_plants.insert(PlantName::PEASHOOTER);
+    unlocked_plants.insert(PlantName::REPEATER);
+    unlocked_plants.insert(PlantName::THREEPEATER);
+    unlocked_plants.insert(PlantName::PUFFSHROOM);
+    unlocked_plants.insert(PlantName::WALLNUT);
+    unlocked_plants.insert(PlantName::CHERRYBOMB);
+    unlocked_plants.insert(PlantName::SPIKEWEED);
+    unlocked_plants.insert(PlantName::JALAPENO);
 }
+
+// ----------------------------------------------------
+// Economic Logic
+// ----------------------------------------------------
 
 long long PlayerProfile::getCoins() const
 {
-    return _coins;
+    return coins;
 }
 
 void PlayerProfile::addCoins(long long amount)
 {
-    _coins += amount;
+    coins += amount;
 }
 
 bool PlayerProfile::spendCoins(long long amount)
 {
-    if (_coins >= amount)
+    if (coins >= amount)
     {
-        _coins -= amount;
+        coins -= amount;
         return true;
     }
     return false;
 }
 
+// ----------------------------------------------------
+// Progression Logic
+// ----------------------------------------------------
+
 void PlayerProfile::unlockPlant(PlantName plantName)
 {
-    _unlockedPlants.insert(plantName);
+    unlocked_plants.insert(plantName);
 }
 
 bool PlayerProfile::isPlantUnlocked(PlantName plantName) const
 {
-    // Non-upgraded plants are unlocked by default
+    /**
+     * Logic: Standard plants are available by default.
+     * Only "Upgrade" plants (found in Crazy Dave's shop) require explicit unlocking.
+     */
     switch (plantName)
     {
         case PlantName::TWINSUNFLOWER:
         case PlantName::GATLINGPEA:
         case PlantName::SPIKEROCK:
-            return _unlockedPlants.count(plantName) > 0;
+            return unlocked_plants.count(plantName) > 0;
         default:
-            return true; // Other plants are unlocked by default
+            return true;
     }
 }
 
+// ----------------------------------------------------
+// Power-up Management
+// ----------------------------------------------------
+
 void PlayerProfile::enableRake(bool enable)
 {
-    _rakeEnabled = enable;
+    rake_enabled = enable;
 }
 
 bool PlayerProfile::isRakeEnabled() const
 {
-    return _rakeEnabled;
+    return rake_enabled;
 }
 
 void PlayerProfile::enableMower(bool enable)
 {
-    _mowerEnabled = enable;
+    mower_enabled = enable;
 }
 
 bool PlayerProfile::isMowerEnabled() const
 {
-    return _mowerEnabled;
+    return mower_enabled;
 }

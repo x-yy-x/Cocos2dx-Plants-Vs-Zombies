@@ -66,7 +66,7 @@ Gargantuar* Gargantuar::createZombie()
         z->initWalkAnimation();
         z->initSmashAnimation();
         z->initThrowAnimation();
-        z->_currentHealth = static_cast<int>(3000.0f);
+        z->current_health = static_cast<int>(3000.0f);
         z->ATTACK_DAMAGE = 1000.0f;
         z->ATTACK_INTERVAL = 2.64f;
         z->runAction(z->_walkAction);
@@ -110,32 +110,32 @@ void Gargantuar::updateMoving(float delta)
 {
     if (_isThrowing)
         return;
-    if (_currentHealth <= 1500 && _currentHealth > 0 && _hasthrown == false && this->getPositionX() >= 500) {
-        this->_currentSpeed = 0;
+    if (current_health <= 1500 && current_health > 0 && _hasthrown == false && this->getPositionX() >= 500) {
+        this->current_speed = 0;
         this->_isThrowing = true;
         setState(static_cast<int>(ZombieState::THROWING));
         return;
     }
-    float newX = this->getPositionX() - _currentSpeed * delta;
+    float newX = this->getPositionX() - current_speed * delta;
     this->setPositionX(newX);
 }
 
 void Gargantuar::updateEating(float delta)
 {
-    _accumulatedTime += delta;
+    accumulated_time += delta;
     // If eating, deal damage periodically
-    if (_accumulatedTime >= ATTACK_INTERVAL)
+    if (accumulated_time >= ATTACK_INTERVAL)
     {
         _targetPlant->takeDamage(ATTACK_DAMAGE);
         cocos2d::AudioEngine::play2d("gargantuar-thump.mp3");
-        _accumulatedTime = 0.0f;
+        accumulated_time = 0.0f;
     }
 }
 
 // Set animation corresponding to state
 void Gargantuar::setAnimationForState()
 {
-    switch (static_cast<ZombieState>(_currentState))
+    switch (static_cast<ZombieState>(current_state))
     {
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");
@@ -151,7 +151,7 @@ void Gargantuar::setAnimationForState()
                 MoveBy::create(0, Vec2(20, -55)),
                 CallFunc::create([this]() {
                     this->_isEating = false;
-                    this->_currentSpeed = MOVE_SPEED;
+                    this->current_speed = MOVE_SPEED;
                     setState(static_cast<int>(ZombieState::WALKING));
                     }),
                 nullptr
@@ -173,7 +173,7 @@ void Gargantuar::setAnimationForState()
                     CallFunc::create([this]() {
                         this->_hasthrown = true;
                         this->_isThrowing = false;
-                        this->_currentSpeed = MOVE_SPEED;
+                        this->current_speed = MOVE_SPEED;
                         this->setState(static_cast<int>(ZombieState::WALKING));
                         }),
                     nullptr
@@ -186,7 +186,7 @@ void Gargantuar::setAnimationForState()
             this->stopAllActions();
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
-                _isDead = true;
+                is_dead = true;
                 _isDying = false;
                 });
             auto sequence = Sequence::create(fadeOut, markDead, nullptr);

@@ -20,10 +20,10 @@ const int Jalapeno::EXPLOSION_RADIUS = 1;  // 3x3 grid (radius of 1 from center)
 // Protected constructor
 Jalapeno::Jalapeno()
     : BombPlant()
-    , _idleAnimationDuration(0.0f)
+    , idle_animation_duration(0.0f)
 {
-    _explosionDamage = EXPLOSION_DAMAGE;
-    _explosionRadius = EXPLOSION_RADIUS;
+    explosion_damage = EXPLOSION_DAMAGE;
+    explosion_radius = EXPLOSION_RADIUS;
     CCLOG("Jalapeno created.");
 }
 
@@ -44,11 +44,11 @@ bool Jalapeno::init()
         return false;
     }
 
-    _maxHealth = 1000;
-    _currentHealth = 1000;
-    _cooldownInterval = 0.0f;
-    _accumulatedTime = 0.0f;
-    _idleAnimationDuration = 0.0f;
+    max_health = 1000;
+    current_health = 1000;
+    cooldown_interval = 0.0f;
+    accumulated_time = 0.0f;
+    idle_animation_duration = 0.0f;
 
     this->setAnimation();
     this->scheduleUpdate();
@@ -75,7 +75,7 @@ void Jalapeno::setAnimation()
     const float frameWidth = 85;
     const float frameHeight = 110;
 
-    _idleAnimationDuration = 8 * 0.07f;
+    idle_animation_duration = 8 * 0.07f;
     
     auto animation = initAnimate("jalapeno_spritesheet.png", frameWidth, frameHeight, 2, 4, 8, 0.07f);
     if (animation) {
@@ -92,9 +92,9 @@ void Jalapeno::update(float delta)
     Plant::update(delta);
 
     // Check if idle animation has finished
-    if (!_animationFinished && _accumulatedTime >= _idleAnimationDuration)
+    if (!animation_finished && accumulated_time >= idle_animation_duration)
     {
-        _animationFinished = true;
+        animation_finished = true;
         CCLOG("Jalapeno idle animation finished, ready to explode!");
     }
 }
@@ -104,17 +104,17 @@ void Jalapeno::update(float delta)
 // ------------------------------------------------------------------------
 void Jalapeno::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, int plantCol)
 {
-    if (_hasExploded)
+    if (has_exploded)
     {
         return;
     }
 
-    if (!_animationFinished)
+    if (!animation_finished)
     {
         return;  // Wait for animation to finish
     }
 
-    _hasExploded = true;
+    has_exploded = true;
 
     // Get zombies in explosion range (3x3 grid)
     std::vector<Zombie*> zombiesInRange = allZombiesInRow[plantRow];
@@ -126,8 +126,8 @@ void Jalapeno::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, in
     {
         if (zombie && !zombie->isDead())
         {
-            zombie->takeDamage(static_cast<float>(_explosionDamage));
-            CCLOG("Jalapeno dealt %d damage to zombie!", _explosionDamage);
+            zombie->takeDamage(static_cast<float>(explosion_damage));
+            CCLOG("Jalapeno dealt %d damage to zombie!", explosion_damage);
         }
     }
 
@@ -178,10 +178,10 @@ void Jalapeno::playExplosionAnimation()
         }
         else
             explosionSprite->runAction(RemoveSelf::create());
-        this->_isDead = true;
+        this->is_dead = true;
     }
     else
-        this->_isDead = true;
+        this->is_dead = true;
 
     CCLOG("Jalapeno explosion animation played!");
 }

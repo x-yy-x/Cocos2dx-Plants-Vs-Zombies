@@ -9,103 +9,99 @@ const std::string Shovel::IMAGE_FILENAME = "Shovel.png";
 const cocos2d::Rect Shovel::INITIAL_PIC_RECT = Rect::ZERO;
 const cocos2d::Size Shovel::OBJECT_SIZE = Size(80, 80);
 
-// Protected constructor
+// Constructor
 Shovel::Shovel()
-    : _isDragging(false)
-    , _originalPosition(Vec2::ZERO)
+    : is_dragging(false)
+    , original_position(Vec2::ZERO)
 {
-    CCLOG("Shovel created.");
+    CCLOG("Shovel instance created.");
 }
 
 // Destructor
 Shovel::~Shovel()
 {
-    CCLOG("Shovel destroyed.");
+    CCLOG("Shovel instance destroyed.");
 }
 
-// Initialization function
+// Initialization logic
 bool Shovel::init()
 {
-    // Call parent class initialization
     if (!GameObject::init())
     {
         return false;
     }
 
-    // Initialize sprite with shovel image
+    // Load the shovel texture
     if (!Sprite::initWithFile(IMAGE_FILENAME))
     {
-        CCLOG("Failed to load shovel image: %s", IMAGE_FILENAME.c_str());
+        CCLOG("Critical Error: Failed to load shovel image: %s", IMAGE_FILENAME.c_str());
         return false;
     }
 
-    // Set anchor point to left side (tip of the shovel)
-    // This makes the tip of the shovel the reference point for removal
+    /** * Setting the anchor point to the left center (0.0, 0.5).
+     * This ensures the tip of the shovel acts as the "hotspot" for collision detection
+     * and follows the cursor accurately.
+     */
     this->setAnchorPoint(Vec2(0.0f, 0.5f));
 
-    _isDragging = false;
+    is_dragging = false;
 
-    CCLOG("Shovel initialized successfully.");
+    CCLOG("Shovel successfully initialized.");
     return true;
 }
 
-// Check if point is inside shovel
+// Hit-test check
 bool Shovel::containsPoint(const Vec2& point)
 {
     return this->getBoundingBox().containsPoint(point);
 }
 
-// Set dragging state
+// Dragging state visual feedback
 void Shovel::setDragging(bool enabled)
 {
-    _isDragging = enabled;
-    
+    is_dragging = enabled;
+
     if (enabled)
     {
-        // Make shovel larger/highlighted when dragging
+        // Enlarge and make slightly translucent to signify it is "picked up"
         this->setScale(1.2f);
         this->setOpacity(200);
     }
     else
     {
-        // Reset to normal size
+        // Restore standard scale and full opacity
         this->setScale(1.0f);
         this->setOpacity(255);
     }
 }
 
-// Check if dragging
 bool Shovel::isDragging() const
 {
-    return _isDragging;
+    return is_dragging;
 }
 
-// Update position to follow touch
 void Shovel::updatePosition(const Vec2& touchPos)
 {
-    if (_isDragging)
+    if (is_dragging)
     {
         this->setPosition(touchPos);
     }
 }
 
-// Reset to original position
 void Shovel::resetPosition()
 {
-    this->setPosition(_originalPosition);
+    this->setPosition(original_position);
     setDragging(false);
 }
 
-// Set original position
 void Shovel::setOriginalPosition(const Vec2& pos)
 {
-    // Store the center position of shovel back
-    // Since anchor point is at left (0, 0.5), we need to adjust
-    // to make the whole shovel visually centered in the shovel back
+    /** * Since the anchor point is at the left (0, 0.5), we adjust the position
+     * by half its width to ensure the shovel body is centered within its UI container.
+     */
     float shovelWidth = this->getContentSize().width;
-    Vec2 adjustedPos = Vec2(pos.x - shovelWidth * 0.5f, pos.y);
-    
-    _originalPosition = adjustedPos;
+    Vec2 adjustedPos = Vec2(pos.x - (shovelWidth * 0.5f), pos.y);
+
+    original_position = adjustedPos;
     this->setPosition(adjustedPos);
 }
-

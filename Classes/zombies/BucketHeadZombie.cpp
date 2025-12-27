@@ -82,7 +82,7 @@ void BucketHeadZombie::initEatAnimation()
 // Take damage
 void BucketHeadZombie::takeDamage(float damage)
 {
-    if (_isDead || _isDying)
+    if (is_dead || _isDying)
     {
         return;
     }
@@ -91,8 +91,8 @@ void BucketHeadZombie::takeDamage(float damage)
     {
         _bucketHealth -= damage;
         if (_bucketHealth <= 0) {
-            _currentHealth += static_cast<int>(_bucketHealth);
-            if (_currentHealth <= 0) {
+            current_health += static_cast<int>(_bucketHealth);
+            if (current_health <= 0) {
                 this->_isDying = true;
                 this->_targetPlant = nullptr;
                 this->_isEating = false;
@@ -104,10 +104,10 @@ void BucketHeadZombie::takeDamage(float damage)
     }
     else
     {
-        _currentHealth -= static_cast<int>(damage);
-        if (_currentHealth <= 0)
+        current_health -= static_cast<int>(damage);
+        if (current_health <= 0)
         {
-            _currentHealth = 0;
+            current_health = 0;
 
             // Mark as dying (playing death animation)
             _isDying = true;
@@ -125,7 +125,7 @@ void BucketHeadZombie::takeDamage(float damage)
 // Set animation corresponding to state
 void BucketHeadZombie::setAnimationForState()
 {
-    switch (static_cast<ZombieState>(_currentState))
+    switch (static_cast<ZombieState>(current_state))
     {
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");
@@ -143,7 +143,7 @@ void BucketHeadZombie::setAnimationForState()
             this->stopAllActions();
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
-                _isDead = true;
+                is_dead = true;
                 _isDying = false;
                 });
             auto sequence = Sequence::create(fadeOut, markDead, nullptr);

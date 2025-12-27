@@ -20,6 +20,7 @@ USING_NS_CC;
 
 namespace
 {
+    // Layout constants for the Seed Bank UI (the bar that holds selected cards)
     const float SEED_BANK_POS_X_RATIO = 0.315f;
     const float SEED_BANK_POS_Y_RATIO = 0.927f;
     const float SEED_BANK_SCALE_FACTOR_X = 1.34f;
@@ -38,7 +39,7 @@ SelectCardsScene* SelectCardsScene::create(bool isNightMode)
     SelectCardsScene* ret = new (std::nothrow) SelectCardsScene();
     if (ret)
     {
-        ret->_isNightMode = isNightMode;
+        ret->is_night_mode = isNightMode;
         if (ret->init())
         {
             ret->autorelease();
@@ -50,92 +51,79 @@ SelectCardsScene* SelectCardsScene::create(bool isNightMode)
 }
 
 SelectCardsScene::SelectCardsScene()
-    : _isNightMode(false)
-    , _worldLayer(nullptr)
-    , _uiLayer(nullptr)
-    , _background(nullptr)
-    , _backMenu(nullptr)
-    , _selectBG(nullptr)
-    , _zombieShowLayer(nullptr)
-    , _moveDuration(0.9f)
-    , _moveOffsetX(520.0f)
-    , _selectBGPosXRatio(0.35f)
-    , _selectBGPosYRatio(0.4f)
-    , _selectBGScale(1.0f)
-    , _zShowStartX(880.0f)
-    , _zShowStartY(140.0f)
-    , _zShowGapX(200.0f)
-    , _zShowGapY(150.0f)
-    , _selectedCardsContainer(nullptr)
+    : is_night_mode(false)
+    , world_layer(nullptr)
+    , ui_layer(nullptr)
+    , background(nullptr)
+    , back_menu(nullptr)
+    , selectBG(nullptr)
+    , zombie_show_layer(nullptr)
+    , move_duration(0.9f)
+    , move_offsetX(520.0f)
+    , selectBG_posX_ratio(0.35f)
+    , selectBG_posY_ratio(0.4f)
+    , selectBG_scale(1.0f)
+    , zShow_startX(880.0f)
+    , zShow_startY(140.0f)
+    , zShow_gapX(200.0f)
+    , zShow_gapY(150.0f)
+    , selected_cards_container(nullptr)
 {
 }
 
 SelectCardsScene::~SelectCardsScene()
 {
-    // No need to release SeedPackets anymore since we're not passing pointers to GameWorld
-    // SeedPackets are managed by Cocos2d-x's autorelease pool
+    // Destructor: SeedPackets are autoreleased by Cocos2d-x
 }
 
 bool SelectCardsScene::init()
 {
     if (!Scene::init()) return false;
 
-    _worldLayer = Node::create();
-    this->addChild(_worldLayer, 0);
+    // Layer organization: World (Background) -> Zombies -> UI (Cards/Menus)
+    world_layer = Node::create();
+    this->addChild(world_layer, 0);
 
-    _uiLayer = Node::create();
-    this->addChild(_uiLayer, 10);
+    ui_layer = Node::create();
+    this->addChild(ui_layer, 10);
 
-    _zombieShowLayer = Node::create();
-    this->addChild(_zombieShowLayer, 8);
+    zombie_show_layer = Node::create();
+    this->addChild(zombie_show_layer, 8);
 
     buildWorld();
     buildUI();
     runIntroMove();
 
-    // Loop BGM for select scene
-    _selectBgmId = cocos2d::AudioEngine::play2d("select.mp3", true);
+    // Initialize background music for selection
+    select_BgmId = cocos2d::AudioEngine::play2d("select.mp3", true);
 
     return true;
 }
 
-void SelectCardsScene::setMoveDuration(float d)
-{
-    _moveDuration = d;
-}
-
-void SelectCardsScene::setMoveOffsetX(float x)
-{
-    _moveOffsetX = x;
-}
-
-void SelectCardsScene::setSelectBGPosRatio(float xr, float yr)
-{
-    _selectBGPosXRatio = xr;
-    _selectBGPosYRatio = yr;
-}
-
-void SelectCardsScene::setSelectBGScale(float s)
-{
-    _selectBGScale = s;
-}
+// --- Configuration Setters ---
+void SelectCardsScene::setMoveDuration(float d) { move_duration = d; }
+void SelectCardsScene::setMoveOffsetX(float x) { move_offsetX = x; }
+void SelectCardsScene::setSelectBGPosRatio(float xr, float yr) { selectBG_posX_ratio = xr; selectBG_posY_ratio = yr; }
+void SelectCardsScene::setSelectBGScale(float s) { selectBG_scale = s; }
 
 void SelectCardsScene::buildWorld()
 {
     auto vs = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
 
-    const char* bgFile = _isNightMode ? "select_night.png" : "select_day.png";
-    _background = Sprite::create(bgFile);
-    if (_background)
+    // Setup environmental background (Day/Night)
+    const char* bgFile = is_night_mode ? "select_night.png" : "select_day.png";
+    background = Sprite::create(bgFile);
+    if (background)
     {
-        _background->setPosition(Vec2(vs.width * 1.47f / 2.0f + origin.x, vs.height * 0.5f + origin.y));
-        float scaleX = vs.width / _background->getContentSize().width * 1.47f;
-        float scaleY = vs.height / _background->getContentSize().height;
-        _background->setScale(scaleX, scaleY);
-        _worldLayer->addChild(_background, 0);
+        background->setPosition(Vec2(vs.width * 1.47f / 2.0f + origin.x, vs.height * 0.5f + origin.y));
+        float scaleX = vs.width / background->getContentSize().width * 1.47f;
+        float scaleY = vs.height / background->getContentSize().height;
+        background->setScale(scaleX, scaleY);
+        world_layer->addChild(background, 0);
     }
-      
+
+    // Setup the Seed Bank UI bar
     auto seedBankSprite = Sprite::create(SEED_BANK_IMAGE);
     if (seedBankSprite)
     {
@@ -144,16 +132,11 @@ void SelectCardsScene::buildWorld()
         seedBankSprite->setPosition(Vec2(finalX, finalY));
         seedBankSprite->setScale(SEED_BANK_SCALE_FACTOR_X, SEED_BANK_SCALE_FACTOR_Y);
         this->addChild(seedBankSprite, 1);
-        CCLOG("SeedBank Sprite initialized successfully.");
     }
-    else
-    {
-        CCLOG("Error: Failed to load seed bank image: %s", SEED_BANK_IMAGE.c_str());
-    }
-    
-    // Create container for selected cards (above seedBank)
-    _selectedCardsContainer = Node::create();
-    this->addChild(_selectedCardsContainer, 2);
+
+    // Container to hold the actual plant sprites inside the Seed Bank
+    selected_cards_container = Node::create();
+    this->addChild(selected_cards_container, 2);
 }
 
 void SelectCardsScene::buildUI()
@@ -161,15 +144,15 @@ void SelectCardsScene::buildUI()
     auto vs = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
 
+    // Create the "Back to Menu" button
     auto backItem = MenuItemImage::create(
         "btn_Menu.png",
         "btn_Menu2.png",
         [this](Ref*) {
             cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
-            // stop select bgm when leaving
-            if (_selectBgmId != cocos2d::AudioEngine::INVALID_AUDIO_ID) {
-                cocos2d::AudioEngine::stop(_selectBgmId);
-                _selectBgmId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+            if (select_BgmId != cocos2d::AudioEngine::INVALID_AUDIO_ID) {
+                cocos2d::AudioEngine::stop(select_BgmId);
+                select_BgmId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
             }
             Director::getInstance()->replaceScene(TransitionFade::create(0.5f, GameMenu::createScene()));
         }
@@ -177,166 +160,159 @@ void SelectCardsScene::buildUI()
     backItem->setScale(0.8f);
     backItem->setPosition(Vec2(vs.width - 100.0f + origin.x, vs.height - 40.0f + origin.y));
 
-    _backMenu = Menu::create(backItem, nullptr);
-    _backMenu->setPosition(Vec2::ZERO);
-    _uiLayer->addChild(_backMenu, 100);
+    back_menu = Menu::create(backItem, nullptr);
+    back_menu->setPosition(Vec2::ZERO);
+    ui_layer->addChild(back_menu, 100);
 }
 
 void SelectCardsScene::runIntroMove()
 {
-    if (_worldLayer)
+    if (world_layer)
     {
-        auto move = MoveBy::create(_moveDuration, Vec2(-_moveOffsetX, 0));
+        // Pan the camera to the right to show zombies, then reveal selection UI
+        auto move = MoveBy::create(move_duration, Vec2(-move_offsetX, 0));
         auto after = CallFunc::create([this]() {
             showSelectBG();
             spawnZombieShowcase();
             createSelectCards();
-        });
-        _worldLayer->runAction(Sequence::create(move, after, nullptr));
+            });
+        world_layer->runAction(Sequence::create(move, after, nullptr));
     }
 }
 
 void SelectCardsScene::showSelectBG()
 {
-    if (_selectBG) return;
+    if (selectBG) return;
 
     auto vs = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
 
-    _selectBG = Sprite::create("SelectCard_BG.png");
-    if (_selectBG)
+    // Initialize the main wooden board for card selection
+    selectBG = Sprite::create("SelectCard_BG.png");
+    if (selectBG)
     {
-        float finalX = vs.width * _selectBGPosXRatio + origin.x;
-        float finalY = vs.height * _selectBGPosYRatio + origin.y;
-        _selectBG->setPosition(Vec2(finalX, finalY));
-        _selectBG->setScale(_selectBGScale);
-        _selectBG->setOpacity(0);
-        _uiLayer->addChild(_selectBG, 20);
-        _selectBG->runAction(FadeIn::create(0.25f));
+        float finalX = vs.width * selectBG_posX_ratio + origin.x;
+        float finalY = vs.height * selectBG_posY_ratio + origin.y;
+        selectBG->setPosition(Vec2(finalX, finalY));
+        selectBG->setScale(selectBG_scale);
+        selectBG->setOpacity(0);
+        ui_layer->addChild(selectBG, 20);
+        selectBG->runAction(FadeIn::create(0.25f));
 
+        // Create the "Let's Start" button on the board
         auto startLabel = Label::createWithSystemFont("Let's start!", "Arial", 28);
-        auto startItem = MenuItemLabel::create(startLabel, [this](Ref*){
+        auto startItem = MenuItemLabel::create(startLabel, [this](Ref*) {
             cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
-            // Hide selectBG and all cards inside it
-            if (_selectBG && _selectBG->isVisible()) {
-                _selectBG->runAction(Sequence::create(
+
+            // Hide the selection board and pan camera back to start the game
+            if (selectBG && selectBG->isVisible()) {
+                selectBG->runAction(Sequence::create(
                     FadeOut::create(0.25f),
-                    CallFunc::create([this](){ 
-                        _selectBG->setVisible(false);
-                        // Hide all select cards
-                        for (auto* card : _allSelectCards) {
+                    CallFunc::create([this]() {
+                        selectBG->setVisible(false);
+                        for (auto* card : all_select_cards) {
                             if (card) card->setVisible(false);
                         }
-                    }),
+                        }),
                     nullptr
                 ));
             }
-            if (_worldLayer) {
-                auto moveBack = MoveBy::create(_moveDuration, Vec2(_moveOffsetX, 0));
-                auto stayBack = MoveBy::create(_moveDuration, Vec2(_moveOffsetX, 0));
-                // Move scene back to left, then play Ready-Set-Plant sequence
-                _worldLayer->runAction(Sequence::create(
+            if (world_layer) {
+                auto moveBack = MoveBy::create(move_duration, Vec2(move_offsetX, 0));
+                auto stayBack = MoveBy::create(move_duration, Vec2(move_offsetX, 0));
+                world_layer->runAction(Sequence::create(
                     moveBack,
-                    CallFunc::create([this](){
-                        // stop select bgm to avoid mixing
-                        if (_selectBgmId != cocos2d::AudioEngine::INVALID_AUDIO_ID) {
-                            cocos2d::AudioEngine::stop(_selectBgmId);
-                            _selectBgmId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
+                    CallFunc::create([this]() {
+                        if (select_BgmId != cocos2d::AudioEngine::INVALID_AUDIO_ID) {
+                            cocos2d::AudioEngine::stop(select_BgmId);
+                            select_BgmId = cocos2d::AudioEngine::INVALID_AUDIO_ID;
                         }
                         playReadySetPlantSequence();
-                    }),
+                        }),
                     nullptr
                 ));
-                if (_zombieShowLayer) _zombieShowLayer->runAction(stayBack);
+                if (zombie_show_layer) zombie_show_layer->runAction(stayBack);
             }
-        });
+            });
         auto startMenu = Menu::create(startItem, nullptr);
-        startMenu->setPosition(Vec2(_selectBG->getContentSize().width * 0.5f, _selectBG->getContentSize().height * 0.08f));
-        _selectBG->addChild(startMenu, 1);
+        startMenu->setPosition(Vec2(selectBG->getContentSize().width * 0.5f, selectBG->getContentSize().height * 0.08f));
+        selectBG->addChild(startMenu, 1);
     }
 }
 
 void SelectCardsScene::spawnZombieShowcase()
 {
+    // Utility to arrange preview zombies in a grid on the right side of the lawn
     int idx = 0, idy = 0;
-    auto addShow = [&](Sprite* sp){
+    auto addShow = [&](Sprite* sp) {
         if (!sp) return;
-        sp->setPosition(Vec2(_zShowStartX + _zShowGapX * idx, _zShowStartY + _zShowGapY * idy));
-        if (_zombieShowLayer) _zombieShowLayer->addChild(sp, 7 - idy);
+        sp->setPosition(Vec2(zShow_startX + zShow_gapX * idx, zShow_startY + zShow_gapY * idy));
+        if (zombie_show_layer) zombie_show_layer->addChild(sp, 7 - idy);
         idy++;
         if (idy >= 4) {
             idy = 0;
             ++idx;
         }
-    };
+        };
 
-    if (auto z = NormalZombie::createZombie())
-        addShow(z->createShowcaseSprite(Vec2::ZERO));
-    if (auto z = FlagZombie::createZombie())
-        addShow(z->createShowcaseSprite(Vec2::ZERO));
-    if (auto z = PoleVaulter::createZombie())
-        addShow(z->createShowcaseSprite(Vec2::ZERO));
-    if (auto z = Zomboni::createZombie())
-        addShow(z->createShowcaseSprite(Vec2::ZERO));
-    if (auto z = Gargantuar::createZombie())
-        addShow(z->createShowcaseSprite(Vec2::ZERO));
-    if (auto z = BucketHeadZombie::createZombie())
-        addShow(z->createShowcaseSprite(Vec2::ZERO));
+    // Instantiate various zombies for the preview sequence
+    if (auto z = NormalZombie::createZombie()) addShow(z->createShowcaseSprite(Vec2::ZERO));
+    if (auto z = FlagZombie::createZombie()) addShow(z->createShowcaseSprite(Vec2::ZERO));
+    if (auto z = PoleVaulter::createZombie()) addShow(z->createShowcaseSprite(Vec2::ZERO));
+    if (auto z = Zomboni::createZombie()) addShow(z->createShowcaseSprite(Vec2::ZERO));
+    if (auto z = Gargantuar::createZombie()) addShow(z->createShowcaseSprite(Vec2::ZERO));
+    if (auto z = BucketHeadZombie::createZombie()) addShow(z->createShowcaseSprite(Vec2::ZERO));
 }
 
 void SelectCardsScene::createSelectCards()
 {
-    if (!_selectBG) return;
+    if (!selectBG) return;
 
-    // 1. 直接遍历全局配置表，自动创建所有定义的植物卡片
-    // 使用 C++11 兼容的迭代器遍历 SeedPacket::CONFIG_TABLE
+    // 1. Iterate through Global Config to automatically create plant cards
     for (std::map<PlantName, PlantConfig>::const_iterator it = SeedPacket::CONFIG_TABLE.begin();
         it != SeedPacket::CONFIG_TABLE.end(); ++it)
     {
         PlantName name = it->first;
         const PlantConfig& cfg = it->second;
 
-        // 利用之前写好的统一工厂接口
         SeedPacket* seedPacket = SeedPacket::createFromConfig(name);
-
         if (seedPacket) {
-            // 创建选择界面的卡片对象
             auto selectCard = SelectCard::create(cfg.packetImage, name, seedPacket);
             if (selectCard) {
-                _allSelectCards.push_back(selectCard);
-                _selectBG->addChild(selectCard, 10);
+                all_select_cards.push_back(selectCard);
+                selectBG->addChild(selectCard, 10);
             }
         }
     }
 
-    // 2. 布局逻辑 (保持原样，但代码更整洁)
+    // 2. Grid Layout Logic (8 columns)
     const float cardSpacingX = 65.0f;
     const float cardSpacingY = 85.0f;
     const float cardStartX = 50.0f;
-    const float cardStartY = _selectBG->getContentSize().height - 100.0f;
+    const float cardStartY = selectBG->getContentSize().height - 100.0f;
 
-    for (size_t i = 0; i < _allSelectCards.size(); ++i) {
-        auto card = _allSelectCards[i];
+    for (size_t i = 0; i < all_select_cards.size(); ++i) {
+        auto card = all_select_cards[i];
         if (!card) continue;
 
-        // 计算网格位置：每行 8 个
         int row = i / 8;
         int col = i % 8;
         card->setPosition(Vec2(cardStartX + col * cardSpacingX, cardStartY - row * cardSpacingY));
 
-        // 检查解锁状态
+        // Darken cards if plant is not yet unlocked by the player
         if (!PlayerProfile::getInstance()->isPlantUnlocked(card->getPlantName())) {
-            card->setColor(Color3B(100, 100, 100)); // 未解锁变暗
+            card->setColor(Color3B(100, 100, 100));
         }
 
-        // 3. 绑定触摸事件 (保持原逻辑)
+        // 3. Bind Touch Events for each card
         auto listener = EventListenerTouchOneByOne::create();
         listener->setSwallowTouches(true);
         listener->onTouchBegan = [this, card](Touch* touch, Event* event) -> bool {
-            if (!card || !card->getParent()) return false;
+            if (!can_select_cards) return false;
 
+            if (!card || !card->getParent()) return false;
             Vec2 locationInParent = card->getParent()->convertTouchToNodeSpace(touch);
-            Rect cardRect = card->getBoundingBox(); // 使用 getBoundingBox 更简洁地获取位置和大小
+            Rect cardRect = card->getBoundingBox();
 
             if (cardRect.containsPoint(locationInParent)) {
                 this->onCardSelected(card);
@@ -353,95 +329,87 @@ void SelectCardsScene::onCardSelected(SelectCard* card)
 {
     if (!card) return;
 
-    // Check if the plant is unlocked before proceeding
+    // Check unlock status
     if (!PlayerProfile::getInstance()->isPlantUnlocked(card->getPlantName())) {
         cocos2d::AudioEngine::play2d("buzzer.mp3", false);
-        return; // Not unlocked, do nothing
+        return;
     }
-    
-    bool wasSelected = card->isSelected();
-    
-    // Maximum 9 plants can be selected
-    if (!wasSelected && _selectedCards.size() >= 9) {
-        cocos2d::AudioEngine::play2d("buzzer.mp3", false);
-        return;  // Cannot select more
-    }
-    
-    // Valid toggle
-    cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
 
+    bool wasSelected = card->isSelected();
+
+    // Limit deck to 9 slots
+    if (!wasSelected && selected_cards.size() >= 9) {
+        cocos2d::AudioEngine::play2d("buzzer.mp3", false);
+        return;
+    }
+
+    cocos2d::AudioEngine::play2d("buttonclick.mp3", false);
     card->setSelected(!wasSelected);
-    
+
     auto* seedPacket = card->getSeedPacket();
-    if (!seedPacket) return;  // Safety check
-    
+    if (!seedPacket) return;
+
     if (card->isSelected()) {
-        // Add to selected list
-        _selectedCards.push_back(card);
-        _selectedPlantNames.push_back(card->getPlantName());
-    } else {
-        // Remove from selected list
-        auto it = std::find(_selectedCards.begin(), _selectedCards.end(), card);
-        if (it != _selectedCards.end()) {
-            _selectedCards.erase(it);
+        selected_cards.push_back(card);
+        selected_plant_names.push_back(card->getPlantName());
+    }
+    else {
+        auto it = std::find(selected_cards.begin(), selected_cards.end(), card);
+        if (it != selected_cards.end()) {
+            selected_cards.erase(it);
         }
-        auto it2 = std::find(_selectedPlantNames.begin(), _selectedPlantNames.end(), card->getPlantName());
-        if (it2 != _selectedPlantNames.end()) {
-            _selectedPlantNames.erase(it2);
+        auto it2 = std::find(selected_plant_names.begin(), selected_plant_names.end(), card->getPlantName());
+        if (it2 != selected_plant_names.end()) {
+            selected_plant_names.erase(it2);
         }
     }
-    
+
     updateSelectedCardsDisplay();
 }
 
 void SelectCardsScene::updateSelectedCardsDisplay()
 {
-    if (!_selectedCardsContainer) return;
-    
-    // Clear existing display and listeners
-    _selectedCardsContainer->removeAllChildren();
-    _displaySprites.clear();
-    
-    // Reference GameWorld positions
+    if (!selected_cards_container) return;
+
+    selected_cards_container->removeAllChildren();
+    display_sprites.clear();
+
     auto vs = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
     float baseX = 187.0f;
     float baseY = 667.0f;
     float spacing = 65.0f;
-    
-    // Display selected seed packets in seedBank area
-    // Use SelectCard* instead of SeedPacket* to avoid accessing freed memory
-    for (size_t i = 0; i < _selectedCards.size(); ++i) {
-        auto* card = _selectedCards[i];
-        if (!card) continue;  // Safety check
-        
-        // Get image filename from SelectCard and create sprite from file
+
+    // Refresh the Seed Bank bar with currently selected plant sprites
+    for (size_t i = 0; i < selected_cards.size(); ++i) {
+        auto* card = selected_cards[i];
+        if (!card) continue;
+
         const std::string& imageFile = card->getImageFile();
         if (imageFile.empty()) continue;
-        
+
         auto displaySprite = Sprite::create(imageFile);
         if (displaySprite) {
             displaySprite->setPosition(Vec2(baseX + i * spacing + origin.x, baseY + origin.y));
-            // No scaling - same size as in main scene
-            _selectedCardsContainer->addChild(displaySprite);
-            _displaySprites.push_back(displaySprite);
-            
-            // Add touch listener to allow deselecting by clicking on seedBank card
+            selected_cards_container->addChild(displaySprite);
+            display_sprites.push_back(displaySprite);
+
+            // Allow deselecting by clicking on the Seed Bank cards
             auto listener = EventListenerTouchOneByOne::create();
             listener->setSwallowTouches(true);
             listener->onTouchBegan = [this, card](Touch* touch, Event* event) -> bool {
+                if (!can_select_cards) return false;
                 if (!card) return false;
-                // Use getBoundingBox for touch detection
+
                 auto* target = static_cast<Sprite*>(event->getCurrentTarget());
                 Rect boundingBox = target->getBoundingBox();
                 Vec2 touchLocation = touch->getLocation();
                 if (boundingBox.containsPoint(touchLocation)) {
-                    // Deselect the card
                     this->onCardSelected(card);
                     return true;
                 }
                 return false;
-            };
+                };
             Director::getInstance()->getEventDispatcher()->addEventListenerWithSceneGraphPriority(listener, displaySprite);
         }
     }
@@ -449,41 +417,39 @@ void SelectCardsScene::updateSelectedCardsDisplay()
 
 void SelectCardsScene::playReadySetPlantSequence()
 {
-    if (_isTransitioning) return;
-    _isTransitioning = true;
+    if (is_transitioning) return;
+    is_transitioning = true;
+    can_select_cards = false;
 
     auto vs = Director::getInstance()->getVisibleSize();
     auto origin = Director::getInstance()->getVisibleOrigin();
     Vec2 center(vs.width * 0.5f + origin.x, vs.height * 0.5f + origin.y);
 
-    // Create sprites
+    // Create sprites for "Ready, Set, Plant!" text panels
     auto s1 = Sprite::create("w_0000_Group-1.png");
     auto s2 = Sprite::create("w_0001_Group-2.png");
     auto s3 = Sprite::create("w_0001_Group-3.png");
 
     float maxScale = 1.0f;
-    auto setupSprite = [&](Sprite* sp){
+    auto setupSprite = [&](Sprite* sp) {
         if (!sp) return;
         sp->setPosition(center);
         sp->setOpacity(0);
         sp->setScale(maxScale);
         this->addChild(sp, 1000);
-    };
-    setupSprite(s1);
-    setupSprite(s2);
-    setupSprite(s3);
+        };
+    setupSprite(s1); setupSprite(s2); setupSprite(s3);
 
-    // Sequence: show s1 -> s2 -> s3 (fixed timing)
-    float dur = 0.6f; // per panel stay duration
+    // Animation sequence for transition panels
+    float dur = 0.6f;
     if (s1) s1->runAction(Sequence::create(FadeIn::create(0.1f), DelayTime::create(dur), FadeOut::create(0.1f), nullptr));
     if (s2) s2->runAction(Sequence::create(DelayTime::create(dur + 0.2f), FadeIn::create(0.1f), DelayTime::create(dur), FadeOut::create(0.1f), nullptr));
-    if (s3) s3->runAction(Sequence::create(DelayTime::create(2*dur + 0.4f), FadeIn::create(0.1f), DelayTime::create(dur), FadeOut::create(0.1f), nullptr));
+    if (s3) s3->runAction(Sequence::create(DelayTime::create(2 * dur + 0.4f), FadeIn::create(0.1f), DelayTime::create(dur), FadeOut::create(0.1f), nullptr));
 
-    // Play voice (do not wait for finish)
-    _readySfxId = cocos2d::AudioEngine::play2d("plants-vs-zombies-ready-set-plant.mp3", false);
+    readySfxId = cocos2d::AudioEngine::play2d("plants-vs-zombies-ready-set-plant.mp3", false);
 
-    // Fixed wait, then go to game
-    float totalWait = 2.6f; // covers three panels' total duration
+    // Final scene swap to the game world after the sequence completes
+    float totalWait = 2.6f;
     this->runAction(Sequence::create(
         DelayTime::create(totalWait),
         CallFunc::create([this]() { maybeGoGame(); }),
@@ -493,9 +459,7 @@ void SelectCardsScene::playReadySetPlantSequence()
 
 void SelectCardsScene::maybeGoGame()
 {
-    // stop this scene audios
     cocos2d::AudioEngine::stopAll();
-
-    // enter game scene with selected plants (keep original behavior/signature)
-    Director::getInstance()->replaceScene(GameWorld::createScene(_isNightMode, _selectedPlantNames));
+    // Navigate to the main gameplay scene
+    Director::getInstance()->replaceScene(GameWorld::createScene(is_night_mode, selected_plant_names));
 }

@@ -53,7 +53,7 @@ bool Zomboni::init()
 
     // Enable per-frame update
     cocos2d::AudioEngine::play2d("zomboni.mp3");
-    this->_currentHealth = MAX_HEALTH;
+    this->current_health = MAX_HEALTH;
     this->_hasBeenAttackedBySpike = false; // Reset spike attack flag on initialization
     this->setScale(0.45f);
     this->scheduleUpdate();
@@ -97,10 +97,10 @@ void Zomboni::initSpecialDieAnimation()
 // Update every frame
 void Zomboni::update(float delta)
 {
-    if (_isDead || _isDying)
+    if (is_dead || _isDying)
         return;
 
-    float dx = _currentSpeed * delta;
+    float dx = current_speed * delta;
     float newX = this->getPositionX() - dx;
     this->setPositionX(newX);
 
@@ -125,7 +125,7 @@ void Zomboni::update(float delta)
             _targetPlant->takeDamage(10000.0f);
             _isEating = false;
             _targetPlant = nullptr;
-            this->_currentSpeed = MOVE_SPEED;
+            this->current_speed = MOVE_SPEED;
         }
     }
 }
@@ -136,7 +136,7 @@ void Zomboni::update(float delta)
 // Set animation corresponding to state
 void Zomboni::setAnimationForState()
 {
-    switch (static_cast<ZombieState>(_currentState))
+    switch (static_cast<ZombieState>(current_state))
     {
     case ZombieState::DRIVING:
         CCLOG("Setting DRIVING animation.");
@@ -149,7 +149,7 @@ void Zomboni::setAnimationForState()
         this->stopAllActions();
         auto fadeOut = FadeOut::create(0.5f);
         auto markDead = CallFunc::create([this]() {
-            _isDead = true;
+            is_dead = true;
             _isDying = false;
             CCLOG("Zombie death animation finished, marked as dead.");
             });
@@ -200,6 +200,6 @@ void Zomboni::setSpecialDeath()
 {
     // Mark that this zomboni has been attacked by spikeweed to prevent multiple damage
     _hasBeenAttackedBySpike = true;
-    this->_currentHealth -= static_cast<int>(10000.0f);
+    this->current_health -= static_cast<int>(10000.0f);
     this->setState(static_cast<int>(ZombieState::SPECIAL));
 }

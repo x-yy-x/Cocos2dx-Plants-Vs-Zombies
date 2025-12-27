@@ -3,45 +3,68 @@
 
 USING_NS_CC;
 
+// ---------------------------------------------------------
+// Constructor & Destructor
+// ---------------------------------------------------------
+
 SelectCard::SelectCard()
-    : _isSelected(false)
-    , _plantName(PlantName::SUNFLOWER)
-    , _seedPacket(nullptr)
+    : is_selected(false)
+    , plant_name(PlantName::SUNFLOWER)
+    , seed_packet(nullptr)
 {
+    // Member variables are initialized in the list above
 }
 
 SelectCard::~SelectCard()
 {
+    // Standard cleanup
 }
+
+// ---------------------------------------------------------
+// Factory Method
+// ---------------------------------------------------------
 
 SelectCard* SelectCard::create(const std::string& imageFile, PlantName plantName, SeedPacket* seedPacket)
 {
     SelectCard* ret = new (std::nothrow) SelectCard();
+
+    // Initialize the sprite with the provided image file
     if (ret && ret->initWithFile(imageFile))
     {
-        ret->_imageFile = imageFile;
-        ret->_plantName = plantName;
-        ret->_seedPacket = seedPacket;
+        ret->image_file = imageFile;
+        ret->plant_name = plantName;
+        ret->seed_packet = seedPacket;
+
+        // Add to the autorelease pool for automatic memory management
         ret->autorelease();
         return ret;
     }
+
+    // Cleanup if initialization fails
     delete ret;
     return nullptr;
 }
 
+// ---------------------------------------------------------
+// Logic Implementation
+// ---------------------------------------------------------
+
 void SelectCard::setSelected(bool selected)
 {
-    _isSelected = selected;
-    if (_isSelected)
+    is_selected = selected;
+
+    if (is_selected)
     {
-        // Gray out when selected
+        /** * Apply a gray tint (50% brightness) to indicate that this card
+         * has already been chosen and is sitting in the player's slots.
+         */
         this->setColor(Color3B(128, 128, 128));
     }
     else
     {
-        // Normal color when not selected
+        /** * Restore full brightness (white color filter) to indicate
+         * the card is available to be picked.
+         */
         this->setColor(Color3B::WHITE);
     }
 }
-
-

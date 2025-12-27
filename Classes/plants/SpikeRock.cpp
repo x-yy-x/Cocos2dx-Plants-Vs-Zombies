@@ -16,8 +16,8 @@ const cocos2d::Rect SpikeRock::INITIAL_PIC_RECT = Rect(0.0f, 512.0f - 128.0f, 85
 // Protected constructor
 SpikeRock::SpikeRock()
 {
-    this->_currentState = SpikeRockState::COMPLETE;
-    this->_currentHealth = 3000;
+    this->current_state = SpikeRockState::COMPLETE;
+    this->current_health = 3000;
     CCLOG("SpikeRock created.");
 }
 
@@ -61,14 +61,14 @@ void SpikeRock::update(float delta)
     // Plant::update handles cooldown logic
     // GameWorld will call attack() when conditions are met
     SpikeRockState newState = SpikeRockState::COMPLETE;
-    if (_currentHealth <= 2000 && _currentHealth > 1000)
+    if (current_health <= 2000 && current_health > 1000)
         newState = SpikeRockState::DAMAGED;
-    else if (_currentHealth <= 1000)
+    else if (current_health <= 1000)
         newState = SpikeRockState::BROKEN;
-    if (_currentState != newState) {
-        _currentState = newState;
+    if (current_state != newState) {
+        current_state = newState;
         this->stopAllActions();
-        if (_currentState == SpikeRockState::DAMAGED) {
+        if (current_state == SpikeRockState::DAMAGED) {
             auto animation = initAnimate(IMAGE_FILENAME_SECOND, 105.0f, 54.0f, 3, 3, 9, 0.105f);
             if (animation) {
                 auto animate = Animate::create(animation);
@@ -94,11 +94,11 @@ std::vector<Bullet*> SpikeRock::checkAndAttack(std::vector<Zombie*> allZombiesIn
 {
     std::vector<Bullet*> empty; 
 
-    _accumulatedTime += Director::getInstance()->getDeltaTime();
+    accumulated_time += Director::getInstance()->getDeltaTime();
 
-    if (_accumulatedTime < _cooldownInterval)
+    if (accumulated_time < cooldown_interval)
         return empty;
-    _accumulatedTime = 0.0f;
+    accumulated_time = 0.0f;
 
 
     Rect spikeRect = this->getBoundingBox();

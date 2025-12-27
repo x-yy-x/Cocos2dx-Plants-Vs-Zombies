@@ -53,14 +53,14 @@ public:
         return upgradePlantName == PlantName::SPIKEROCK; 
     }
 
-protected:
+private:
     // ----------------------------------------------------
     // Static constants
     // ----------------------------------------------------
     static const std::string IMAGE_FILENAME;
     static const cocos2d::Rect INITIAL_PIC_RECT;
 
-    const int _cooldownInterval = 2;
+    const int cooldown_interval = 2;
     
     /**
      * @brief Set up animation frames

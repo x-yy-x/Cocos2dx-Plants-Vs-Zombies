@@ -11,12 +11,12 @@ const float Plant::ATTACK_RANGE = 1000.0f;  // Default attack range
 
 // Protected constructor
 Plant::Plant()
-    : _isDead(false)
-    , _maxHealth(100)
-    , _currentHealth(100)
-    , _cooldownInterval(1.0f)
-    , _accumulatedTime(0.0f)
-    , _plantPos(Vec2::ZERO)
+    : is_dead(false)
+    , max_health(100)
+    , current_health(100)
+    , cooldown_interval(1.0f)
+    , accumulated_time(0.0f)
+    , plant_pos(Vec2::ZERO)
 {
     CCLOG("Plant created.");
 }
@@ -37,8 +37,8 @@ bool Plant::init()
     }
 
     // Plant-specific initialization logic
-    _isDead = false;
-    _accumulatedTime = 0.0f;
+    is_dead = false;
+    accumulated_time = 0.0f;
 
     return true;
 }
@@ -47,36 +47,36 @@ bool Plant::init()
 void Plant::update(float delta)
 {
     // Skip if already dead
-    if (_isDead)
+    if (is_dead)
     {
         return;
     }
 
     // Accumulate time
-    _accumulatedTime += delta;
+    accumulated_time += delta;
 }
 
 // Check if dead
 bool Plant::isDead() const
 {
-    return _isDead;
+    return is_dead;
 }
 
 // Take damage
 void Plant::takeDamage(float damage)
 {
-    if (_isDead)
+    if (is_dead)
     {
         return;
     }
 
-    _currentHealth -= static_cast<int>(damage);
-    CCLOG("Plant took %d damage, remaining health: %d", static_cast<int>(damage), _currentHealth);
+    current_health -= static_cast<int>(damage);
+    CCLOG("Plant took %d damage, remaining health: %d", static_cast<int>(damage), current_health);
 
-    if (_currentHealth <= 0)
+    if (current_health <= 0)
     {
-        _currentHealth = 0;
-        _isDead = true;
+        current_health = 0;
+        is_dead = true;
         CCLOG("Plant is dead.");
         // Can add death effects here, remove from scene, etc.
     }
@@ -85,7 +85,7 @@ void Plant::takeDamage(float damage)
 // Set plant position
 void Plant::setPlantPosition(const cocos2d::Vec2& pos)
 {
-    _plantPos = pos;
+    plant_pos = pos;
     this->setPosition(pos);
 }
 
@@ -106,10 +106,10 @@ bool Plant::initPlantWithSettings(const std::string& imageFile,
         return false;
     }
 
-    _maxHealth = maxHealth;
-    _currentHealth = maxHealth;
-    _cooldownInterval = cooldown;
-    _accumulatedTime = 0.0f;
+    max_health = maxHealth;
+    current_health = maxHealth;
+    cooldown_interval = cooldown;
+    accumulated_time = 0.0f;
 
     this->setAnimation();
     this->scheduleUpdate();

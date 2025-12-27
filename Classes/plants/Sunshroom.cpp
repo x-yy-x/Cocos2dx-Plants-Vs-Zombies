@@ -4,7 +4,9 @@
 
 USING_NS_CC;
 
-// 静态常量定义
+// ----------------------------------------------------
+// Static Configuration
+// ----------------------------------------------------
 const std::string Sunshroom::IMAGE_FILENAME = "sunshroom/init/1 (1).png";
 const cocos2d::Rect Sunshroom::INITIAL_PIC_RECT = Rect::ZERO;
 const cocos2d::Size Sunshroom::OBJECT_SIZE = Size(85.333f, 78.0f);
@@ -15,20 +17,20 @@ const float Sunshroom::GROWN_SCALE = 1.0f;
 const int Sunshroom::SMALL_SUN_VALUE = 15;
 const int Sunshroom::GROWN_SUN_VALUE = 25;
 
-// 构造函数：初始化所有父类
 Sunshroom::Sunshroom()
-    : Plant()             // 虚基类初始化
+    : Plant()
     , SunProducingPlant()
     , Mushroom()
-    , _growthState(GrowthState::SMALL_INIT)
-    , _growthTimer(0.0f)
-    , _currentScale(SMALL_SCALE)
+    , growth_state(GrowthState::SMALL_INIT)
+    , growth_timer(0.0f)
+    , current_scale(SMALL_SCALE)
 {
-    CCLOG("Sunshroom created.");
+    CCLOG("Sunshroom instance created.");
 }
 
 bool Sunshroom::init()
 {
+    // Initialize with 80 health and 15s production interval
     if (!initPlantWithSettings(IMAGE_FILENAME, INITIAL_PIC_RECT, 80, SUN_PRODUCTION_INTERVAL))
     {
         return false;
@@ -41,52 +43,47 @@ Sunshroom* Sunshroom::plantAtPosition(const Vec2& globalPos)
     return createPlantAtPosition<Sunshroom>(globalPos);
 }
 
+// ----------------------------------------------------
+// Life Cycle & State Management
+// ----------------------------------------------------
+
 void Sunshroom::update(float delta)
 {
-    // 1. 调用 Plant 的基础更新
     Plant::update(delta);
 
-    // 预览模式不执行逻辑
     if (!this->getParent()) return;
 
-    // 2. 利用 Mushroom 基类检查昼夜变化
+    // 1. Sync environment state via Mushroom base class
     bool envChanged = checkDayNightChange();
 
-    // 3. 处理初始化或状态切换
     if (envChanged)
     {
-        if (_isNightMode)
-        {
-            wakeUp(); // 从 Mushroom 调用的虚函数
-        }
-        else
-        {
-            sleep();  // 从 Mushroom 调用的虚函数
-        }
+        if (is_night_mode) wakeUp();
+        else sleep();
     }
 
-    // 4. 夜晚特有的生长逻辑
-    if (_isNightMode)
+    // 2. Night-specific growth logic
+    if (is_night_mode)
     {
-        // 确保不在睡觉状态
-        if (_growthState == GrowthState::SLEEPING)
+        // Force wakeup if it's night but marked as sleeping
+        if (growth_state == GrowthState::SLEEPING)
         {
             wakeUp();
         }
 
-        // 计时生长
-        if (_growthState == GrowthState::SMALL_INIT)
+        // Maturation timer logic
+        if (growth_state == GrowthState::SMALL_INIT)
         {
-            _growthTimer += delta;
-            if (_growthTimer >= GROWTH_TIME)
+            growth_timer += delta;
+            if (growth_timer >= GROWTH_TIME)
             {
                 startGrowingSequence();
             }
         }
     }
-    else // 白天
+    else // Daytime
     {
-        if (_growthState != GrowthState::SLEEPING)
+        if (growth_state != GrowthState::SLEEPING)
         {
             sleep();
         }
@@ -95,10 +92,10 @@ void Sunshroom::update(float delta)
 
 void Sunshroom::wakeUp()
 {
-    // 阳光菇醒来时，要根据生长进度决定是变小还是变大
-    Mushroom::_activityState = ActivityState::ACTIVE;
+    Mushroom::activity_state = ActivityState::ACTIVE;
 
-    if (_growthTimer >= GROWTH_TIME)
+    // Restore state based on whether it had finished maturing before sleeping
+    if (growth_timer >= GROWTH_TIME)
     {
         setGrowthState(GrowthState::GROWN);
     }
@@ -110,47 +107,48 @@ void Sunshroom::wakeUp()
 
 void Sunshroom::sleep()
 {
-    Mushroom::_activityState = ActivityState::SLEEPING;
+    Mushroom::activity_state = ActivityState::SLEEPING;
     setGrowthState(GrowthState::SLEEPING);
 }
 
 void Sunshroom::setGrowthState(GrowthState state)
 {
-    if (_growthState == state) return;
+    if (growth_state == state) return;
 
-    _growthState = state;
+    growth_state = state;
 
-    // 设置缩放
+    // Update scale based on stage
     switch (state)
     {
         case GrowthState::SMALL_INIT:
-            _currentScale = SMALL_SCALE;
+            current_scale = SMALL_SCALE;
             break;
         case GrowthState::GROWING:
         case GrowthState::GROWN:
         case GrowthState::SLEEPING:
-            _currentScale = GROWN_SCALE;
+            current_scale = GROWN_SCALE;
             break;
     }
 
-    this->setScale(_currentScale);
+    this->setScale(current_scale);
     setAnimation();
 }
 
+// ----------------------------------------------------
+// Animation & Production
+// ----------------------------------------------------
+
 void Sunshroom::setAnimation()
 {
-    // 停止当前动作
-    if (_currentAnimation)
+    if (current_animation)
     {
-        this->stopAction(_currentAnimation);
-        _currentAnimation = nullptr;
+        this->stopAction(current_animation);
+        current_animation = nullptr;
     }
 
     Animation* animation = nullptr;
 
-    // 使用 Mushroom::loadAnimation 来加载动画
-    // 注意：这里不需要手动传裁剪参数，因为阳光菇用的是完整图
-    switch (_growthState)
+    switch (growth_state)
     {
         case GrowthState::SMALL_INIT:
             animation = loadAnimation("sunshroom/init", 10, SMALL_SCALE, OBJECT_SIZE.width, OBJECT_SIZE.height);
@@ -170,34 +168,30 @@ void Sunshroom::setAnimation()
     {
         auto animate = Animate::create(animation);
         auto repeat = RepeatForever::create(animate);
-        _currentAnimation = repeat;
+        current_animation = repeat;
         this->runAction(repeat);
     }
 }
 
 std::vector<Sun*> Sunshroom::produceSun()
 {
-    // 如果是白天（Mushroom提供的检查），不生产阳光
-    if (isDaytime())
-    {
-        return {};
-    }
+    // Sun-shrooms (and all mushrooms) are inactive during the day
+    if (isDaytime()) return {};
 
-    // 冷却检查
-    if (_accumulatedTime >= _cooldownInterval)
+    if (accumulated_time >= cooldown_interval)
     {
-        _accumulatedTime = 0.0f;
+        accumulated_time = 0.0f;
         Sun* sun = nullptr;
 
-        if (_growthState == GrowthState::SMALL_INIT || _growthState == GrowthState::GROWING)
+        if (growth_state == GrowthState::SMALL_INIT || growth_state == GrowthState::GROWING)
         {
+            // Spawn small sun (15 value, 0.8 scale)
             sun = Sun::createCustomSun(this->getPosition(), 0.8f, SMALL_SUN_VALUE);
-            CCLOG("Small Sunshroom produced sun: %d", SMALL_SUN_VALUE);
         }
-        else if (_growthState == GrowthState::GROWN)
+        else if (growth_state == GrowthState::GROWN)
         {
+            // Spawn standard sun (25 value, 1.0 scale)
             sun = Sun::createCustomSun(this->getPosition(), 1.0f, GROWN_SUN_VALUE);
-            CCLOG("Grown Sunshroom produced sun: %d", GROWN_SUN_VALUE);
         }
 
         if (sun) return { sun };
@@ -208,20 +202,19 @@ std::vector<Sun*> Sunshroom::produceSun()
 
 void Sunshroom::startGrowingSequence()
 {
-    if (_currentAnimation)
+    if (current_animation)
     {
-        this->stopAction(_currentAnimation);
-        _currentAnimation = nullptr;
+        this->stopAction(current_animation);
+        current_animation = nullptr;
     }
 
-    _growthState = GrowthState::GROWING;
-    _currentScale = GROWN_SCALE;
+    growth_state = GrowthState::GROWING;
+    current_scale = GROWN_SCALE;
 
     auto scaleUp = ScaleTo::create(0.5f, GROWN_SCALE);
-    // 复用基类加载函数
-    auto growUpAnimation = loadAnimation("sunshroom/grownup", 10, GROWN_SCALE, OBJECT_SIZE.width, OBJECT_SIZE.height);
+    auto growUpAnim = loadAnimation("sunshroom/grownup", 10, GROWN_SCALE, OBJECT_SIZE.width, OBJECT_SIZE.height);
 
-    Action* growUpAction = growUpAnimation ? (Action*)Animate::create(growUpAnimation) : (Action*)DelayTime::create(1.0f);
+    Action* growUpAction = growUpAnim ? (Action*)Animate::create(growUpAnim) : (Action*)DelayTime::create(1.0f);
 
     cocos2d::AudioEngine::play2d("plantgrow.mp3", false, 1.0f);
 

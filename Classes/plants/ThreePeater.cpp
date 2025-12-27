@@ -46,7 +46,7 @@ std::vector<Bullet*> ThreePeater::checkAndAttack(std::vector<Zombie*> allZombies
     std::vector<Bullet*> bullets;
 
     // Check if cooldown is ready
-    if (_accumulatedTime < _cooldownInterval)
+    if (accumulated_time < cooldown_interval)
     {
         return bullets;
     }
@@ -59,7 +59,7 @@ std::vector<Bullet*> ThreePeater::checkAndAttack(std::vector<Zombie*> allZombies
     }
 
     // Reset cooldown
-    _accumulatedTime = 0.0f;
+    accumulated_time = 0.0f;
 
     // Create peas for three lanes: row above, current row, row below
     Vec2 basePos = this->getPosition();

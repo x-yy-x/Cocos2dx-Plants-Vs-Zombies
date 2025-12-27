@@ -36,7 +36,7 @@ public:
      */
     virtual void explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, int plantCol) override;
 
-protected:
+private:
     // ----------------------------------------------------
     // Static constants
     // ----------------------------------------------------
@@ -62,6 +62,6 @@ protected:
     Jalapeno();
 
     // Animation tracking
-    float _idleAnimationDuration;  // How long the idle animation plays
+    float idle_animation_duration;  // How long the idle animation plays
 };
 

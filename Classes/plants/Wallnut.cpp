@@ -30,11 +30,11 @@ bool Wallnut::init()
         return false;
     }
 
-    _maxHealth = 1000;
-    _currentHealth = 1000;
-    _cooldownInterval = 1.5f;  // Attack once every 1.5 seconds
-    _accumulatedTime = 0.0f;
-    _currentState = WallnutState::NORMAL;
+    max_health = 1000;
+    current_health = 1000;
+    cooldown_interval = 1.5f;  // Attack once every 1.5 seconds
+    accumulated_time = 0.0f;
+    current_state = WallnutState::NORMAL;
 
     this->setAnimation();
     this->setCrackedAnimation();
@@ -87,18 +87,18 @@ void Wallnut::update(float delta)
 {
     Plant::update(delta);
 
-    WallnutState newState = (_currentHealth >= 300)
+    WallnutState newState = (current_health >= 300)
         ? WallnutState::NORMAL
         : WallnutState::CRACKED;
 
     // Only switch animation when state changes
-    if (newState != _currentState)
+    if (newState != current_state)
     {
-        _currentState = newState;
+        current_state = newState;
 
         this->stopAllActions();
 
-        if (_currentState == WallnutState::NORMAL)
+        if (current_state == WallnutState::NORMAL)
             this->runAction(normalAnimation);
         else
             this->runAction(crackedAnimation);

@@ -100,8 +100,8 @@ PoleVaulter* PoleVaulter::createZombie()
         z->initEatAnimation();
         z->initRunningAnimation();
         z->initJumpingAnimation();
-        z->_currentState = static_cast<int>(ZombieState::RUNNING);
-        z->_currentSpeed = RUNNING_SPEED;
+        z->current_state = static_cast<int>(ZombieState::RUNNING);
+        z->current_speed = RUNNING_SPEED;
         z->runAction(z->_runAction);
         return z;
     }
@@ -309,7 +309,7 @@ void PoleVaulter::setAnimationForState()
 {
     auto jumpAnim = _jumpAction;
 
-    switch (static_cast<ZombieState>(_currentState))
+    switch (static_cast<ZombieState>(current_state))
     {
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");
@@ -332,7 +332,7 @@ void PoleVaulter::setAnimationForState()
             this->stopAllActions();
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
-                _isDead = true;
+                is_dead = true;
                 _isDying = false;
                 });
             auto sequence = Sequence::create(fadeOut, markDead, nullptr);
@@ -347,7 +347,7 @@ void PoleVaulter::setAnimationForState()
                     jumpAnim,
                     CallFunc::create([this]() {
                         this->_isJumping = false;
-                        this->_currentSpeed = MOVE_SPEED;
+                        this->current_speed = MOVE_SPEED;
                         this->setState(static_cast<int>(ZombieState::WALKING));
                         }),
                     MoveBy::create(0.0001f, Vec2(-170, 0)),
@@ -422,7 +422,7 @@ void PoleVaulter::startJumping()
 {
     _hasJumped = true;
     _isJumping = true;
-    _currentSpeed = 0;
+    current_speed = 0;
     setState(static_cast<int>(ZombieState::JUMPING));
     CCLOG("Zombie start jumping!");
     cocos2d::AudioEngine::play2d("polevault.mp3", false);

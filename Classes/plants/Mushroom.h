@@ -1,67 +1,74 @@
-#pragma once
+#ifndef __MUSHROOM_H__
+#define __MUSHROOM_H__
 
 #include "Plant.h"
 #include "GameWorld.h"
 #include "cocos2d.h"
 
-// 必须使用 virtual public Plant 以解决菱形继承问题
+/**
+ * @brief Abstract base class for all Mushroom-type plants.
+ * Uses virtual inheritance from Plant to resolve potential diamond inheritance issues.
+ * Mushrooms have a unique "Sleep" mechanic where they become inactive during daytime
+ * unless awakened by a Coffee Bean.
+ */
 class Mushroom : virtual public Plant
 {
 public:
-    // 蘑菇通用的活动状态
+    /** @brief Represents the physiological state of the mushroom. */
     enum class ActivityState
     {
-        ACTIVE,     // 活跃（晚上）
-        SLEEPING    // 睡觉（白天）
+        ACTIVE,     // Fully functional (Nighttime or awakened)
+        SLEEPING    // Inactive, grayed out animation (Daytime)
     };
 
 protected:
     Mushroom();
     virtual ~Mushroom();
 
-    // ----------------------------------------------------------------
-    // 状态变量
-    // ----------------------------------------------------------------
-    bool _isNightMode;      // 当前是否为夜晚
-    bool _isInitialized;    // 是否已完成首次初始化
-    ActivityState _activityState; // 当前活动状态
-    cocos2d::Action* _currentAnimation; // 当前播放的动画动作
+    // ----------------------------------------------------
+    // State Variables
+    // ----------------------------------------------------
+    bool is_night_mode;                 // Tracks if the current level environment is night
+    bool is_initialized;                // Ensures first-frame state synchronization
+    ActivityState activity_state;       // Current operational status
+    cocos2d::Action* current_animation; // Pointer to the currently playing animation action
 
-    // ----------------------------------------------------------------
-    // 核心复用功能
-    // ----------------------------------------------------------------
+    // ----------------------------------------------------
+    // Core Shared Functionality
+    // ----------------------------------------------------
 
     /**
-     * @brief 检查并更新昼夜模式
-     * @return 如果模式发生了改变（从昼变夜或反之）返回 true，否则返回 false
+     * @brief Queries the GameWorld to synchronize with the current day/night cycle.
+     * @return true if the environment changed (e.g., transition or first-frame setup).
      */
     bool checkDayNightChange();
 
-    /**
-     * @brief 判断当前是否是白天
-     */
+    /** @brief Returns true if the current environment is daytime. */
     bool isDaytime() const;
 
     /**
-     * @brief 通用动画加载辅助函数
-     * @param folderPath 图片文件夹路径
-     * @param frameCount 帧数
-     * @param scale 缩放比例
-     * @param offsetX 裁剪区域X偏移 (默认0)
-     * @param offsetY 裁剪区域Y偏移 (默认0)
-     * @param cropWidth 裁剪宽度 (小于0则使用默认对象宽度)
-     * @param cropHeight 裁剪高度 (小于0则使用默认对象高度)
+     * @brief Utility function to load multi-frame animations from a directory.
+     * @param folderPath Path to the folder containing numbered .png files.
+     * @param frameCount Number of frames to load.
+     * @param scale Visual scale factor.
+     * @param objectW/objectH Base dimensions of the mushroom.
+     * @param offsetX/offsetY Rect offsets for sprite sheet slicing.
+     * @return A pointer to the created Animation object, or nullptr on failure.
      */
     cocos2d::Animation* loadAnimation(const std::string& folderPath,
         int frameCount,
         float scale,
-        float objectW, float objectH, // 传入对象原始尺寸
+        float objectW, float objectH,
         float offsetX = 0.0f,
         float offsetY = 0.0f,
         float cropWidth = -1.0f,
         float cropHeight = -1.0f);
 
-    // 子类需要实现的纯虚函数或钩子，用于处理唤醒和睡眠的具体表现
+    /** @brief Triggered when the mushroom enters an active state. */
     virtual void wakeUp() = 0;
+
+    /** @brief Triggered when the mushroom falls asleep (e.g., planted in day). */
     virtual void sleep() = 0;
 };
+
+#endif // __MUSHROOM_H__

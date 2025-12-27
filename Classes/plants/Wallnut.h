@@ -40,7 +40,7 @@ public:
      */
     virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
 
-protected:
+private:
     // ----------------------------------------------------
     // Static constants
     // ----------------------------------------------------
@@ -52,7 +52,7 @@ protected:
     cocos2d::RepeatForever* normalAnimation;
     cocos2d::RepeatForever* crackedAnimation;
 
-    WallnutState _currentState;
+    WallnutState current_state;
 
     /**
      * @brief Set up animation frames

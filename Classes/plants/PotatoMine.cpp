@@ -18,8 +18,8 @@ PotatoMine::PotatoMine()
     , _state(MineState::ARMING)
     , _armingTimer(DEFAULT_ARMING_TIME)
 {
-    _explosionDamage = EXPLOSION_DAMAGE;
-    _explosionRadius = EXPLOSION_RADIUS;
+    explosion_damage = EXPLOSION_DAMAGE;
+    explosion_radius = EXPLOSION_RADIUS;
 }
 
 // ---------- init ----------
@@ -32,12 +32,12 @@ bool PotatoMine::init()
         return false;
 
     // Set health value (easy to be eaten by zombies)
-    _maxHealth      = 80;
-    _currentHealth  = 80;
+    max_health      = 80;
+    current_health  = 80;
 
     // Mine doesn't need cooldown
-    _cooldownInterval = 0.0f;
-    _accumulatedTime  = 0.0f;
+    cooldown_interval = 0.0f;
+    accumulated_time  = 0.0f;
 
     this->scheduleUpdate();
     return true;
@@ -94,7 +94,7 @@ void PotatoMine::switchToReadyState()
 // ---------- explode ----------
 void PotatoMine::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, int plantCol)
 {
-    if (_state != MineState::READY || _hasExploded)
+    if (_state != MineState::READY || has_exploded)
         return;
 
     // Detect zombie collision in current row
@@ -106,7 +106,7 @@ void PotatoMine::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, 
         {
             if (this->getBoundingBox().intersectsRect(zombie->getBoundingBox()))
             {
-                zombie->takeDamage(static_cast<float>(_explosionDamage));
+                zombie->takeDamage(static_cast<float>(explosion_damage));
                 triggered = true;
             }
         }
@@ -115,7 +115,7 @@ void PotatoMine::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, 
     if (triggered)
     {
         _state = MineState::TRIGGERED;
-        _hasExploded = true;
+        has_exploded = true;
         playExplosionAnimation();
     }
 }
@@ -134,7 +134,7 @@ void PotatoMine::playExplosionAnimation()
     auto blink = Blink::create(0.3f, 4);
     auto fade  = FadeOut::create(0.4f);
     auto die   = CallFunc::create([this]() {
-        this->_isDead = true;
+        this->is_dead = true;
     });
 
     this->runAction(Sequence::create(blink, fade, die, nullptr));

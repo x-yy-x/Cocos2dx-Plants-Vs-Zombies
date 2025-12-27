@@ -1,70 +1,68 @@
-#pragma once
+#ifndef __SHOVEL_H__
+#define __SHOVEL_H__
 
 #include "cocos2d.h"
 #include "GameObject.h"
 #include "GameDefs.h"
 
 /**
- * @brief Shovel class for removing plants from the grid.
- * Inherits from GameObject.
- * Can be dragged to plant positions to remove them.
+ * @brief Shovel tool used to remove existing plants from the grid.
+ * Inherits from GameObject. It can be picked up from the UI bank and
+ * dragged over plants to trigger their removal.
  */
 class Shovel : public GameObject
 {
 public:
     /**
-     * @brief Shovel initialization function
+     * @brief Initializes the shovel sprite and its interaction properties.
+     * @return true if initialization was successful.
      */
     virtual bool init() override;
 
-    // Implement the "static create()" method
+    // Standard Cocos2d-x macro for creating the instance
     CREATE_FUNC(Shovel);
 
     /**
-     * @brief Check if a point is inside the shovel's bounding box
-     * @param point Point to check
-     * @return true if point is inside, false otherwise
+     * @brief Checks if a world-space point falls within the shovel's current hit box.
+     * @param point The world position to check.
+     * @return true if the point is inside the bounding box.
      */
     bool containsPoint(const cocos2d::Vec2& point);
 
     /**
-     * @brief Set shovel to dragging state and follow touch position
-     * @param enabled true to enable dragging, false to disable
+     * @brief Toggles the dragging visual state (scaling/opacity).
+     * @param enabled True to enter dragging mode, false to return to idle.
      */
     void setDragging(bool enabled);
 
     /**
-     * @brief Check if shovel is currently being dragged
-     * @return true if dragging, false otherwise
+     * @brief Returns whether the shovel is currently active in the user's hand.
      */
     bool isDragging() const;
 
     /**
-     * @brief Update shovel position to follow touch
-     * @param touchPos Touch position in world coordinates
+     * @brief Updates the shovel's position to follow the user's finger or cursor.
+     * @param touchPos The target world coordinates.
      */
     void updatePosition(const cocos2d::Vec2& touchPos);
 
     /**
-     * @brief Reset shovel to its original position (center of shovel back)
+     * @brief Returns the shovel to its home slot in the UI.
      */
     void resetPosition();
 
     /**
-     * @brief Set the original position (center of shovel back)
-     * @param pos Original position
+     * @brief Defines the home position for the shovel (typically the center of the shovel UI slot).
+     * @param pos The global coordinates of the UI slot.
      */
     void setOriginalPosition(const cocos2d::Vec2& pos);
 
-protected:
-    // Protected constructor
+private:
     Shovel();
-
-    // Virtual destructor
     virtual ~Shovel();
 
     // ----------------------------------------------------
-    // Static constants
+    // Static configuration constants
     // ----------------------------------------------------
     static const std::string IMAGE_FILENAME;
     static const cocos2d::Rect INITIAL_PIC_RECT;
@@ -73,7 +71,8 @@ protected:
     // ----------------------------------------------------
     // Member variables
     // ----------------------------------------------------
-    bool _isDragging;                    // Is currently being dragged
-    cocos2d::Vec2 _originalPosition;     // Original position (center of shovel back)
+    bool is_dragging;                // Tracking flag for movement state
+    cocos2d::Vec2 original_position; // Cached home position for the UI bank
 };
 
+#endif // __SHOVEL_H__

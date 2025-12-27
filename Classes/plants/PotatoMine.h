@@ -34,7 +34,7 @@ public:
     // ---------- BombPlant interface ----------
     virtual void explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, int plantCol) override;
 
-protected:
+private:
     PotatoMine();
 
     // BombPlant pure virtual function implementation
@@ -43,7 +43,6 @@ protected:
     // Plant animation initialization
     virtual void setAnimation() override;
 
-private:
     void switchToReadyState();
 
     // ---------- Member variables ----------

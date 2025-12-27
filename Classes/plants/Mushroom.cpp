@@ -3,51 +3,51 @@
 USING_NS_CC;
 
 Mushroom::Mushroom()
-    : _isNightMode(false)
-    , _isInitialized(false)
-    , _activityState(ActivityState::ACTIVE)
-    , _currentAnimation(nullptr)
+    : is_night_mode(false)
+    , is_initialized(false)
+    , activity_state(ActivityState::ACTIVE)
+    , current_animation(nullptr)
 {
 }
 
 Mushroom::~Mushroom()
 {
+    // Animations are handled by Cocos2d-x reference counting or auto-cleanup
 }
 
 bool Mushroom::isDaytime() const
 {
-    return !_isNightMode;
+    return !is_night_mode;
 }
 
 bool Mushroom::checkDayNightChange()
 {
+    // Retrieve the GameWorld context from the running scene
     Scene* runningScene = Director::getInstance()->getRunningScene();
     auto gameWorld = dynamic_cast<GameWorld*>(runningScene);
 
     if (gameWorld)
     {
         bool newMode = gameWorld->isNightMode();
-        bool changed = (newMode != _isNightMode);
-        _isNightMode = newMode;
+        bool changed = (newMode != is_night_mode);
+        is_night_mode = newMode;
 
-        // 如果是第一帧初始化
-        if (!_isInitialized)
+        // Force a "change" event during the first initialization frame
+        if (!is_initialized)
         {
-            _isInitialized = true;
-            CCLOG("Mushroom Initialized. Mode: %s", _isNightMode ? "NIGHT" : "DAY");
-            // 返回 true 以便子类在第一帧就能正确设置状态
+            is_initialized = true;
+            CCLOG("Mushroom logic synchronized. Mode: %s", is_night_mode ? "NIGHT" : "DAY");
             return true;
         }
 
         if (changed)
         {
-            CCLOG("Mushroom environment changed to: %s", _isNightMode ? "NIGHT" : "DAY");
+            CCLOG("Mushroom environment shifted to: %s", is_night_mode ? "NIGHT" : "DAY");
         }
 
         return changed;
     }
 
-    // 如果找不到 GameWorld，不做改变
     return false;
 }
 
@@ -57,15 +57,15 @@ Animation* Mushroom::loadAnimation(const std::string& folderPath, int frameCount
 {
     Vector<SpriteFrame*> frames;
 
-    // 如果未指定裁剪宽高，使用对象默认宽高
+    // Determine the clipping rectangle; fallback to object size if no custom crop is provided
     float actualCropW = (cropWidth < 0) ? objectW : cropWidth;
     float actualCropH = (cropHeight < 0) ? objectH : cropHeight;
 
     for (int i = 1; i <= frameCount; ++i)
     {
+        // Expects file naming convention: "folder/1 (1).png", "folder/1 (2).png", etc.
         std::string filename = StringUtils::format("%s/1 (%d).png", folderPath.c_str(), i);
 
-        // 创建 SpriteFrame
         auto frame = SpriteFrame::create(filename, Rect(offsetX, offsetY, actualCropW, actualCropH));
 
         if (frame)
@@ -74,13 +74,14 @@ Animation* Mushroom::loadAnimation(const std::string& folderPath, int frameCount
         }
         else
         {
-            CCLOG("Mushroom failed to load frame: %s", filename.c_str());
+            CCLOG("Warning: Mushroom failed to load animation frame: %s", filename.c_str());
         }
     }
 
     if (!frames.empty())
     {
-        return Animation::createWithSpriteFrames(frames, 0.1f); // 0.1秒一帧
+        // Default frame rate of 10 FPS (0.1s per frame)
+        return Animation::createWithSpriteFrames(frames, 0.1f);
     }
 
     return nullptr;

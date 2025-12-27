@@ -62,10 +62,10 @@ void TwinSunflower::update(float delta)
 std::vector<Sun*> TwinSunflower::produceSun()
 {
     // Check if cooldown is finished
-    if (_accumulatedTime >= _cooldownInterval)
+    if (accumulated_time >= cooldown_interval)
     {
         // Reset cooldown
-        _accumulatedTime = 0.0f;
+        accumulated_time = 0.0f;
 
         // Create sun at sunflower position
         Sun* sun1 = Sun::createFromSunflower(this->getPosition() + Vec2(20, 0));

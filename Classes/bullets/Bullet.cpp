@@ -2,23 +2,33 @@
 
 USING_NS_CC;
 
-// Protected constructor
+/**
+ * @brief Default constructor.
+ * Initializes the projectile with default values and logs creation.
+ */
 Bullet::Bullet()
-    : _isActive(true)
-    , _damage(0)
-    , _currentSpeed(0.0f)
-    , _hitboxSize(Size::ZERO)
+    : is_active(true)
+    , damage(0)
+    , current_speed(0.0f)
+    , hitbox_size(Size::ZERO)
 {
     CCLOG("Bullet created.");
 }
 
-// Destructor
+/**
+ * @brief Destructor.
+ * Handles clean-up and logs destruction for debugging purposes.
+ */
 Bullet::~Bullet()
 {
     CCLOG("Bullet destroyed.");
 }
 
-// Initialization function
+/**
+ * @brief Initialization override.
+ * Calls base GameObject initialization and schedules the per-frame update.
+ * @return true if successfully initialized.
+ */
 bool Bullet::init()
 {
     if (!GameObject::init())
@@ -26,24 +36,29 @@ bool Bullet::init()
         return false;
     }
 
-    _isActive = true;
+    is_active = true;
     this->scheduleUpdate();
 
     return true;
 }
 
-// Update function
+/**
+ * @brief Main update loop.
+ * Updates bullet position and performs a boundary check to deactivate
+ * projectiles that have moved significantly off-screen.
+ * @param delta Time elapsed since the last frame.
+ */
 void Bullet::update(float delta)
 {
-    if (!_isActive)
+    if (!is_active)
     {
         return;
     }
 
-    // Perform movement
+    // Execute specialized movement logic defined by subclasses
     updateMovement(delta);
 
-    // Check if out of screen (simple check)
+    // Visibility check: deactivate bullet if it passes the right screen edge
     auto visibleSize = Director::getInstance()->getVisibleSize();
     if (getPositionX() > visibleSize.width + 50)
     {
@@ -51,30 +66,43 @@ void Bullet::update(float delta)
     }
 }
 
-// Check if active
+/**
+ * @brief Activity status getter.
+ * @return true if the bullet is currently active in the game world.
+ */
 bool Bullet::isActive() const
 {
-    return _isActive;
+    return is_active;
 }
 
-// Deactivate bullet
+/**
+ * @brief Deactivation logic.
+ * Marks the bullet as inactive and hides it. Removal from the scene tree
+ * is deferred to prevent pointer invalidation during container iteration.
+ */
 void Bullet::deactivate()
 {
-    _isActive = false;
+    is_active = false;
     this->setVisible(false);
-    // Do NOT removeFromParent here, as it might cause immediate destruction
-    // while the pointer is still in GameWorld::_bullets list.
-    // Removal will be handled in GameWorld::removeInactiveBullets.
+    // Note: Manual removal is handled by the GameWorld manager to ensure
+    // memory safety while iterating through bullet lists.
 }
 
-// Get damage
+/**
+ * @brief Damage value getter.
+ * @return The integer damage value assigned to this projectile.
+ */
 int Bullet::getDamage() const
 {
-    return _damage;
+    return damage;
 }
 
-// Default movement (can be overridden)
+/**
+ * @brief Trajectory update handler.
+ * Provides a hook for subclasses to implement specific movement patterns.
+ * @param delta Time elapsed since the last frame.
+ */
 void Bullet::updateMovement(float delta)
 {
-    // Base class does nothing, subclasses implement movement
+    // Implementation is provided by derived classes (e.g., Pea, Cabbage)
 }

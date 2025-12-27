@@ -63,12 +63,12 @@ std::vector<Bullet*> GatlingPea::checkAndAttack(std::vector<Zombie*> allZombiesI
     std::vector<Bullet*> bullets;
 
     // Check if any zombie is in range in current row and cooldown is ready
-    if (!isZombieInRange(allZombiesInRow[plantRow]) || _accumulatedTime < _cooldownInterval)
+    if (!isZombieInRange(allZombiesInRow[plantRow]) || accumulated_time < cooldown_interval)
     {
         return bullets;
     }
 
-    _accumulatedTime = 0.0f; // Reset cooldown
+    accumulated_time = 0.0f; // Reset cooldown
 
     std::vector<Pea*> pea(4);
     std::vector<Vec2>spawnPos(4);

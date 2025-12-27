@@ -3,46 +3,28 @@
 USING_NS_CC;
 
 // ----------------------------------------------------
-// Static constant definitions
+// Static Configuration
 // ----------------------------------------------------
 const std::string Pea::IMAGE_FILENAME = "pea.png";
 const cocos2d::Rect Pea::INITIAL_PIC_RECT = Rect::ZERO;
-// TODO: Adjust default speed here
 const float Pea::DEFAULT_SPEED = 400.0f;
-// TODO: Adjust default damage here
 const int Pea::DEFAULT_DAMAGE = 20;
 
-// Protected constructor
+/**
+ * @brief Constructor for Pea using member initializer list.
+ * Note: Base properties like damage and speed are initialized here to
+ * ensure the object starts in a valid state.
+ */
 Pea::Pea()
 {
     CCLOG("Pea created.");
 }
 
-// Initialization function
-bool Pea::init()
-{
-    // Initialize parent Bullet
-    if (!Bullet::init())
-    {
-        return false;
-    }
-
-    // Initialize sprite with image
-    if (!Sprite::initWithFile(IMAGE_FILENAME))
-    {
-        CCLOG("Failed to load pea image: %s", IMAGE_FILENAME.c_str());
-        return false;
-    }
-
-    // Set default values
-    _damage = DEFAULT_DAMAGE;
-    _currentSpeed = DEFAULT_SPEED;
-    _hitboxSize = this->getContentSize();
-
-    return true;
-}
-
-// Static create method with position
+/**
+ * @brief Factory method for creating a Pea at a specific position.
+ * @param startPos Initial world coordinates.
+ * @return Autoreleased Pea instance.
+ */
 Pea* Pea::create(const Vec2& startPos)
 {
     Pea* pRet = new(std::nothrow) Pea();
@@ -60,10 +42,42 @@ Pea* Pea::create(const Vec2& startPos)
     }
 }
 
-// Update movement logic
+/**
+ * @brief Initialization override.
+ * Loads texture resources and syncs hitbox size with the sprite content size.
+ * @return true if initialization was successful.
+ */
+bool Pea::init()
+{
+    // Initialize inherited Bullet properties
+    if (!Bullet::init())
+    {
+        return false;
+    }
+
+    // Load visual asset
+    if (!Sprite::initWithFile(IMAGE_FILENAME))
+    {
+        CCLOG("Failed to load pea image: %s", IMAGE_FILENAME.c_str());
+        return false;
+    }
+
+    // Assign gameplay values defined in static constants
+    damage = DEFAULT_DAMAGE;
+    current_speed = DEFAULT_SPEED;
+    hitbox_size = this->getContentSize();
+
+    return true;
+}
+
+/**
+ * @brief Implements linear horizontal movement.
+ * Moves the pea forward based on current_speed and frame time.
+ * @param delta Time elapsed since the last frame.
+ */
 void Pea::updateMovement(float delta)
 {
-    // Move forward (to the right)
-    float newX = getPositionX() + _currentSpeed * delta;
+    // Standard rightward translation
+    float newX = getPositionX() + current_speed * delta;
     setPositionX(newX);
 }

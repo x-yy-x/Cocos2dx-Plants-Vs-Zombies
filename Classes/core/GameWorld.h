@@ -1,4 +1,4 @@
-#ifndef __GAMEWORLD_H__
+﻿#ifndef __GAMEWORLD_H__
 #define __GAMEWORLD_H__
 
 #include "GameDefs.h"
@@ -6,7 +6,7 @@
 #include "cocos2d.h"
 #include <vector>
 
-// Forward declarations
+// Forward declarations to improve compilation time
 class Plant;
 class Zombie;
 class Shovel;
@@ -29,279 +29,186 @@ public:
 
     virtual bool init() override;
     virtual ~GameWorld();
-    
-    // A selector callback
+
+    /** @brief Add a zombie instance to the game world */
+    void addZombie(Zombie* z);
+
+    /** @brief Check if current scene is in night mode */
+    bool isNightMode() const { return is_night_mode; }
+
+    /** @brief Add an ice tile effect to the world */
+    void addIceTile(IceTile* ice);
+
+    /** @brief Remove all ice tiles in a specific row */
+    void removeIceInRow(int row);
+
+    /** @brief Get the current total sun resources */
+    int getSunCount() const { return sun_count; }
+
+private:
+    // UI Callbacks
     void menuCloseCallback(cocos2d::Ref* pSender);
-    
+
     /**
-     * @brief Toggle speed mode on/off
-     * @param sender The menu item that triggered this callback
+     * @brief Toggles game speed between Normal, 2x, and 3x
+     * @param sender The menu item that triggered the callback
      */
     void toggleSpeedMode(cocos2d::Ref* sender);
 
+    /** @brief Initialize the seed packet UI at the top of the screen */
     void initSeedPackets();
 
-    /**
-     * @brief Show pause menu
-     * @param sender The menu item that triggered this callback
-     */
+    /** @brief Displays the in-game pause menu overlay */
     void showPauseMenu(cocos2d::Ref* sender);
 
-    /**
-     * @brief Resume game from pause
-     * @param sender The menu item that triggered this callback
-     */
+    /** @brief Resumes the game from a paused state */
     void resumeGame(cocos2d::Ref* sender);
 
-    /**
-     * @brief Restart current game
-     * @param sender The menu item that triggered this callback
-     */
+    /** @brief Restarts the current level */
     void restartGame(cocos2d::Ref* sender);
 
-    /**
-     * @brief Return to main menu
-     * @param sender The menu item that triggered this callback
-     */
+    /** @brief Returns to the main menu scene */
     void returnToMenu(cocos2d::Ref* sender);
 
-    /**
-     * @brief Show game over screen when zombie reaches left edge
-     */
+    /** @brief Triggered when a zombie reaches the player's house */
     void showGameOver();
 
-    /**
-     * @brief Increase background music volume
-     * @param sender The menu item that triggered this callback
-     */
+    // Volume Control Logic
     void increaseMusicVolume(cocos2d::Ref* sender);
-
-    /**
-     * @brief Decrease background music volume
-     * @param sender The menu item that triggered this callback
-     */
     void decreaseMusicVolume(cocos2d::Ref* sender);
-
-    /**
-     * @brief Increase background music volume
-     * @param sender The menu item that triggered this callback
-     */
     void increaseVolume(cocos2d::Ref* sender);
-
-    /**
-     * @brief Decrease background music volume
-     * @param sender The menu item that triggered this callback
-     */
     void decreaseVolume(cocos2d::Ref* sender);
 
-    /**
-     * @brief Update function called every frame
-     * @param delta Time delta
-     */
+    /** @brief Main game loop logic */
     virtual void update(float delta) override;
 
-    void addZombie(Zombie* z);
-
-	bool isNightMode() const { return _isNightMode; }
-
-    void addIceTile(IceTile* ice);
-
-    void removeIceInRow(int row);
-
-	int getSunCount() const { return _sunCount; }
-
-private:
-    /** Scripted phased batch generation (Scheme D) */
+    // Phased Batch Generation (Wave System)
     void spawnTimedBatch(float normalizedTime);
     void spawnFinalWave();
     void spawnSubBatch(int normalCnt, int poleCnt, int bucketHeadCnt, int zamboniCnt, int gargantuarCnt, float delaySec);
     int randRange(int a, int b);
     int applyNightFactor(int baseCount, bool allowZero = false);
 
-    // Victory process
+    /** @brief Victory sequence when all waves are cleared */
     void showWinTrophy();
 
-    /**
-     * @brief Setup user interaction (touch events for planting and shoveling)
-     */
+    /** @brief Initializes touch listeners for gameplay mechanics */
     void setupUserInteraction();
 
     /**
-     * @brief Try to plant using selected seed packet
-     * @param globalPos The global position where the user touched
-     * @param seedPacket The seed packet to use for planting
-     * @return true if planting was successful, false otherwise
+     * @brief Logic for placing a plant on the grid
+     * @return true if successful
      */
     bool tryPlantAtPosition(const cocos2d::Vec2& globalPos, SeedPacket* seedPacket);
 
     /**
-     * @brief Try to remove a plant at the given position using shovel
-     * @param globalPos The global position where the shovel was released
-     * @return true if removal was successful, false otherwise
+     * @brief Logic for removing a plant using the shovel tool
+     * @return true if successful
      */
     bool tryRemovePlantAtPosition(const cocos2d::Vec2& globalPos);
 
-    /**
-     * @brief Get grid cell coordinates from global position
-     * @param globalPos The global position
-     * @param outRow Output parameter for row
-     * @param outCol Output parameter for column
-     * @return true if the position is within valid grid bounds
-     */
+    /** @brief Maps screen position to grid row/column */
     bool getGridCoordinates(const cocos2d::Vec2& globalPos, int& outRow, int& outCol) const;
 
-    /**
-     * @brief Update all zombies
-     * @param delta Time delta
-     */
+    // Component update functions
     void updateZombies(float delta);
-
-    /**
-     * @brief Update all plants (check for firing)
-     * @param delta Time delta
-     */
     void updatePlants(float delta);
-
-    /**
-     * @brief Update all bullets (movement and collision)
-     * @param delta Time delta
-     */
     void updateBullets(float delta);
-
-    /**
-     * @brief Remove dead zombies from the scene and container
-     */
-    void removeDeadZombies();
-
-    /**
-     * @brief Remove dead plants from the scene and grid
-     */
-    void removeDeadPlants();
-
-    /**
-     * @brief Remove inactive bullets from the scene and container
-     */
-    void removeInactiveBullets();
-
     void updateMoneyBankDisplay();
-
     void updateCoins(float delta);
-
-    void removeExpiredCoins();
-
-    /**
-     * @brief Update sun counter display
-     */
     void updateSunDisplay();
-
-
-    /**
-     * @brief Update all suns (movement and lifetime)
-     * @param delta Time delta
-     */
     void updateSuns(float delta);
-
-    /**
-     * @brief Remove expired or collected suns
-     */
-    void removeExpiredSuns();
-
-    /**
-     * @brief Spawn a sun from sky at random grid column
-     */
-    void spawnSunFromSky();
-
-    void maybePlayZombieGroan(float delta);
-
     void updateIceTiles(float delta);
-    
+
+    // Garbage collection for dead objects
+    void removeDeadZombies();
+    void removeDeadPlants();
+    void removeInactiveBullets();
+    void removeExpiredCoins();
+    void removeExpiredSuns();
     void removeExpiredIceTiles();
 
-    bool hasIceAt(int row,int col) const;
-
+    // Spawn systems
+    void spawnSunFromSky();
+    void maybePlayZombieGroan(float delta);
     void spawnCoinAfterZombieDeath(Zombie* zombie);
-  
-    // Grid storage system - stores Plant pointers directly
-    Plant* _plantGrid[MAX_ROW][MAX_COL];
-    
-    // Plant selection state
-    bool _plantSelected;
-    int _selectedSeedPacketIndex;  // Index of selected seed packet (-1 if none)
-    Plant* _previewPlant;          // Transparent preview plant following cursor
 
-    // Shovel state
-    bool _shovelSelected;
+    /** @brief Checks if a specific grid cell is covered by ice */
+    bool hasIceAt(int row, int col) const;
 
-    // UI elements
-    cocos2d::Sprite* _coinBank;
-    Shovel* _shovel;
-    cocos2d::Sprite* _shovelBack;
-    std::vector<SeedPacket*> _seedPackets;
-    std::vector<PlantName> _initialPlantNames;  // PlantNames passed from SelectCardsScene
+    // Grid Storage: directly stores Plant pointers for O(1) access
+    Plant* plant_grid[MAX_ROW][MAX_COL];
 
-    // Flag meter moving icon (right end follows progress)
-    cocos2d::Sprite* _flagIconRight{ nullptr };
-    // --- Progress Bar ---
-    cocos2d::ui::LoadingBar* _progressBar;
-    cocos2d::Sprite* _progressBarFull;
-    float _elapsedTime = 0.0f;
+    // Interaction State
+    bool plant_selected;
+    int selected_seedpacket_index;
+    Plant* preview_plant;
 
+    bool shovel_selected;
+
+    // UI Components
+    cocos2d::Sprite* coin_bank;
+    Shovel* shovel;
+    cocos2d::Sprite* shovel_back;
+    std::vector<SeedPacket*> seed_packets;
+    std::vector<PlantName> initial_plant_names;
+
+    // Progress Tracking
+    cocos2d::Sprite* flag_icon_right{ nullptr };
+    cocos2d::ui::LoadingBar* progress_bar;
+    cocos2d::Sprite* progress_bar_full;
+    float elapsed_time = 0.0f;
     const float TOTAL_GAME_TIME = 300.0f;
-    
-    // Sun system
-    int _sunCount;
-    cocos2d::Label* _sunCountLabel;
 
-    // Coin system
-    cocos2d::Label* _moneyCountLabel;
+    // Resource System
+    int sun_count;
+    cocos2d::Label* sun_count_label;
+    cocos2d::Label* money_count_label;
 
-    // Containers for game objects
-    std::vector<Zombie*> _zombiesInRow[MAX_ROW];
-    std::vector<Bullet*> _bullets;
-    std::vector<Sun*> _suns;
-    std::vector<IceTile*> _iceTiles;
-    std::vector<Coin*> _coins;
+    // Object Containers
+    std::vector<Zombie*> zombies_in_row[MAX_ROW];
+    std::vector<Bullet*> bullets;
+    std::vector<Sun*> suns;
+    std::vector<IceTile*> ice_tiles;
+    std::vector<Coin*> coins;
 
-    // Rake trap per row (optional)
-    Rake* _rakePerRow[MAX_ROW];
-    Mower* _mowerPerRow[MAX_ROW];
+    // Map Utilities
+    Rake* rake_per_row[MAX_ROW];
+    Mower* mower_per_row[MAX_ROW];
 
-    // Timed batch spawning (Version D)
-    int _currentWave;                // (legacy, unused by Version D but kept)
-    float _nextBatchTimeSec;         // Time for next scripted batch (seconds)
-    bool _finalWaveTriggered{ false }; // Whether final wave has been triggered
+    // Wave/Batch Spawning State
+    int current_wave;
+    float next_batch_time_sec;
+    bool final_wave_triggered{ false };
 
-    // Win flow
-    bool _finalWaveSpawningDone{ false };
-    bool _winShown{ false };
-    cocos2d::Sprite* _trophySprite{ nullptr };
+    // Win/Lose Flow State
+    bool final_wave_spawning_done{ false };
+    bool win_shown{ false };
+    cocos2d::Sprite* trophy_sprite{ nullptr };
 
-    float _zombieGroanTimer;
+    float zombie_groan_timer;
+    float sun_spawn_timer;
+    int background_music_id{ -1 };
+    bool is_night_mode{ false };
 
-    // Sun spawning system
-    float _sunSpawnTimer;            // Timer for sun spawning (every 5 seconds)
-    int _backgroundMusicId{-1};
-    bool _isNightMode{ false };
+    // Speed Control
+    int speed_level{ 0 };
+    float speed_scale{ 2.0f };
+    cocos2d::MenuItemToggle* speed_toggle_button;
 
-    // Speed mode system
-    int _speedLevel{ 0 };           // Speed level: 0=normal, 1=2x, 2=3x
-    float _speedScale{ 2.0f };       // Speed multiplier when in speed mode
-    cocos2d::MenuItemToggle* _speedToggleButton; // Speed mode toggle button
-
-    // Pause system
-    bool _isPaused{ false };
-    cocos2d::MenuItemImage* _pauseButton;
-    cocos2d::Layer* _pauseMenuLayer;
-    cocos2d::Menu* _pauseMenu;
-    cocos2d::Label* _volumeLabel;
-    float _musicVolume{ 1.0f };
-    // Game control system
-    bool _isGameOver{ false };
-	bool _gameStarted{ false };
+    // Pause & Control Systems
+    bool is_paused{ false };
+    cocos2d::MenuItemImage* pause_button;
+    cocos2d::Layer* pause_menu_layer;
+    cocos2d::Menu* pause_menu;
+    cocos2d::Label* volume_label;
+    float music_volume{ 1.0f };
+    bool is_gameover{ false };
+    bool game_started{ false };
 };
 
-// Wave spawning parameters (reduced difficulty)
-const float FIRST_WAVE_TIME = 60.0f;    // First wave spawns at 60 seconds
-const float MIN_WAVE_INTERVAL = 10.0f;   // Minimum interval between waves (10 seconds)
+// Global Wave Constants
+const float FIRST_WAVE_TIME = 60.0f;
+const float MIN_WAVE_INTERVAL = 10.0f;
 
 #endif // __GAMEWORLD_H__

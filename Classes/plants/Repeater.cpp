@@ -44,12 +44,12 @@ std::vector<Bullet*> Repeater::checkAndAttack(std::vector<Zombie*> allZombiesInR
     std::vector<Bullet*> bullets;
 
     // Check if any zombie is in range in current row and cooldown is ready
-    if (!isZombieInRange(allZombiesInRow[plantRow]) || _accumulatedTime < _cooldownInterval)
+    if (!isZombieInRange(allZombiesInRow[plantRow]) || accumulated_time < cooldown_interval)
     {
         return bullets;
     }
 
-    _accumulatedTime = 0.0f; // Reset cooldown
+    accumulated_time = 0.0f; // Reset cooldown
     
     // Create first pea
     Vec2 spawnPos1 = this->getPosition() + Vec2(30.0f, 20.0f);

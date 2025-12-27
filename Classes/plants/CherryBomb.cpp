@@ -6,46 +6,40 @@
 USING_NS_CC;
 
 // ----------------------------------------------------
-// Static constant definitions
+// Static definitions
 // ----------------------------------------------------
 const std::string CherryBomb::IMAGE_FILENAME = "cherry_bomb_spritesheet.png";
 const std::string CherryBomb::EXPLOSION_IMAGE = "explosion.png";
 const cocos2d::Rect CherryBomb::INITIAL_PIC_RECT = Rect(0, 0, 128, 128);
 const cocos2d::Size CherryBomb::OBJECT_SIZE = Size(128, 128);
-const float CherryBomb::ATTACK_RANGE = 0.0f;  // Not used for bomb
+const float CherryBomb::ATTACK_RANGE = 0.0f;
 const int CherryBomb::EXPLOSION_DAMAGE = 1500;
-const int CherryBomb::EXPLOSION_RADIUS = 1;  // 3x3 grid (radius of 1 from center)
+const int CherryBomb::EXPLOSION_RADIUS = 1;
 
-// Protected constructor
 CherryBomb::CherryBomb()
     : BombPlant()
-    , _idleAnimationDuration(0.0f)
+    , idle_animation_duration(0.0f)
 {
-    _explosionDamage = EXPLOSION_DAMAGE;
-    _explosionRadius = EXPLOSION_RADIUS;
-    CCLOG("CherryBomb created.");
+    explosion_damage = EXPLOSION_DAMAGE;
+    explosion_radius = EXPLOSION_RADIUS;
 }
 
-// ------------------------------------------------------------------------
-// 1. CherryBomb initialization
-// ------------------------------------------------------------------------
+// ----------------------------------------------------
+// Initialization & Planting
+// ----------------------------------------------------
+
 bool CherryBomb::init()
 {
-    if (!BombPlant::init())
-    {
-        return false;
-    }
+    if (!BombPlant::init()) return false;
 
-    if (!Sprite::initWithFile(IMAGE_FILENAME, INITIAL_PIC_RECT))
-    {
-        return false;
-    }
+    if (!Sprite::initWithFile(IMAGE_FILENAME, INITIAL_PIC_RECT)) return false;
 
-    _maxHealth = 1000;
-    _currentHealth = 1000;
-    _cooldownInterval = 0.0f;  // No cooldown needed
-    _accumulatedTime = 0.0f;
-    _idleAnimationDuration = 0.0f;
+    // CherryBombs have high health to prevent being eaten during their short arming time
+    max_health = 1000;
+    current_health = 1000;
+    cooldown_interval = 0.0f;
+    accumulated_time = 0.0f;
+    idle_animation_duration = 0.0f;
 
     this->setAnimation();
     this->scheduleUpdate();
@@ -53,122 +47,95 @@ bool CherryBomb::init()
     return true;
 }
 
-// ------------------------------------------------------------------------
-// 2. Static planting function
-// ------------------------------------------------------------------------
 CherryBomb* CherryBomb::plantAtPosition(const Vec2& globalPos)
 {
     return createPlantAtPosition<CherryBomb>(globalPos);
 }
 
-// ------------------------------------------------------------------------
-// 3. CherryBomb animation (4x4 sprite sheet, plays once)
-// ------------------------------------------------------------------------
+// ----------------------------------------------------
+// Logic & Detonation
+// ----------------------------------------------------
+
 void CherryBomb::setAnimation()
 {
     const float frameWidth = 150.0f;
     const float frameHeight = 145.0f;
     const int totalFrames = 16;
-    
-    // Calculate animation duration
-    _idleAnimationDuration = totalFrames * 0.07f;  // 1.12 seconds
+    const float frameDelay = 0.07f;
 
-    auto animation = initAnimate(IMAGE_FILENAME, frameWidth, frameHeight, 4, 4, totalFrames, 0.07f);
+    // Set the arming time based on the total frames of the spritesheet
+    idle_animation_duration = totalFrames * frameDelay; // Approx 1.12 seconds
+
+    auto animation = initAnimate(IMAGE_FILENAME, frameWidth, frameHeight, 4, 4, totalFrames, frameDelay);
     if (animation) {
         auto animate = Animate::create(animation);
         this->runAction(animate);
     }
 }
 
-// ------------------------------------------------------------------------
-// 4. Update function
-// ------------------------------------------------------------------------
 void CherryBomb::update(float delta)
 {
     Plant::update(delta);
 
-    // Check if idle animation has finished
-    if (!_animationFinished && _accumulatedTime >= _idleAnimationDuration)
+    // Transition to the explosion state once the arming animation finishes
+    if (!animation_finished && accumulated_time >= idle_animation_duration)
     {
-        _animationFinished = true;
-        CCLOG("CherryBomb idle animation finished, ready to explode!");
+        animation_finished = true;
+        CCLOG("CherryBomb is armed and ready.");
     }
 }
 
-// ------------------------------------------------------------------------
-// 5. Explode function
-// ------------------------------------------------------------------------
 void CherryBomb::explode(std::vector<Zombie*> allZombiesInRow[5], int plantRow, int plantCol)
 {
-    if (_hasExploded)
-    {
-        return;
-    }
+    if (has_exploded || !animation_finished) return;
 
-    if (!_animationFinished)
-    {
-        return;  // Wait for animation to finish
-    }
+    has_exploded = true;
 
-    _hasExploded = true;
-
-    // Get zombies in explosion range (3x3 grid)
+    // Detect all zombies within a 3x3 grid centered on this plant
     std::vector<Zombie*> zombiesInRange = getZombiesInRange(allZombiesInRow, plantRow, plantCol);
 
-    // Deal damage to all zombies in range
-    // Note: zombiesInRange is a local copy, so range-for is safe here
-    // But we still check isDead() to skip dying zombies
     for (auto zombie : zombiesInRange)
     {
         if (zombie && !zombie->isDead())
         {
-            zombie->takeDamage(static_cast<float>(_explosionDamage));
-            CCLOG("CherryBomb dealt %d damage to zombie!", _explosionDamage);
+            zombie->takeDamage(static_cast<float>(explosion_damage));
         }
     }
 
-    // Play explosion animation
     playExplosionAnimation();
 }
 
-// ------------------------------------------------------------------------
-// 6. Explosion animation
-// ------------------------------------------------------------------------
+
+
 void CherryBomb::playExplosionAnimation()
 {
-    // Stop current animation
     this->stopAllActions();
 
-    // Load explosion sprite
+    // Create a temporary sprite for the explosion visual effect
     auto explosionSprite = Sprite::create(EXPLOSION_IMAGE);
     if (explosionSprite)
     {
         explosionSprite->setPosition(this->getPosition());
         if (this->getParent())
         {
+            // Place explosion on a layer above plants
             this->getParent()->addChild(explosionSprite, PLANT_LAYER + 1);
         }
 
-        // Fade out and remove
         auto fadeOut = FadeOut::create(0.5f);
-        auto removeCallback = CallFunc::create([this]() {
-            // Mark plant as dead so it gets removed
-            this->_isDead = true;
-        });
+        auto removePlant = CallFunc::create([this]() {
+            this->is_dead = true; // Mark plant for cleanup in the next update cycle
+            });
         auto removeSprite = RemoveSelf::create();
-        auto sequence = Sequence::create(fadeOut, removeSprite, nullptr);
-        
-        explosionSprite->runAction(sequence);
-        this->runAction(removeCallback);
+
+        explosionSprite->runAction(Sequence::create(fadeOut, removeSprite, nullptr));
+        this->runAction(removePlant);
     }
     else
     {
-        // If explosion sprite fails to load, just mark as dead
-        this->_isDead = true;
+        this->is_dead = true;
     }
 
-    CCLOG("CherryBomb explosion animation played!");
-
+    // Audio feedback
     cocos2d::AudioEngine::play2d("cherrybomb.mp3", false);
 }
-

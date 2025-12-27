@@ -49,7 +49,7 @@ public:
 
     virtual std::vector<Bullet*> checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow) override;
 
-protected:
+private:
     // ----------------------------------------------------
     // Static constants
     // ----------------------------------------------------

@@ -129,10 +129,10 @@ protected:
     // ----------------------------------------------------
     // Member variables
     // ----------------------------------------------------
-    bool _isDead;              // Is dead flag
-    int _maxHealth;            // Maximum health
-    int _currentHealth;        // Current health
-    float _cooldownInterval;   // Cooldown interval (in seconds)
-    float _accumulatedTime;    // Current cooldown accumulated time
-    cocos2d::Vec2 _plantPos;   // Plant position
+    bool is_dead;              // Is dead flag
+    int max_health;            // Maximum health
+    int current_health;        // Current health
+    float cooldown_interval;   // Cooldown interval (in seconds)
+    float accumulated_time;    // Current cooldown accumulated time
+    cocos2d::Vec2 plant_pos;   // Plant position
 };
