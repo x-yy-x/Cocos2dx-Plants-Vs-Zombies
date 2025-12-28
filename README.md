@@ -6,9 +6,8 @@
  2. [架构总览](#架构总览)
  3. [核心组件设计](#核心组件设计)
  4. [接口设计](#接口设计)
- 5. [角色类层次结构](#角色类层次结构)
- 6. [系统交互流程](#系统交互流程)
- 7. [实现状态与路线图](#实现状态与路线图)
+ 5. [系统交互流程](#系统交互流程)
+ 6. [实现状态与路线图](#实现状态与路线图)
 ## 项目概述
 ### 项目背景
 本项目是基于Cocos2d-x游戏引擎开发的植物大战僵尸（Plants vs. Zombies）复刻版，旨在学习和实践2D游戏开发、面向对象设计和C++编程技术。游戏还原了经典塔防玩法，玩家通过种植不同功能的植物来抵御僵尸的入侵，同时需要管理阳光资源以维持防御体系。
@@ -25,7 +24,7 @@
 塔防类 (Tower Defense) / 策略类 (Strategy) / 2D休闲游戏
 
 ### 核心特性
-- **植物防御系统**：支持14种功能各异的植物，包括攻击型、生产型、防御型等多种类型
+- **植物防御系统**：支持14种功能各异的植物，包括攻击型、生产型、爆炸型等多种类型
 - **僵尸波次系统**：动态生成6种僵尸类型，难度随波次递增
 - **日夜交替模式**：白天/夜晚场景切换，影响阳光生成和植物生长
 - **资源管理**：阳光和金币双资源系统，实现经济循环和策略深度
@@ -41,96 +40,144 @@
 - 实现经典植物大战僵尸游戏的核心玩法
 - 展示面向对象设计和C++编程能力
 - 构建可扩展的游戏架构，支持后续功能迭代
-- 提供跨平台的游戏体验（当前主要支持Windows平台）
 ## 架构总览
 ### 高层架构图
 ```mermaid
 graph TD
-    subgraph core ["核心层(core)"]
-        GameWorld[GameWorld 游戏世界控制器]
+    subgraph scenes ["场景层 (Scenes)"]
+        GameMenu[GameMenu 主菜单]
+        SelectCardsScene[SelectCardsScene 选卡场景]
+        ShopScene[ShopScene 商店场景]
+        GameWorld[GameWorld 核心战斗场景]
+    end
+
+    subgraph core ["核心/管理层 (Core)"]
         AppDelegate[AppDelegate 应用入口]
-        Background[Background 背景管理]
-        GameDefs[GameDefs 游戏常量定义]
+        GameDefs[GameDefs 全局常量/枚举]
+        PlayerProfile[PlayerProfile 玩家数据存档]
+        Background[Background 背景与天气管理]
     end
     
-    subgraph gameobjects ["游戏对象层(gameobjects)"]
+    subgraph gameobjects ["游戏对象基础 (GameObjects)"]
         GameObject[GameObject 游戏对象基类]
         SeedPacket[SeedPacket 种子包]
+        SelectCard[SelectCard 选卡 UI]
         Sun[Sun 阳光]
         Coin[Coin 金币]
         Shovel[Shovel 铲子]
-        SelectCard[SelectCard 选卡界面]
+        Rake[Rake 耙子]
     end
     
-    subgraph plants ["植物层(plants)"]
+    subgraph plants ["植物体系 (Plants)"]
         Plant[Plant 植物基类]
-        AttackingPlant[AttackingPlant 攻击植物]
-        SunProducingPlant[SunProducingPlant 产阳光植物]
+        
+        %% 中间抽象层
+        AttackingPlant[AttackingPlant 攻击/战斗型]
+        SunProducingPlant[SunProducingPlant 生产型]
+        Mushroom[Mushroom 蘑菇基类/夜行性]
+        UpgradePlant[UpgradePlant 升级类植物]
+        BombPlant[BombPlant 炸弹类/瞬杀型]
+
+        %% 基础/战斗植物
         PeaShooter[PeaShooter 豌豆射手]
         Repeater[Repeater 双发射手]
+        ThreePeater[ThreePeater 三线射手]
+        Wallnut[Wallnut 坚果墙]
+        SpikeWeed[SpikeWeed 地刺]
+        
+        %% 生产类
         Sunflower[Sunflower 向日葵]
+        
+        %% 炸弹类具体实现
+        CherryBomb[CherryBomb 樱桃炸弹]
+        Jalapeno[Jalapeno 火爆辣椒]
+        PotatoMine[PotatoMine 土豆雷]
+        
+        %% 蘑菇类逻辑
         Sunshroom[Sunshroom 阳光菇]
+        Puffshroom[Puffshroom 小喷菇]
+        
+        %% 升级类逻辑
+        GatlingPea[GatlingPea 机枪豌豆]
+        TwinSunflower[TwinSunflower 双子向日葵]
+        SpikeRock[SpikeRock 地刺王]
     end
     
-    subgraph zombies ["僵尸层(zombies)"]
+    subgraph zombies ["僵尸体系 (Zombies)"]
         Zombie[Zombie 僵尸基类]
         NormalZombie[NormalZombie 普通僵尸]
         FlagZombie[FlagZombie 旗帜僵尸]
         BucketHeadZombie[BucketHeadZombie 铁桶僵尸]
-        Gargantuar[Gargantuar 巨人僵尸]
+        PoleVaulter[PoleVaulter 撑杆跳僵尸]
+        Zomboni[Zomboni 冰车僵尸]
+        Gargantuar[Gargantuar 巨人]
+        Imp[Imp 小鬼僵尸]
     end
     
-    subgraph bullets ["子弹层(bullets)"]
+    subgraph bullets ["弹药体系 (Bullets)"]
         Bullet[Bullet 子弹基类]
         Pea[Pea 豌豆子弹]
         Puff[Puff 烟雾子弹]
     end
+
+    %% 核心场景流转
+    AppDelegate --> GameMenu
+    GameMenu -->|进入选卡| SelectCardsScene
+    GameMenu -->|进入商店| ShopScene
+    SelectCardsScene -->|开始战斗| GameWorld
     
-    subgraph player ["玩家层(player)"]
-        PlayerProfile[PlayerProfile 玩家档案]
-    end
-    
-    subgraph scenes ["场景层(scenes)"]
-        GameMenu[GameMenu 主菜单]
-        SelectCardsScene[SelectCardsScene 选卡场景]
-        ShopScene[ShopScene 商店场景]
-    end
-    
-    %% 连线关系
-    AppDelegate --> GameWorld
-    GameWorld --> Background
+    %% 对象管理
     GameWorld --> GameObject
-    
     GameObject --> Plant
     GameObject --> Zombie
     GameObject --> Bullet
-    GameObject --> SeedPacket
-    GameObject --> Sun
-    GameObject --> Coin
-    GameObject --> Shovel
-    GameObject --> SelectCard
     
+    %% 植物详细继承
     Plant --> AttackingPlant
     Plant --> SunProducingPlant
-    
+    Plant --> Mushroom
+    Plant --> UpgradePlant
+    Plant --> BombPlant
+
+    %% 攻击/战斗类分支扩展
     AttackingPlant --> PeaShooter
     AttackingPlant --> Repeater
-    
+    AttackingPlant --> ThreePeater
+    AttackingPlant --> Wallnut
+    AttackingPlant --> SpikeWeed
+
+    %% 生产类分支
     SunProducingPlant --> Sunflower
+    
+    %% 炸弹类分支扩展
+    BombPlant --> CherryBomb
+    BombPlant --> Jalapeno
+    BombPlant --> PotatoMine
+    
+    %% 蘑菇双重逻辑
+    Mushroom --> Sunshroom
     SunProducingPlant --> Sunshroom
+    Mushroom --> Puffshroom
+    AttackingPlant --> Puffshroom
+
+    %% 升级植物关联逻辑
+    UpgradePlant --> GatlingPea
+    Repeater -.->|核心升级依赖| GatlingPea
     
+    UpgradePlant --> TwinSunflower
+    Sunflower -.->|核心升级依赖| TwinSunflower
+    
+    UpgradePlant --> SpikeRock
+    SpikeWeed -.->|核心升级依赖| SpikeRock
+
+    %% 僵尸关系
     Zombie --> NormalZombie
-    NormalZombie --> FlagZombie
-    NormalZombie --> BucketHeadZombie
-    NormalZombie --> Gargantuar
-    
-    Bullet --> Pea
-    Bullet --> Puff
-    
-    GameWorld --> PlayerProfile
-    GameWorld --> GameMenu
-    GameWorld --> SelectCardsScene
-    GameWorld --> ShopScene
+    Zombie --> FlagZombie
+    Zombie --> BucketHeadZombie
+    Zombie --> PoleVaulter
+    Zombie --> Zomboni
+    Zombie --> Gargantuar
+    Gargantuar -.->|投掷逻辑| Imp
 ```
 
 ### 架构说明
@@ -461,7 +508,7 @@ protected:
 - 采用冷却时间机制，每12秒产生一个阳光
 - 使用模板方法`createPlantAtPosition`实现植物的网格定位
 - 阳光生成位置固定在向日葵上方
-
+---
 
 ##### 3.2 PeaShooter (豌豆射手) (已完成 ✅)
 **职责**: 基础攻击型植物，发射豌豆子弹攻击前方僵尸，是游戏防御系统的核心
@@ -471,7 +518,7 @@ protected:
 - 采用范围检测算法，检测前方是否有僵尸
 - 使用模板方法创建特定类型的子弹
 - 实现攻击冷却机制，确保攻击频率可控
-
+---
 
 ##### 3.3 CherryBomb (樱桃炸弹) (已完成 ✅)
 **职责**: 爆炸型植物，在一定范围内对所有僵尸造成大量伤害，用于应对僵尸密集情况
@@ -481,159 +528,260 @@ protected:
 - 使用延迟触发机制，种植后自动进行武装动画，完成后爆炸
 - 采用范围检测算法，计算爆炸范围内的所有僵尸
 - 实现3x3网格的范围伤害效果
+---
 
+##### 3.4 Repeater (双发射手) (已完成 ✅)
 
-##### 3.4 Sunshroom (阳光菇) (已完成 ✅)
-**职责**: 昼夜适应型阳光生产植物，根据环境条件调整阳光产出效率，是游戏中白天和夜晚模式切换时的关键资源生产者
-
-**核心实现细节**:
-Sunshroom是一个典型的状态机驱动植物，它通过状态变化实现了从幼年到成熟的成长过程，以及昼夜环境下的产出效率调整。
-
-**成长机制实现**:
-- 继承自`SunProducingPlant`和`Mushroom`接口，实现双重继承以获得阳光生产能力和蘑菇的昼夜特性
-- 包含`growth_state`和`growth_timer`状态变量，用于跟踪成长进度和当前状态
-- 在`update`方法中持续累积成长时间，当达到阈值时触发`startGrowingSequence()`方法实现状态转换
-- 成长后不仅阳光产出量增加（幼年15阳光→成熟25阳光），植物的视觉表现也会相应变化
-
-
-**环境适应能力**:
-- 通过`GameWorld`获取当前场景的昼夜状态（`isNightMode()`方法）
-- 根据环境切换不同的阳光生产间隔（白天10秒/次→夜晚8秒/次）
-- 使用条件编译和常量定义，确保不同环境下的参数可配置、易维护
-
-**状态机管理**:
-- 实现了"幼年状态"和"成熟状态"两种核心状态，通过布尔变量`is_mature`进行切换
-- 每种状态下的阳光产出量、生产间隔和视觉表现都有所不同
-- 状态转换时会更新植物的精灵动画，提供直观的成长反馈
-
-**关键代码实现**:
-```cpp
-class Sunshroom : public Plant, public SunProducingPlant {
-public:
-    static Sunshroom* create();
-    virtual bool init() override;
-    virtual void update(float delta) override;
-    
-    // 实现阳光生产接口
-    virtual std::vector<Sun*> produceSun() override;
-    
-    // 实现植物类别接口
-    virtual PlantCategory getCategory() const override { return PlantCategory::SUN_PRODUCING; }
-    
-protected:
-    Sunshroom();
-    virtual ~Sunshroom();
-    
-    // 设置动画
-    virtual void setAnimation() override;
-    
-    // 成长相关方法
-    void growUp();
-    
-    // 阳光生产相关属性
-    float sun_produce_timer = 0.0f;
-    float grow_timer = 0.0f;
-    bool is_mature = false;
-    
-    // 不同环境下的阳光生产间隔
-    static const float SUN_PRODUCE_INTERVAL_DAY; // 10.0f秒（白天）
-    static const float SUN_PRODUCE_INTERVAL_NIGHT; // 8.0f秒（夜晚）
-    
-    // 不同生长阶段的阳光值
-    static const int SUN_VALUE_JUVENILE; // 15阳光（幼年）
-    static const int SUN_VALUE_MATURE; // 25阳光（成熟）
-    
-    // 成长时间
-    static const float GROW_TIME; // 30.0f秒
-};
-
-// 阳光生产实现
-typedef std::vector<Sun*> SunVector;
-SunVector Sunshroom::produceSun() {
-    SunVector producedSuns;
-    
-    // 创建阳光实例
-    Sun* sun = Sun::create();
-    if (sun) {
-        // 设置阳光位置为阳光菇上方随机偏移
-        cocos2d::Vec2 sunPos = getPosition();
-        sunPos.y += 40.0f;
-        sunPos.x += (rand() % 30) - 15; // 随机偏移-15到15像素
-        sun->setPosition(sunPos);
-        
-        // 根据生长阶段设置阳光值
-        sun->setValue(is_mature ? SUN_VALUE_MATURE : SUN_VALUE_JUVENILE);
-        
-        // 添加到列表
-        producedSuns.push_back(sun);
-    }
-    
-    return producedSuns;
-}
-
-// 更新逻辑实现
-void Sunshroom::update(float delta) {
-    Plant::update(delta);
-    
-    // 处理成长机制
-    if (!is_mature) {
-        grow_timer += delta;
-        if (grow_timer >= GROW_TIME) {
-            growUp();
-        }
-    }
-    
-    // 根据昼夜模式设置不同的阳光生产间隔
-    GameWorld* gameWorld = dynamic_cast<GameWorld*>(getParent());
-    float sunProduceInterval = gameWorld && gameWorld->isNightMode() ? 
-        SUN_PRODUCE_INTERVAL_NIGHT : SUN_PRODUCE_INTERVAL_DAY;
-    
-    // 阳光生产计时
-    sun_produce_timer += delta;
-    if (sun_produce_timer >= sunProduceInterval) {
-        sun_produce_timer = 0.0f;
-        
-        // 生产阳光
-        auto suns = produceSun();
-        for (auto sun : suns) {
-            if (sun) {
-                getParent()->addChild(sun);
-            }
-        }
-    }
-}
-
-// 成长实现
-void Sunshroom::growUp() {
-    is_mature = true;
-    
-    // 播放成长动画
-    playAnimation(growAnimation);
-    
-    // 调整植物大小
-    setScale(1.2f);
-    
-    // 更新碰撞盒
-    updateCollisionBox();
-}
-```
-
-##### 3.5 Repeater (双重射手) (已完成 ✅)
-**职责**: 高级攻击型植物，能够快速连续发射两颗豌豆，提供更强的火力输出，是基础豌豆射手的增强版
+**职责**: 进阶攻击型植物，通过在单次攻击周期内发射两颗豌豆子弹，提供双倍的火力输出，是防线中后期的核心输出单位。
 
 **核心实现细节**:
-Repeater是一个典型的继承扩展案例，它通过继承PeaShooter类，在不修改父类代码的情况下扩展了双发射击功能，充分体现了面向对象设计中的开闭原则。
+Repeater 是一个典型的继承扩展案例，它通过继承 `PeaShooter` 类，在复用父类基础功能的基础上扩展了双发射击与升级接口，充分体现了面向对象设计中的开闭原则。
 
 **继承关系与扩展设计**:
-- 直接继承自`PeaShooter`类，复用了父类的所有功能，包括攻击冷却机制、范围检测算法和子弹创建逻辑
-- 仅重写`checkAndAttack`方法，在保持原有攻击逻辑不变的基础上增加双发射击功能
-- 使用C++的多态特性，确保在GameWorld中可以与其他攻击型植物统一处理
+
+* **直接继承**: 继承自 `PeaShooter` 类，完整复用了父类的生命值管理、基础渲染逻辑以及子弹创建模板。
+* **功能扩展**: 专门重写 `checkAndAttack` 方法，将单发攻击逻辑升级为双连发逻辑。
+* **升级接口实现**: 重写 `canBeUpgradedTo`虚函数，显式声明其作为 `GatlingPea`（机枪豌豆）前置基础植物的升级权限。
 
 **双发射击机制实现**:
-- 保持与基础豌豆射手相同的攻击冷却时间，确保游戏平衡性
-- 在单次攻击中创建并发射两颗豌豆子弹，第二颗子弹延迟发射，形成连续射击效果
-- 使用模板方法创建特定类型的子弹，确保与父类的子弹创建逻辑一致
-- 通过`std::vector<Bullet*>`返回所有创建的子弹，便于GameWorld统一管理和添加到场景中
+
+* **逻辑重写**: 在 `checkAndAttack` 中，当检测到当前行存在僵尸时，通过 `std::vector<Bullet*>` 容器同时返回两颗豌豆对象。
+* **攻击同步**: 保持与基础豌豆射手一致的检测频率，但通过内部逻辑实现两颗子弹的连续生成，确保火力密度提升的同时维持游戏数值平衡。
+* **工厂方法集成**: 提供静态 `plantAtPosition` 接口，利用 `createPlantAtPosition` 模板快速完成网格对齐与实例化。
+* **动画适配**: 通过 `setAnimation` 加载专属于双发射手的序列帧，确保在视觉上与普通豌豆射手有明显的辨识度。
+---
+##### 3.5 PotatoMine (土豆雷) (已完成 ✅)
+
+**职责**: 延迟触发型单体防御植物，经过一段武装期后对踏入其所在网格的僵尸造成致命伤害。它是前期应对高血量僵尸（如铁桶僵尸）极具性价比的手段。
+
+**核心实现细节**:
+PotatoMine 是一个典型的基于**状态机 (State Machine)** 设计的植物，其行为逻辑随时间与外部触发而改变。
+
+**状态机逻辑实现**:
+
+* **MineState 枚举**: 定义了三个核心状态：`ARMING`（武装中，处于地下）、`READY`（已准备，钻出地面）和 `TRIGGERED`（已触发，执行爆炸）。
+* **武装机制**: 在 `init` 阶段进入 `ARMING` 状态。通过 `_armingTimer` 在 `update` 中累积时间，达到 `DEFAULT_ARMING_TIME` 后调用 `switchToReadyState()` 钻出地面。
+* **触发判定**: 仅在 `READY` 状态下开启碰撞检测。当僵尸坐标进入其所在网格时，状态立即转为 `TRIGGERED`。
+
+**战斗与渲染表现**:
+
+* **继承 BombPlant**: 实现了 `explode` 接口。与樱桃炸弹的全屏/大范围不同，土豆雷的 `EXPLOSION_RADIUS` 通常设为 0，即仅对当前网格生效。
+* **瞬时高伤**: 触发瞬间对目标僵尸应用 `EXPLOSION_DAMAGE`，通常足以秒杀普通或防具类僵尸。
+* **动态动画切换**: 重载 `setAnimation`。在 `ARMING` 阶段显示静止或微动的地下图像，切换到 `READY` 后加载 `READY_FRAME_DIR` 目录下的循环序列帧，爆炸时播放专用的爆炸动画。
+* **内存管理**: 爆炸完成后，通过 `playExplosionAnimation` 的动作回调清理对象，确保内存高效回收。
+---
+##### 3.6 ThreePeater (三线射手) (已完成 ✅)
+
+**职责**: 广域攻击型植物，能够同时向自身所在行及相邻的上下两行发射豌豆。它是多路防御体系的核心，尤其在应对多行僵尸均衡推进时具有极高的压制效率。
+
+**核心实现细节**:
+ThreePeater 是对 `AttackingPlant` 基础扫描逻辑的一次重要扩展。其核心难点在于如何突破单行的物理约束，实现跨行（Cross-lane）的目标检测与子弹生成。
+
+**多行攻击机制实现**:
+
+* **跨行扫描逻辑**: 重写 `checkAndAttack` 方法。与传统单行植物不同，它会同时遍历 `allZombiesInRow[plantRow]`、`allZombiesInRow[plantRow-1]` 和 `allZombiesInRow[plantRow+1]` 三个容器（需包含边界安全检查，确保行索引在 `0` 到 `MAX_ROW-1` 之间）。
+* **独立发射判定**: 只要三行中任意一行存在僵尸，该植物就会进入攻击状态。在单次攻击周期内，它会生成三个 `Pea` 对象，并将它们的 Y 轴坐标分别初始化为对应三行的中心高度。
+* **子弹分发**: 通过 `std::vector<Bullet*>` 返回所有生成的子弹，让 `GameWorld` 统一将它们添加到不同的行管理容器中。
+
+**继承关系与视觉设计**:
+
+* **基类继承**: 继承自 `AttackingPlant`，复用了标准攻击型植物的冷却计时器（Cooldown）和基础属性管理逻辑。
+* **工厂模式集成**: 采用 `CREATE_FUNC` 宏与 `plantAtPosition` 静态方法，确保其能完美契合现有的网格种植系统。
+* **三头协同动画**: 通过 `setAnimation` 加载独特的序列帧，表现出三个头部协同摇摆的视觉效果，确保玩家能一眼识别其多行攻击的特性。
+---
+
+##### 3.7 Wallnut (坚果墙) (已完成 ✅)
+
+**职责**: 高生命值的防御型植物，通过阻挡僵尸行进为其他植物争取攻击时间，是防御阵地的第一道防线。
+
+**核心实现细节**:
+Wallnut 虽然继承自 `AttackingPlant`，但其核心逻辑在于**高额生命值管理**与**基于生命值的状态切换表现**。
+
+**继承关系与逻辑适配**:
+
+* **防御型适配**: 显式重写 `checkAndAttack` 方法，逻辑内不进行任何僵尸检测与子弹生成，始终返回空的 `std::vector<Bullet*>`，从而关闭其攻击功能，专注于防御。
+* **高耐久属性**: 在 `init` 阶段配置远高于普通攻击植物的生命值上限，利用基类的 `_health` 成员处理僵尸的啃食伤害。
+
+**状态机与视觉反馈**:
+
+* **WallnutState 维护**: 定义 `NORMAL`（正常）和 `CRACKED`（受损）两种状态。在 `update` 轮询中实时监控当前血量百分比。
+* **动态动作切换**: 维护 `normalAnimation` 和 `crackedAnimation` 两个持续动作指针。当生命值低于特定阈值（如 50%）时，触发 `setCrackedAnimation()`，停止当前动作并无缝切换至受损序列帧，为玩家提供直观的战损反馈。
+* **资源优化**: 预先加载并存储 `RepeatForever` 动作，避免在血量波动时频繁创建动作对象，提升渲染效率。
+
+**种植与部署**:
+
+* **对齐逻辑**: 静态方法 `plantAtPosition` 确保坚果墙能够严格对齐草坪网格，其 `OBJECT_SIZE` 与常规植物保持一致，保证僵尸在碰撞检测时能够准确触发啃食动作。
+---
+
+##### 3.8 Jalapeno (火爆辣椒) (已完成 ✅)
+
+**职责**: 强力瞬杀型植物，能够摧毁所在整行轨道上的所有僵尸，并清除该行上的障碍物（如冰车留下的冰道）。
+
+**核心实现细节**:
+Jalapeno 展现了对 `BombPlant` 基类的高级定制化实现，通过将传统的“圆周范围伤害”修改为“线性全屏伤害”来改变战局。
+
+**线性爆炸机制**:
+
+* **全行判定逻辑**: 重写 `explode` 方法。不同于樱桃炸弹的 3x3 九宫格判定，火爆辣椒的算法遍历当前 `plantRow` 对应的整行僵尸容器 `allZombiesInRow[plantRow]`。
+* **瞬时高额伤害**: 对该行内所有僵尸应用 `EXPLOSION_DAMAGE`。由于其伤害数值设定极高，通常能够清空除巨人僵尸（Gargantuar）以外的所有目标。
+* **清除环境效果**: 逻辑中通常包含对该行特殊状态（如 Zomboni 创建的冰面）的重置操作，体现其“火焰”属性。
+
+**生命周期与动画管理**:
+
+* **延迟触发流程**: 利用 `idle_animation_duration` 控制爆炸前的“准备”时间。种植后先播放辣椒身体发红、膨胀的预备动画，给予玩家视觉预警。
+* **全行特效表现**: `playExplosionAnimation` 不再仅在原位播放动画，而是沿水平方向在整行轨道上生成火焰粒子特效或覆盖全行的火柱序列帧，确保视觉反馈与伤害范围完全匹配。
+* **自动销毁**: 在爆炸动作序列（Action Sequence）执行完毕后，触发回调函数移除自身，防止对象驻留内存。
+
+**架构设计特点**:
+
+* **继承 BombPlant**: 严格遵守瞬杀类植物的接口规范，确保其能被 `GameWorld` 的爆炸触发逻辑统一调度。
+* **静态工厂集成**: 通过 `plantAtPosition` 快速响应玩家的选卡种植操作，并自动对齐所属行。
+---
+##### 3.9 Sun-shroom (阳光菇) (已完成 ✅)
+
+**职责**: 极低成本的夜间资源生产植物。通过随时间成长的机制，实现从低产向高产的转变，是夜间关卡中取代向日葵的核心经济支柱。
+
+**核心实现细节**:
+Sunshroom 采用了**多重继承**与**分段状态机**的设计模式。它不仅需要处理 `Mushroom` 基类定义的昼夜生理状态，还需管理自身特有的成长生命周期。
+
+**成长机制与状态控制**:
+
+* **GrowthState 状态机**: 定义了从 `SMALL_INIT`（初始小型）、`GROWING`（成长过渡）到 `GROWN`（成熟大型）的完整路径。
+* **定时成长判定**: 利用 `growth_timer` 在 `update` 方法中累积生存时间。一旦超过 `GROWTH_TIME`，触发 `startGrowingSequence()`，通过缩放动画和序列帧切换实现视觉与逻辑上的双重成熟。
+* **动态资源产出**: 重写 `produceSun` 接口。生产逻辑会根据当前 `growth_state` 动态决定产出数值：幼年期产生 `SMALL_SUN_VALUE` (15阳光)，成熟期产生 `GROWN_SUN_VALUE` (25阳光)。
+
+**多重继承架构**:
+
+* **菱形继承优化**: 同时继承 `SunProducingPlant` 和 `Mushroom`。通过显式重写 `getCategory()` 解决 C++ 中的函数支配（dominance）问题。
+* **夜行性逻辑**: 实现 `sleep()` 和 `wakeUp()` 接口。在白天关卡中，植物强制进入 `SLEEPING` 状态，停止 `growth_timer` 和阳光生产计时器，并切换至睡眠序列帧。
+* **视觉反馈系统**: 使用 `SMALL_SCALE` 和 `GROWN_SCALE` 配合 `setAnimation`，确保不同成长阶段在网格上具有明显的视觉区分度。
+
+**资源配置**:
+
+* 采用静态工厂模式 `plantAtPosition` 进行实例化。
+* 阳光生产间隔由 `SUN_PRODUCTION_INTERVAL` 统一控制，确保经济产出的节奏可控。
+---
+##### 3.10 Puff-shroom (小喷菇) (已完成 ✅)
+
+**职责**: 0阳光成本的夜间基础攻击植物，通过发射短程孢子攻击僵尸。它是夜间关卡前期的核心防御力量，依靠极高的部署频率补偿其有限的攻击距离。
+
+**核心实现细节**:
+Puff-shroom 结合了**多重继承**与**短程战斗逻辑**，是在有限资源下实现高频交互的典型案例。
+
+**多重继承与架构适配**:
+
+* **双重特性集成**: 同时继承 `AttackingPlant` 和 `Mushroom`。通过 `Mushroom` 接口实现 `sleep()` 与 `wakeUp()` 逻辑，确保其符合夜间植物的生理特性（白天睡眠，夜晚工作）。
+* **菱形继承冲突解决**: 针对 C4250 编译警告，显式重写 `getCategory()` 方法，将其归类为 `ATTACKING` 类别，确保在 `Plant` 基类逻辑中具有明确的支配地位。
+* **静态工厂模式**: 利用 `plantAtPosition` 模板方法实现一键种植，并自动处理网格位置偏移。
+
+**战斗机制实现**:
+
+* **短程检测算法**: 重写 `checkAndAttack` 方法。不同于全屏射手，它利用 `DETECTION_RANGE` 常量将检测范围严格限制在前方约 3 个网格（约 300 像素）内。
+* **攻击冷却控制**: 通过 `ATTACK_COOLDOWN` 维持孢子发射频率，确保在 0 成本的前提下，单体输出效率保持在平衡范围内。
+* **孢子子弹生成**: 当僵尸进入短程判定区时，实例化专用的孢子子弹对象并加入游戏容器。
+
+**视觉与状态管理**:
+
+* **睡眠机制**: 在 `sleep()` 状态下，停止 `update` 轮询，并切换至闭眼、灰阶的睡眠动画序列。
+* **觉醒机制**: 在夜间环境或被特定道具唤醒后，通过 `wakeUp()` 恢复 `setAnimation` 定义的常规待机与攻击动画。
+* **资源优化**: 采用 `INITIAL_PIC_RECT` 和 `OBJECT_SIZE` 进行精确的纹理切片，减少运行时的内存开销。
+---
+##### 3.11 SpikeWeed (地刺) (已完成 ✅)
+
+**职责**: 辅助攻击型植物，种植在地面上对经过的僵尸造成持续伤害，且无法被普通僵尸啃食。它是应对车辆类僵尸（如冰车）的特效手段。
+
+**核心实现细节**:
+SpikeWeed 采用了**地面判定逻辑**与**接触式伤害机制**。其核心特点是免疫啃食伤害，但会因抵御车辆碾压而损毁。
+
+**接触伤害与攻击逻辑**:
+
+* **范围伤害判定**: 重写 `checkAndAttack` 方法。不同于射击类植物生成子弹，它直接遍历 `allZombiesInRow[plantRow]`，对处于自身碰撞箱（Bounding Box）内的所有僵尸定期调用 `takeDamage()`。
+* **群体攻击属性**: 由于没有子弹实体，其伤害逻辑对重叠在同一网格内的所有僵尸同时生效，具有极高的群体杀伤效率。
+* **攻击间隔控制**: 使用 `cooldown_interval` 变量控制伤害触发频率，确保逻辑开销与数值平衡。
+
+**特性与升级接口**:
+
+* **非啃食属性**: 通过重写 `isSpike()` 返回 `true`，配合僵尸类的 AI 逻辑，使普通僵尸在经过时不会停下啃食，而是持续受损。
+* **车辆防御逻辑**: 在 `update` 中检测特殊僵尸类（如 `Zomboni`）。当检测到车辆碾压时，地刺会直接摧毁车辆，并随后调用自身的销毁逻辑。
+* **升级路径定义**: 实现 `canBeUpgradedTo` 接口，允许在其上方覆盖种植高级形态 `SpikeRock`（地刺王）。
+
+**渲染与部署**:
+
+* **低位渲染**: 在 `init` 阶段设置较低的 `Z-Order`（Enemy Layer 以下），确保视觉上贴合地面。
+* **动画表现**: `setAnimation` 加载地刺不断伸缩、穿刺的循环序列帧，为玩家提供清晰的实时伤害反馈。
+* **网格对齐**: 利用静态工厂 `plantAtPosition` 确保植物中心与瓦片地图网格精确重合。
+---
+##### 3.12 TwinSunflower (双子向日葵) (已完成 ✅)
+
+**职责**: 高级生产型植物，作为向日葵的升级形态，在单次生产周期内产出双倍阳光，是后期高耗能防线（如机枪豌豆阵列）的经济核心。
+
+**核心实现细节**:
+TwinSunflower 采用了**多重继承**架构，结合了生产逻辑与升级植物的特殊种植规则。
+
+**升级逻辑与架构设计**:
+
+* **多重继承**: 同时继承自 `SunProducingPlant`（获取生产能力）和 `UpgradedPlant`（获取升级逻辑）。
+* **菱形继承优化**: 通过重写 `getCategory()` 并显式返回 `PlantCategory::SUN_PRODUCING`，解决了 C4250 继承支配权警告，确保 `GameWorld` 能将其正确识别为生产类植物。
+* **种植限制**: 继承自 `UpgradedPlant` 意味着它不能直接种在草地上，必须通过 `GameWorld` 判定种植在已有的 `Sunflower` 之上。
+
+**阳光产出机制**:
+
+* **产出加倍**: 重写 `produceSun` 接口。当 `SUN_PRODUCTION_INTERVAL` 计时器归零时，单次调用会向容器中推入两个 `Sun` 对象，实现 50 点阳光的高效产出。
+* **生产频率**: 拥有独立的生产间隔常量，通常设定为平衡游戏节奏的 24 秒，与普通向日葵保持步调一致但产值翻倍。
+* **状态维护**: 利用 `update` 方法驱动内部生产计时器，并在触发生产时播放发光动画（通过 `setAnimation` 定义）。
+
+**视觉表现与状态**:
+
+* **专属序列帧**: 通过 `setAnimation` 加载双头向日葵特有的同步摇摆动画，视觉上具有极高的辨识度。
+* **不可再升级**: 重写 `canBeUpgradedTo` 始终返回 `false`，将其定义为该生产线的最终形态。
+---
+##### 3.13 GatlingPea (机枪豌豆) (已完成 ✅)
+
+**职责**: 顶级攻击型升级植物，作为双发射手的进化形态，能够在单次攻击周期内连续发射四颗豌豆子弹。它是防线后方的终极火力点，具备极高的单体与群体压制能力。
+
+**核心实现细节**:
+GatlingPea 采用了典型的**多重继承**架构，结合了复杂的战斗逻辑与升级植物的特有种植规则。
+
+**继承关系与逻辑适配**:
+
+* **多重继承接口**: 同时继承自 `AttackingPlant`（获取战斗行为）和 `UpgradedPlant`（获取升级属性）。
+* **菱形继承优化**: 显式重写 `getCategory()` 并返回 `PlantCategory::ATTACKING`，解决 C4250 支配权警告，确保 `GameWorld` 将其正确识别为攻击类植物。
+* **种植前置条件**: 逻辑上通过 `UpgradedPlant` 接口限定其无法直接部署，必须通过 `GameWorld` 检测并种植在已有的 `Repeater`（双发射手）之上。
+
+**火力输出机制**:
+
+* **四连发逻辑**: 重写 `checkAndAttack` 方法。当检测到当前行有僵尸进入射程时，在单次攻击判定内向 `std::vector<Bullet*>` 压入四颗豌豆子弹。
+* **攻速与平衡**: 虽然每次发射四颗子弹，但其攻击冷却时间受 `ATTACK_RANGE` 相关的内部计时器控制，通过高瞬时伤害和高火力密度平衡高昂的阳光成本。
+* **子弹分发**: 生成的四颗子弹会依次由 `GameWorld` 接收并添加到对应的子弹管理容器中。
+
+**视觉与状态管理**:
+
+* **专属序列帧**: 通过 `setAnimation` 加载机枪豌豆特有的戴头盔连发射击动画，提供极强的打击感反馈。
+* **进化终点**: `canBeUpgradedTo` 始终返回 `false`，将其定义为豌豆射手系列的最终进化形态。
+* **网格对齐**: 利用静态工厂 `plantAtPosition` 确保其完全覆盖基础植物 `Repeater` 的坐标点。
+---
+##### 3.14 SpikeRock (地刺王) (已完成 ✅)
+
+**职责**: 顶级地面防御型植物，是地刺的进化形态。它拥有更高的伤害效率，并且能够多次抵御车辆类僵尸（如冰车）或巨人僵尸的碾压打击而不立即消失。
+
+**核心实现细节**:
+SpikeRock 通过**状态机切换**与**多重继承**实现了复杂的损耗机制。不同于普通植物的血量逻辑，它通过外观状态来体现其抵御大型伤害的剩余次数。
+
+**状态管理与战损机制**:
+
+* **SpikeRockState 状态机**: 定义了 `COMPLETE`（完整）、`DAMAGED`（受损）、`BROKEN`（严重破损）三个阶段。
+* **阶段性损耗**: 继承自 `AttackingPlant` 的血量管理被重新定义为“抵御次数”。当遭遇 `Zomboni`（冰车）碾压时，不会立即死亡，而是扣除特定比例生命值并由 `update` 驱动状态切换。
+* **外观动态更新**: 根据 `current_state`，从 `IMAGE_FILENAME_FIRST` 切换至 `THIRD`。通过 `setAnimation` 实时更新对应的受损序列帧动画。
+
+**战斗与升级逻辑**:
+
+* **接触式群体攻击**: 重写 `checkAndAttack`，保持 `isSpike()` 返回 `true`。逻辑中遍历当前行僵尸，在 `cooldown_interval` 间隔内对范围内所有目标造成远高于普通地刺的接触伤害。
+* **升级安装要求**: 继承自 `UpgradedPlant`，其 `plantAtPosition` 逻辑必须检测下方是否存在基础植物 `SpikeWeed`。
+* **支配权处理**: 显式重写 `getCategory()` 为 `ATTACKING`，并设置 `canBeUpgradedTo` 返回 `false`，标记其为该植物线的最终进化形态。
+
+**性能表现**:
+
+* **低位层级控制**: 延续地刺类植物的渲染特性，保持在僵尸层级下方（Enemy Layer），通过序列帧表现尖刺持续刺击的视觉效果。
 
 #### 4. 具体僵尸实现方法
 
@@ -652,9 +800,9 @@ Repeater是一个典型的继承扩展案例，它通过继承PeaShooter类，�
 
 **核心实现细节**:
 - 继承自`Zombie`基类，重写部分行为
-- 生命值提升至普通僵尸的2.5倍（500点）
+- 额外拥有1000点血量的铁桶，受到攻击时先减少铁桶的血量
 - 添加金属碰撞音效，增强游戏反馈
-- 实现头盔掉落机制，头盔被破坏后变为普通僵尸
+- 头盔被破坏后变为普通僵尸
 
 
 ##### 4.3 PoleVaulter (撑杆僵尸) (已完成 ✅)
@@ -662,36 +810,19 @@ Repeater是一个典型的继承扩展案例，它通过继承PeaShooter类，�
 
 **核心实现细节**:
 - 继承自`Zombie`基类，扩展跳跃行为
-- 采用状态机管理跳跃流程，包括助跑、跳跃和落地
+- 采用状态机管理跳跃流程，包括奔跑、跳跃和落地
 - 实现碰撞检测，检测前方植物触发跳跃
 - 跳跃后失去撑杆，变为普通移动状态
 
 
 ##### 4.4 FlagZombie (旗帜僵尸) (已完成 ✅)
-**职责**: 波次先锋僵尸，携带旗帜标识新一波僵尸的开始，移动速度略快于普通僵尸，是游戏波次系统的视觉指示器
+**职责**: 波次先锋僵尸，携带旗帜标识新一波僵尸的开始，是游戏波次系统的视觉指示器
 
 **核心实现细节**:
-FlagZombie是一个典型的装饰模式应用案例，它在不修改NormalZombie核心功能的基础上，通过继承和扩展添加了旗帜展示和特殊移动特性，成为了波次系统的重要组成部分。
-
-**波次指示器设计**:
-- 继承自`NormalZombie`类，完全复用普通僵尸的所有核心功能
-- 在游戏设计中，旗帜僵尸总是作为每一波僵尸的第一个出现，通过视觉反馈告诉玩家新的挑战即将开始
-
-**特殊移动特性**:
-- 实现了`MOVEMENT_SPEED_BONUS`常量（1.1倍速），使旗帜僵尸比普通僵尸快10%
-- 重写`updateMoving()`方法，在保持原有移动逻辑不变的基础上，增加速度加成
-- 这种速度差异不仅增加了游戏的紧迫感，也让旗帜僵尸更容易被玩家识别
-
-**旗帜动画系统**:
-- 独立的旗帜精灵组件`flag`，与僵尸主体分离，便于单独控制动画
-- 实现了`flag_swing_timer`计时器和`FLAG_SWING_SPEED`常量（2秒/周期）
-- 在`updateMoving()`方法中通过正弦函数计算旗帜的摆动角度，实现自然流畅的摆动效果
-- 旗帜的视觉设计与当前波次主题相匹配，增强了游戏的视觉表现力
-
-**设计意图与用户体验**:
-- 作为波次开始的明确信号，减少玩家的困惑，提升游戏的可预测性
-- 通过速度差异和特殊视觉标识，使旗帜僵尸在群体中脱颖而出，便于玩家优先处理
-- 额外的金币奖励机制，鼓励玩家积极应对新一波僵尸的到来
+- 继承自`Zombie`基类，实现基础僵尸行为
+- 采用状态机管理移动、进食和死亡状态
+- 使用动画系统实现流畅的状态切换
+- 实现基础的攻击机制，每0.5秒对植物造成10点伤害
 
 
 ##### 4.5 Gargantuar (巨人僵尸) (已完成 ✅)
@@ -703,41 +834,38 @@ Gargantuar作为游戏中的终极威胁之一，其设计遵循了"高风险高
 **核心属性与平衡性设计**:
 - 继承自`Zombie`基类，但拥有远超出普通僵尸的基础属性
 - 生命值高达3000点，是普通僵尸的10倍以上，需要玩家投入大量火力
-- 移动速度较慢（约普通僵尸的70%），给予玩家反应和准备时间
-- 攻击间隔较长（2秒），但单次伤害极高（150点），可直接摧毁大多数植物
+- 攻击间隔较长，但单次伤害极高，可直接摧毁大多数植物
+- 击杀奖励最高，提供100%的掉率加成
 
-**多层次攻击机制**:
-
-**普通攻击系统**:
-- 重写`updateEating()`方法，实现每2秒造成150点伤害的强力攻击
+**攻击系统**:
+- 重写`updateEating()`方法，实现每2.64秒造成1000点伤害的强力攻击
 - 攻击动画与伤害计算分离，确保视觉反馈与游戏逻辑的一致性
 - 可直接摧毁植物（包括坚果墙等防御型植物），需要玩家采用特殊策略应对
 
-**砸地攻击机制**:
-- 独立的`performGroundSlam()`方法实现范围攻击逻辑
-- 通过`ground_slam_timer`和`ground_slam_cooldown`管理攻击周期
-- 3x3范围伤害（120像素半径），对范围内所有植物造成150点伤害
-- 攻击前有明显的动画提示，给予玩家规避和防御的机会
-- 冷却时间长达15秒，确保攻击的稀缺性和战略性
-
-**死亡机制与小鬼僵尸系统**:
-- 重写`onDeath()`方法，实现死亡时抛出小鬼僵尸的独特机制
+**小鬼僵尸系统**:
+- 重写`update()`方法，实现血量少于生命值一半时抛出小鬼僵尸的独特机制
 - `throwImp()`方法负责创建和初始化小鬼僵尸
 - 小鬼僵尸具有较高的移动速度和攻击能力，延续了Gargantuar的威胁
-- 这种"死后继续战斗"的机制增加了Gargantuar的战术价值和挑战性
 
 **状态管理与视觉反馈**:
 - 实现了完整的状态机，包括移动、进食、砸地攻击和死亡状态
 - 不同状态对应不同的动画效果，提供清晰的视觉反馈
-- 受伤时的特殊动画和音效，让玩家能够直观地了解Gargantuar的状态
 - 体积巨大（约普通僵尸的2.5倍），在群体中极具辨识度
 
-**战略意义与游戏体验**:
-- 作为游戏中的" boss 级"敌人，通常在波次末尾出现，考验玩家的资源积累和防御策略
-- 迫使玩家采用多种防御手段（如冰冻、减速、群体攻击等）的组合
-- 其出现会改变游戏节奏，增加紧张感和刺激感
-- 提供极高的击杀奖励，包括大量阳光和金币
 
+##### 4.6 Zomboni (冰车僵尸) (已完成 ✅)
+**职责**: 特殊高强度僵尸，生命值较高、伤害大，作为游戏的"精英怪"角色，提供高挑战性的游戏体验
+
+**核心属性与平衡性设计**:
+- 继承自`Zombie`基类，但拥有较高的基础属性
+- 攻击伤害极高，可以直接碾压路过的植物（除地刺）
+- 地刺可以与冰车僵尸同归于尽，钢地刺则会在秒杀冰车僵尸的同时失去一根角
+- 在身后经过的路径铺冰，冰面上无法种植任何植物，需要等待30秒冰面会自动消融，火爆辣椒可以直接消掉一整行的冰面
+
+**核心实现细节**:
+- 继承自`Zombie`基类，实现基础僵尸行为
+- 采用状态机管理移动和特殊死亡（爆炸）状态
+- 重写`update()`方法，每移动一段距离铺冰,同时对目标植物瞬间造成巨量伤害
 
 ## C++特性使用详解
 
@@ -773,135 +901,95 @@ if (sunflower) {
 }
 ```
 
-### 2. SeedPacket工厂模式与配置表
+### 2. SeedPacket 工厂模式与配置表驱动设计
 
-`SeedPacket`类是本项目中工厂模式和数据驱动设计的典型代表，通过静态配置表和工厂函数实现了植物的动态创建和集中管理。
+`SeedPacket` 类是本项目中**工厂模式 (Factory Pattern)** 和**数据驱动 (Data-Driven)** 设计的核心实现。它通过将植物的静态属性与实例化逻辑解耦，实现了植物系统的动态创建和集中化管理。
 
 #### 2.1 核心设计架构
 
-**配置表与工厂函数结合**:
+**模板工厂与内部实现类**:
+不同于传统的繁琐继承，`SeedPacket` 采用了**模板化工厂函数**结合**局部内部类 (Local Class)** 的设计，实现了极其灵活的类型绑定。
+
 ```cpp
-class SeedPacket : public cocos2d::Sprite {
-public:
-    // 配置表类型定义 - 工厂函数类型，返回Plant指针
-    typedef std::function<Plant*()> PlantFactory;
-    
-    // 植物配置结构体，包含植物的所有静态属性
-    struct PlantConfig {
-        PlantName name;          // 植物名称枚举
-        int cost;                // 阳光成本
-        float rechargeTime;      // 冷却时间（秒）
-        PlantFactory factory;    // 工厂函数，用于创建植物实例
-        std::string spriteFile;  // 种子包图片路径
+template<typename PlantType>
+static SeedPacket* create(const std::string& imageFile, float cooldownTime, int sunCost, PlantName plantName)
+{
+    // 内部实现类：在编译期动态绑定具体的植物类 (PlantType)
+    class SeedPacketImpl : public SeedPacket {
+    public:
+        // 实现具体的种植逻辑：直接调用目标植物类的静态种植接口
+        virtual Plant* plantAt(const cocos2d::Vec2& globalPos) override {
+            return PlantType::plantAtPosition(globalPos);
+        }
+        // 实现预览逻辑：创建一个半透明的植物副本用于拖拽提示
+        virtual Plant* createPreviewPlant() override {
+            auto preview = PlantType::create();
+            if (preview) preview->setOpacity(128);
+            return preview;
+        }
     };
-    
-    // 静态配置表 - 所有植物的配置信息集中存储
-    static const std::unordered_map<PlantName, PlantConfig> CONFIG_TABLE;
-    
-    // 种子包创建方法
-    static SeedPacket* create(PlantName plantName);
-    
-    // 获取当前种子包对应的植物配置
-    const PlantConfig& getPlantConfig() const { return config; }
-    
-    // 使用工厂函数创建对应植物实例
-    Plant* createPlant() const { return config.factory(); }
-    
-private:
-    PlantConfig config;        // 当前种子包对应的植物配置
-    float rechargeTimer = 0.0f; // 冷却计时器
-    bool isReady = true;       // 种子包是否就绪
-};
+    // ... 实例化并返回 packet 指针 ...
+}
+
 ```
 
-#### 2.2 配置表初始化与使用
+#### 2.2 配置表驱动实现
 
-**配置表初始化**:
+**静态配置表 (CONFIG_TABLE)**:
+系统通过一个全局的 `std::map` 将 `PlantName` 枚举与对应的元数据（图片、冷却、消耗、工厂函数）进行映射。
+
 ```cpp
-const std::unordered_map<PlantName, SeedPacket::PlantConfig> SeedPacket::CONFIG_TABLE = {
-    {
-        PlantName::SUNFLOWER,
-        {
-            PlantName::SUNFLOWER,
-            50,                           // 50阳光
-            7.5f,                         // 7.5秒冷却
-            []() -> Plant* { return Sunflower::create(); }, // 工厂lambda
-            "sunflower_seed.png"          // 种子包图片
-        }
-    },
-    {
-        PlantName::PEASHOOTER,
-        {
-            PlantName::PEASHOOTER,
-            100,                          // 100阳光
-            7.5f,                         // 7.5秒冷却
-            []() -> Plant* { return PeaShooter::create(); }, // 工厂lambda
-            "peashooter_seed.png"         // 种子包图片
-        }
-    },
-    {
-        PlantName::CHERRY_BOMB,
-        {
-            PlantName::CHERRY_BOMB,
-            150,                          // 150阳光
-            30.0f,                        // 30秒冷却
-            []() -> Plant* { return CherryBomb::create(); }, // 工厂lambda
-            "cherry_bomb_seed.png"        // 种子包图片
-        }
-    },
+const std::map<PlantName, PlantConfig> SeedPacket::CONFIG_TABLE = {
+    {PlantName::SUNFLOWER,  {"seedpacket_sunflower.png", 7.5f, 50,  
+        [](const std::string& i, float c, int s, PlantName n) { 
+            return SeedPacket::create<Sunflower>(i, c, s, n); 
+        }}},
+    {PlantName::PEASHOOTER, {"seedpacket_peashooter.png", 7.5f, 100, 
+        [](const std::string& i, float c, int s, PlantName n) { 
+            return SeedPacket::create<PeaShooter>(i, c, s, n); 
+        }}},
     // 更多植物配置...
 };
+
 ```
-
-
 
 #### 2.3 技术优势与设计思想
 
-**1. 集中化配置管理**
-- 将所有植物的属性（阳光成本、冷却时间、工厂方法等）集中存储在一个配置表中
-- 便于游戏平衡性调整，只需修改配置表中的数值即可，无需修改核心代码
-- 提供了统一的配置接口，降低了代码的耦合度
+**1. 高度抽象的工厂解耦**
 
-**2. 工厂模式的灵活应用**
-- 使用C++11的lambda表达式作为工厂函数，实现了简洁高效的植物创建
-- 工厂函数封装了植物创建的细节，包括初始化、内存管理等
-- 支持任何Plant子类的创建，只要提供对应的工厂函数即可
+* 通过 `SeedPacketFactory` 回调函数，`SeedPacket` 基类完全不需要知道具体子类（如 `Sunflower`）的存在。
+* **模板化种植接口**：利用 `PlantType::plantAtPosition` 实现了统一的种植入口，极大地简化了 `GameWorld` 调用逻辑。
 
-**3. 类型安全与枚举使用**
-- 使用`PlantName`枚举类型作为配置表的键，避免了字符串类型的错误
-- 编译器可以检查枚举类型的合法性，提高了代码的可靠性
-- 便于代码自动补全和重构，提升开发效率
+**2. 状态机驱动的视觉反馈**
 
-**4. 数据驱动设计**
-- 植物的行为和属性主要由配置数据驱动，而不是硬编码
-- 支持运行时加载配置文件，实现游戏内容的动态更新
-- 便于测试和调试，可以快速切换不同的配置组合
+* **冷却管理**：内置 `accumulated_time` 与 `cooldown_time` 逻辑。在 `update` 循环中，通过 `updateCooldownEffect()` 实现从深色（(30,30,30)）到半亮（(128,128,128)）的线性亮度过渡。
+* **资源判定**：实时轮询 `GameWorld->getSunCount()`。若阳光不足，种子包会自动变灰，提供了直观的交互反馈。
 
-**5. 封装与接口设计**
-- `SeedPacket`类封装了种子包的所有功能，包括冷却管理、植物创建等
-- 提供了简洁统一的接口，如`createPlant()`、`isReady()`等
-- 隐藏了植物创建的复杂细节，降低了使用难度
+**3. 开闭原则 (Open-Closed Principle) 的极致体现**
 
-#### 2.4 扩展性与维护性
+* 当需要添加新植物（如 `PotatoMine`）时，**无需修改 `SeedPacket` 的核心代码**。
+* 只需在 `PlantName` 枚举中添加新成员，并在 `CONFIG_TABLE` 中新增一行 Lambda 表达式映射即可。
 
-`SeedPacket`的设计使得添加新植物变得非常简单，只需三个步骤：
+#### 2.4 核心生命周期与交互流程
 
-1. **创建植物类**：继承自`Plant`基类，实现相应的功能
-2. **添加配置记录**：在`CONFIG_TABLE`中添加一条新的配置记录，包含植物的所有属性和工厂函数
-3. **初始化种子包**：在游戏初始化阶段创建对应的种子包实例
+* **初始化 (init)**：根据配置表中的路径加载纹理，避免了硬编码资源路径带来的维护困难。
+* **冷却控制 (update)**：
+* `is_on_cooldown` 为真时，执行冷却计时与颜色线性插值。
+* 冷却结束后，种子包恢复为可点击状态（或受阳光储备限制的半亮状态）。
 
-这种设计完全符合"开闭原则"，对扩展开放，对修改关闭，极大地提高了代码的可维护性和扩展性。
 
-#### 2.5 与其他系统的交互
+* **工厂调用**：外部通过 `createFromConfig(name)` 即可获得一个全功能的种子包实例，该实例内置了所有必要的种植与预览方法。
 
-`SeedPacket`系统与游戏的其他模块紧密协作：
+#### 2.5 数据定义结构 (PlantConfig)
 
-- **UI系统**：种子包的显示、点击事件处理、冷却状态更新
-- **资源系统**：根据配置表中的图片路径加载种子包资源
-- **游戏世界**：植物实例的创建、位置设置和生命周期管理
-- **资源管理**：阳光的消耗和冷却时间的管理
+系统通过结构体统一了所有植物的选卡属性：
 
-通过这种模块化的设计，各系统之间保持了良好的独立性和协作性，便于单独维护和扩展。
+* `packetImage`: UI 贴图路径
+* `cooldown`: 技能恢复时长
+* `sunCost`: 部署所需阳光
+* `factory`: 绑定了具体植物类模板的实例化函数
+
+---
 
 ### 3. 静态常量与类常量
 
@@ -914,18 +1002,14 @@ const std::unordered_map<PlantName, SeedPacket::PlantConfig> SeedPacket::CONFIG_
 
 **使用示例**:
 ```cpp
-// 植物类中的静态常量
-class Plant : public GameObject {
-protected:
-    static const float ATTACK_RANGE;      // 植物攻击范围（默认为3格）
-    static const float PLANT_CELL_SIZE;   // 植物占用的网格大小
-};
-
 // 向日葵类中的静态常量
 class Sunflower : public Plant, public SunProducingPlant {
-protected:
-    static const float SUN_PRODUCE_INTERVAL; // 8.0f秒
-    static const int SUN_VALUE; // 25阳光
+private:
+    static const std::string IMAGE_FILENAME;
+    static const cocos2d::Rect INITIAL_PIC_RECT;
+    static const cocos2d::Size OBJECT_SIZE;
+    static const float SUN_PRODUCTION_INTERVAL;  // Time between sun productions (24 seconds)
+
 };
 ```
 
@@ -1232,150 +1316,6 @@ public:
 };
 ```
 
-## 角色类层次结构
-
-### 1. 植物类层次结构
-
-```mermaid
-classDiagram
-    class Plant {}
-    class SunProducingPlant {}
-    class AttackingPlant {}
-    class BombPlant {}
-    class Sunflower {}
-    class Sunshroom {}
-    class PeaShooter {}
-    class Repeater {}
-    class CherryBomb {}
-    class Jalapeno {}
-    class PotatoMine {}
-    class SpikeWeed {}
-
-    Plant <|-- SunProducingPlant
-    Plant <|-- AttackingPlant
-    Plant <|-- BombPlant
-    SunProducingPlant <|-- Sunflower
-    SunProducingPlant <|-- Sunshroom
-    AttackingPlant <|-- PeaShooter
-    AttackingPlant <|-- Repeater
-    BombPlant <|-- CherryBomb
-    BombPlant <|-- Jalapeno
-    BombPlant <|-- PotatoMine
-    BombPlant <|-- SpikeWeed
-
-    Plant : +getCategory()
-    Plant : +takeDamage(damage)
-    Plant : +isDead()
-    
-    SunProducingPlant : +produceSun()
-    AttackingPlant : +checkAndAttack()
-    BombPlant : +explode()
-    
-    Sunflower : +produceSun()
-    Sunshroom : +produceSun()
-    PeaShooter : +checkAndAttack()
-    Repeater : +checkAndAttack()
-    CherryBomb : +explode()
-    Jalapeno : +explode()
-    PotatoMine : +explode()
-    SpikeWeed : +explode()
-```
-
-### 2. 僵尸类层次结构
-
-```mermaid
-classDiagram
-    class Zombie {
-        +current_state: int
-        +is_dying: bool
-        +is_dead: bool
-        +current_health: int
-        +is_eating: bool
-        +target_plant: Plant*
-        +current_speed: float
-        +MOVE_SPEED: float
-        +ATTACK_DAMAGE: float
-        +ATTACK_INTERVAL: float
-        +MAX_HEALTH: int
-        +init()
-        +update(delta: float)
-        +updateEating(delta: float)
-        +updateMoving(delta: float)
-        +setState(newState: int)
-        +setAnimationForState()
-        +takeDamage(damage: float)
-        +encounterPlant(plants: vector<Plant*>)
-        +isDead()
-        +startEating(plant: Plant*)
-        +onPlantDied()
-    }
-    class NormalZombie {
-        +init()
-        +setAnimationForState()
-        +updateEating(delta: float)
-        +updateMoving(delta: float)
-    }
-    class BucketHeadZombie {
-        +helmet_intact: bool
-        +helmet_health: int
-        +BASE_HEALTH: int
-        +init()
-        +takeDamage(damage: float)
-        +playsMetalHitSound()
-        +getCoinDropBonus()
-        +setAnimationForState()
-        +updateEating(delta: float)
-        +updateMoving(delta: float)
-    }
-    class PoleVaulter {
-        +has_vault: bool
-        +is_vaulting: bool
-        +vault_timer: float
-        +VAULT_DISTANCE: float
-        +VAULT_DURATION: float
-        +VAULT_SPEED_BOOST: float
-        +init()
-        +encounterPlant(plants: vector<Plant*>)
-        +setAnimationForState()
-        +updateMoving(delta: float)
-        +updateEating(delta: float)
-        +startVaulting()
-        +updateVaulting(delta: float)
-    }
-    class FlagZombie {
-        +init()
-        +setAnimationForState()
-        +updateEating(delta: float)
-        +updateMoving(delta: float)
-    }
-    class Gargantuar {
-        +init()
-        +setAnimationForState()
-        +updateEating(delta: float)
-        +updateMoving(delta: float)
-        +takeDamage(damage: float)
-    }
-    class Zomboni {
-        +init()
-        +setAnimationForState()
-        +updateMoving(delta: float)
-        +isZomboni()
-    }
-    class Imp {
-        +init()
-        +setAnimationForState()
-        +updateEating(delta: float)
-        +updateMoving(delta: float)
-    }
-
-    Zombie <|-- NormalZombie
-    Zombie <|-- BucketHeadZombie
-    Zombie <|-- PoleVaulter
-    NormalZombie <|-- FlagZombie
-    NormalZombie <|-- Imp
-    BucketHeadZombie <|-- Gargantuar
-    PoleVaulter <|-- Zomboni
-```
 
 ## 系统交互流程
 
@@ -1386,7 +1326,7 @@ flowchart TD
     subgraph 玩家交互
         A[玩家点击种子包] --> B{检查阳光是否充足?}
         B -->|是| C[进入种植模式，显示植物预览]
-        B -->|否| D[显示红色闪烁提示]
+        B -->|否| D[声音提示]
         C --> E[玩家选择种植位置]
     end
     
@@ -1435,27 +1375,43 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    subgraph 时间控制
-        A[游戏计时] --> B{到达波次时间点?}
-        B -->|是| C[计算当前波次强度]
-        B -->|否| A
+    subgraph 时机判定
+        A[游戏计时 update] --> B{到达下一次波次时间?}
+        B -->|是| C{是否为最后一波?}
+        C -->|否| D[spawnTimedBatch]
+        C -->|是| E[spawnFinalWave]
     end
-    
-    subgraph 波次配置
-        C --> D[根据波次强度确定僵尸种类]
-        D --> E[计算各类僵尸数量]
-        E --> F[设置僵尸生成间隔]
+
+    subgraph 逻辑计算 [波次参数计算]
+        D --> D1[根据 normalizedTime 划分阶段 p0/p1/p2]
+        D1 --> D2[确定各币种僵尸基础概率与数量范围]
+        D2 --> D3[夜间因素调整: applyNightFactor 数量减扣]
+        D3 --> D4[夜间因素调整: 概率系数 * 0.8f]
+        D4 --> D5[随机数判定: 生成本波各类僵尸总数]
     end
-    
-    subgraph 僵尸生成
-        F --> G[创建僵尸实例]
-        G --> H[随机分配到指定行]
-        H --> I[将僵尸加入游戏世界]
-        I --> J{波次生成完成?}
-        J -->|是| K[记录波次完成时间]
-        J -->|否| G
-        K --> A
+
+    subgraph 子批次分摊 [Sub-Batch 分发逻辑]
+        D5 --> F[计算 SubBatches 数量]
+        F --> G[takePortion 算法: 平摊剩余僵尸到子批次]
+        G --> H[调用 spawnSubBatch]
+        H --> I[使用 DelayTime 配合 Sequence 延时生成]
     end
+
+    subgraph 实体生成 [僵尸实例化]
+        I --> J[创建具体僵尸类: Normal/Pole/Bucket/Zomboni/Gargantuar]
+        J --> K[随机分配 MAX_ROW 行坐标]
+        K --> L[addChild 并加入 zombies_in_row 容器]
+    end
+
+    subgraph 最终波特殊处理
+        E --> E1[显示 LargeWave 旗帜并淡入淡出]
+        E1 --> E2[播放 Wave 音效]
+        E2 --> E3[强制生成 FlagZombie 固定位置]
+        E3 --> E4[按预设延迟序列分发多个 SubBatches]
+        E4 --> E5[标记 final_wave_spawning_done = true]
+    end
+
+    I -.->|更新下次波次时间| A
 ```
 
 ## 实现状态与路线图
