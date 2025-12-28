@@ -40,14 +40,10 @@ public:
      */
     static NormalZombie* createZombie();
 
-    // Showcase: 默认展示（静态图片），用于选卡场景右侧展示
-    // 子类可按需覆盖，pos为建议初始位置（调用方也可重设）
-    cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos);
 
+    cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos);    
 
-    
-
-protected:
+private:
 
     // Virtual destructor
     virtual ~NormalZombie();
@@ -71,6 +67,6 @@ protected:
 
   
     // Animation actions
-    cocos2d::RepeatForever* _walkAction;
-    cocos2d::RepeatForever* _eatAction;
+    cocos2d::RepeatForever* walk_action;
+    cocos2d::RepeatForever* eat_action;
 };

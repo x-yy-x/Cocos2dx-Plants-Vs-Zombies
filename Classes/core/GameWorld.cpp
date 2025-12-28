@@ -341,7 +341,7 @@ bool GameWorld::init()
     bool debug = true;
     if (debug) {
         {
-            auto debugZombie = Gargantuar::createZombie();
+            auto debugZombie =Zomboni::createZombie();
             if (debugZombie)
             {
                 int row = 2;
@@ -992,7 +992,7 @@ void GameWorld::removeDeadZombies()
             Zombie* zombie = *it;
             
             // CRITICAL FIX: Only remove truly dead zombies (death animation finished)
-            // isDead() returns true only when _isDead == true && _isDying == false
+            // isDead() returns true only when _isDead == true && is_dying == false
             if (zombie && zombie->isDead())
             {
                 spawnCoinAfterZombieDeath(zombie);

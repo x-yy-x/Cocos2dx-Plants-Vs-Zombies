@@ -44,13 +44,6 @@ public:
     // 选卡展示静态图
     cocos2d::Sprite* createShowcaseSprite(const cocos2d::Vec2& pos);
 
-    /**
-     * @brief Update function called every frame for movement, attack, death, etc.
-     * @param delta Time delta
-     */
-    //virtual void update(float delta) override;
-
-
 
     /**
      * @brief Check and handle plant encounters
@@ -81,7 +74,6 @@ protected:
      * @brief Initialize eating animation
      */
     void initSmashAnimation();
-
 
     void initThrowAnimation();
 

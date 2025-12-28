@@ -61,7 +61,7 @@ void SpikeWeed::update(float delta)
 // ------------------------------------------------------------------------
 std::vector<Bullet*> SpikeWeed::checkAndAttack(std::vector<Zombie*> allZombiesInRow[MAX_ROW], int plantRow)
 {
-    std::vector<Bullet*> empty; 
+    std::vector<Bullet*> empty;
 
     accumulated_time += Director::getInstance()->getDeltaTime();
 
@@ -69,7 +69,6 @@ std::vector<Bullet*> SpikeWeed::checkAndAttack(std::vector<Zombie*> allZombiesIn
         return empty;
     accumulated_time = 0.0f;
 
-    
     Rect spikeRect = this->getBoundingBox();
     spikeRect.origin.x += 45;
     spikeRect.size.width -= 90;
@@ -78,7 +77,6 @@ std::vector<Bullet*> SpikeWeed::checkAndAttack(std::vector<Zombie*> allZombiesIn
     {
         if (!zombie || zombie->isDead())
             continue;
-        
         if (spikeRect.intersectsRect(zombie->getBoundingBox()))
         {
             auto z = dynamic_cast<Zomboni*>(zombie);

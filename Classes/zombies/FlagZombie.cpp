@@ -102,7 +102,7 @@ void FlagZombie::setAnimationForState()
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
                 is_dead = true;
-                _isDying = false;
+                is_dying = false;
                 });
             auto sequence = Sequence::create(fadeOut, markDead, nullptr);
             this->runAction(sequence);

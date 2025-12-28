@@ -11,8 +11,8 @@ USING_NS_CC;
 // Destructor
 NormalZombie::~NormalZombie()
 {
-    CC_SAFE_RELEASE(_walkAction);
-    CC_SAFE_RELEASE(_eatAction);
+    CC_SAFE_RELEASE(walk_action);
+    CC_SAFE_RELEASE(eat_action);
     CCLOG("NormalZombie destroyed.");
 }
 
@@ -40,7 +40,7 @@ NormalZombie* NormalZombie::createZombie()
         z->autorelease();
         z->initWalkAnimation();
         z->initEatAnimation();
-        z->runAction(z->_walkAction);
+        z->runAction(z->walk_action);
         return z;
     }
     delete z;
@@ -66,8 +66,8 @@ void NormalZombie::initWalkAnimation()
 {
     auto animation = initAnimate("zombie_walk_spritesheet.png", 125.0f, 173.8f, 5, 10, 46, 0.05f);
     auto animate = Animate::create(animation);
-    this->_walkAction = RepeatForever::create(animate);
-    _walkAction->retain();
+    this->walk_action = RepeatForever::create(animate);
+    walk_action->retain();
 }
 
 // Initialize eating animation
@@ -75,8 +75,8 @@ void NormalZombie::initEatAnimation()
 {
     auto animation = initAnimate("zombie_eat_spritesheet.png", 125.0f, 173.8f, 4, 10, 39, 0.03f);
     auto animate = Animate::create(animation);
-    this->_eatAction = RepeatForever::create(animate);
-    _eatAction->retain();
+    this->eat_action = RepeatForever::create(animate);
+    eat_action->retain();
 }
 
 
@@ -89,12 +89,12 @@ void NormalZombie::setAnimationForState()
         case ZombieState::WALKING:
             CCLOG("Setting WALKING animation.");
             this->stopAllActions();
-            this->runAction(_walkAction);
+            this->runAction(walk_action);
             break;
         case ZombieState::EATING:
             CCLOG("Setting EATING animation.");
             this->stopAllActions();
-            this->runAction(_eatAction);
+            this->runAction(eat_action);
             break;
         case ZombieState::DYING:
         {
@@ -103,7 +103,7 @@ void NormalZombie::setAnimationForState()
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
                 is_dead = true;
-                _isDying = false;
+                is_dying = false;
                 });
             auto sequence = Sequence::create(fadeOut, markDead, nullptr);
             this->runAction(sequence);

@@ -12,21 +12,18 @@
 class Plant;
 
 /**
- * @brief Zombie class, inherits from GameObject.
- * Zombies have different states: walking, eating plants, dying.
- * Zombie can be directly instantiated as a normal zombie.
+ * @brief Imp class, inherits from GameObject.
+ * Imps have different states: walking, eating plants, dying.
+ * Imp can be directly instantiated as a normal zombie.
  */
 class Imp : public Zombie
 {
 public:
-    /**
-     * @brief Zombie state enumeration
-     */
     enum class ZombieState
     {
         DYING,
-        WALKING,      // Walking state
-        EATING,       // Eating plant state
+        WALKING,
+        EATING,
         FLYING
     };
 
@@ -35,26 +32,30 @@ public:
      */
     virtual bool init() override;
 
-    /**
-     * @brief Get coin drop bonus multiplier for this zombie type
-     * @return Coin drop bonus multiplier (1.2f for Imp)
-     */
-    virtual float getCoinDropBonus() const override { return 1.2f; }
-
     // Implement the static create() function
     CREATE_FUNC(Imp);
 
     /**
      * @brief Static factory method to create a zombie with animations
-     * @return Zombie* Created zombie instance
+     * @return Imp* Created zombie instance
      */
     static Imp* createZombie();
 
-    virtual void update(float delta) override;
+    virtual void updateMoving(float delta) override;
 
+    /**
+     * @brief Check and handle plant encounters
+     * @param plants Vector of all plants in the scene
+     */
     void encounterPlant(const std::vector<Plant*>& plants) override;
 
-protected:
+    /**
+     * @brief Get coin drop bonus multiplier for this zombie type
+     * @return Coin drop bonus multiplier (1.2f for Imp)
+     */
+    inline virtual float getCoinDropBonus() const override { return 1.2f; }
+
+private:
     // Protected constructor
     Imp();
 
@@ -62,13 +63,10 @@ protected:
     virtual ~Imp();
 
     /**
-     * @brief Initialize walking animation
+     * @brief Initialize animation
      */
     void initWalkAnimation();
 
-    /**
-     * @brief Initialize eating animation
-     */
     void initEatAnimation();
 
     void initFlyAnimation();
@@ -87,12 +85,9 @@ protected:
 
     
     // Animation actions
-    cocos2d::RepeatForever* _walkAction;
-    cocos2d::RepeatForever* _eatAction;
-    cocos2d::Animate* _flyAnimate;
+    cocos2d::RepeatForever* walk_action;
+    cocos2d::RepeatForever* eat_action;
+    cocos2d::Animate* fly_action;
 
-    bool _isFlying;
-    bool _hasBeenThrown;
-
-
+    bool is_flying;
 };

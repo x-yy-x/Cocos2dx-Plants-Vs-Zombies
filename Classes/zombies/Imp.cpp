@@ -6,11 +6,10 @@ USING_NS_CC;
 
 // Protected constructor
 Imp::Imp()
-    : _walkAction(nullptr)
-    , _eatAction(nullptr)
-    , _flyAnimate(nullptr)
-    , _hasBeenThrown(false)
-    , _isFlying(false)
+    : walk_action(nullptr)
+    , eat_action(nullptr)
+    , fly_action(nullptr)
+    , is_flying(false)
 {
     CCLOG("Zombie created.");
 }
@@ -18,9 +17,9 @@ Imp::Imp()
 // Destructor
 Imp::~Imp()
 {
-    CC_SAFE_RELEASE(_walkAction);
-    CC_SAFE_RELEASE(_eatAction);
-    CC_SAFE_RELEASE(_flyAnimate);
+    CC_SAFE_RELEASE(walk_action);
+    CC_SAFE_RELEASE(eat_action);
+    CC_SAFE_RELEASE(fly_action);
     CCLOG("Zombie destroyed.");
 }
 
@@ -53,7 +52,6 @@ Imp* Imp::createZombie()
         z->current_speed = z->MOVE_SPEED;
         z->current_health = 100;
         z->current_state = static_cast<int>(ZombieState::FLYING);
-        //z->runAction(z->_flyAnimate);
         z->setAnimationForState();
         return z;
     }
@@ -66,24 +64,24 @@ void Imp::initWalkAnimation()
 {
     auto animation = initAnimate("imp_walk_spritesheet.png", 100.0f, 138.0f, 3, 5, 12, 0.08f);
     auto animate = Animate::create(animation);
-    this->_walkAction = RepeatForever::create(animate);
-    _walkAction->retain();
+    this->walk_action = RepeatForever::create(animate);
+    walk_action->retain();
 }
 
 // Initialize eating animation
 void Imp::initEatAnimation()
 {
-    auto animation = initAnimate("imp_eat_spritesheet.png", 100.0f, 128.0f, 2, 5, 7, 0.15f);
+    auto animation = initAnimate("imp_eat_spritesheet.png", 100.0f, 138.0f, 2, 5, 7, 0.15f);
     auto animate = Animate::create(animation);
-    this->_eatAction = RepeatForever::create(animate);
-    _eatAction->retain();
+    this->eat_action = RepeatForever::create(animate);
+    eat_action->retain();
 }
 
 void Imp::initFlyAnimation()
 {
     auto animation = initAnimate("imp_fly_spritesheet.png", 145.0f, 200.0f, 4, 5, 23, 0.06f);
-    this->_flyAnimate = Animate::create(animation);
-    _flyAnimate->retain();
+    this->fly_action = Animate::create(animation);
+    fly_action->retain();
 }
 
 
@@ -95,34 +93,29 @@ void Imp::setAnimationForState()
     case ZombieState::WALKING:
         CCLOG("Setting imp WALKING animation.");
         this->stopAllActions();
-        this->runAction(_walkAction);
+        this->runAction(walk_action);
         break;
     case ZombieState::EATING:
         CCLOG("Setting EATING animation.");
         this->stopAllActions();
-        // --- 新增代码 ---
-        this->_isFlying = false;          // 停止飞行逻辑
-        this->current_speed = MOVE_SPEED; // 恢复正常行走速度
+        this->is_eating = false;
+        this->current_speed = MOVE_SPEED;
         // ----------------
-        this->runAction(_eatAction);
+        this->runAction(eat_action);
         break;
     case ZombieState::FLYING:
     {
-        this->_isFlying = true;
+        this->is_flying = true;
         this->stopAllActions();
         this->runAction(Sequence::create(
             CallFunc::create([this]() {
-                this->current_speed = 120.0f; // 飞行速度
+                this->current_speed = 120.0f;
                 }),
-            _flyAnimate,
+            fly_action,
             CallFunc::create([this]() {
-                this->_isFlying = false;     // 落地
+                this->is_flying = false;
                 this->current_speed = MOVE_SPEED;
                 this->setState(static_cast<int>(ZombieState::WALKING));
-
-                // 确保回到行走的基准线上（根据你的网格调整）
-                // 如果之前 update 里减了 Y，这里可以设回固定行高度
-                // 或者：this->setPositionY(original_row_y); 
                 }),
             nullptr));
         break;
@@ -134,7 +127,7 @@ void Imp::setAnimationForState()
         auto fadeOut = FadeOut::create(0.5f);
         auto markDead = CallFunc::create([this]() {
             is_dead = true;
-            _isDying = false;
+            is_dying = false;
             });
         auto sequence = Sequence::create(fadeOut, markDead, nullptr);
         this->runAction(sequence);
@@ -145,76 +138,33 @@ void Imp::setAnimationForState()
     }
 }
 
-void Imp::update(float delta)
+void Imp::updateMoving(float delta)
 {
-    if (is_dead || _isDying)
-    {
-        return;
+    // Only move when not eating
+    float newX = this->getPositionX() - current_speed * delta;
+    this->setPositionX(newX);
+
+    // Only calculate vertical displacement when in flying state
+    if (is_flying) {
+        float newY = this->getPositionY() - 50.0f * delta; // Adjust value as needed
+        this->setPositionY(newY);
     }
-
-    accumulated_time += delta;
-    // If zombie is not eating, continue walking left
-    if (!_isEating)
-    {
-        // 只有不在吃东西时才移动
-        float newX = this->getPositionX() - current_speed * delta;
-        this->setPositionX(newX);
-
-        // 只有明确在飞行状态时才计算纵向位移
-        if (_isFlying) {
-            float newY = this->getPositionY() - 50.0f * delta; // 这里的50可以根据需要调整
-            this->setPositionY(newY);
-        }
-
-        // Check if zombie reached the left edge (game over condition)
-        if (newX < -100)
-        {
-            // Zombie reached the house - game over
-            CCLOG("Zombie reached the house!");
-        }
-    }
-    else
-    {
-        if (!_targetPlant || _targetPlant->isDead()) {
-            onPlantDied();
-            return;
-        }
-        // If eating, deal damage periodically
-        if (accumulated_time >= ATTACK_INTERVAL)
-        {
-            if (_targetPlant && !_targetPlant->isDead())
-            {
-                _targetPlant->takeDamage(ATTACK_DAMAGE);
-                cocos2d::AudioEngine::play2d("zombie_eating.mp3");
-                CCLOG("Zombie deals %f damage to plant", ATTACK_DAMAGE);
-                accumulated_time = 0.0f;
-
-                // Check if plant died
-                if (_targetPlant->isDead())
-                {
-                    cocos2d::AudioEngine::play2d("zombie_gulp.mp3");
-                    onPlantDied();
-                }
-            }
-        }
-    }
-
 }
 
 void Imp::encounterPlant(const std::vector<Plant*>& plants)
 {
-    // 如果正在飞行，或者已经死亡，或者正在吃，直接返回
-    if (_isFlying || _isEating || is_dead || _isDying)
+    // Return if flying, dead, or eating
+    if (is_flying || is_eating || is_dead || is_dying)
     {
         return;
     }
 
-    // 以下是正常的碰撞逻辑
+    // Normal collision detection logic
     for (auto plant : plants)
     {
         if (plant && !plant->isDead())
         {
-            // 这里的判定范围可以根据 Imp 的体型微调
+            // Adjust collision detection based on Imp's size
             Rect zombieRect = this->getBoundingBox();
             if (zombieRect.intersectsRect(plant->getBoundingBox()))
             {

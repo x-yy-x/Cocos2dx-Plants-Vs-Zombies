@@ -126,7 +126,7 @@ void Gargantuar::updateEating(float delta)
     // If eating, deal damage periodically
     if (accumulated_time >= ATTACK_INTERVAL)
     {
-        _targetPlant->takeDamage(ATTACK_DAMAGE);
+        target_plant->takeDamage(ATTACK_DAMAGE);
         cocos2d::AudioEngine::play2d("gargantuar-thump.mp3");
         accumulated_time = 0.0f;
     }
@@ -150,7 +150,7 @@ void Gargantuar::setAnimationForState()
                 _smashAction,
                 MoveBy::create(0, Vec2(20, -55)),
                 CallFunc::create([this]() {
-                    this->_isEating = false;
+                    this->is_eating = false;
                     this->current_speed = MOVE_SPEED;
                     setState(static_cast<int>(ZombieState::WALKING));
                     }),
@@ -187,7 +187,7 @@ void Gargantuar::setAnimationForState()
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
                 is_dead = true;
-                _isDying = false;
+                is_dying = false;
                 });
             auto sequence = Sequence::create(fadeOut, markDead, nullptr);
             this->runAction(sequence);
@@ -201,7 +201,7 @@ void Gargantuar::setAnimationForState()
 // Check and handle plant encounters
 void Gargantuar::encounterPlant(const std::vector<Plant*>& plants)
 {
-    if (_isEating || _isThrowing)
+    if (is_eating || _isThrowing)
         return;
 
     for (auto plant : plants)

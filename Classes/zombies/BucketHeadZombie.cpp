@@ -82,7 +82,7 @@ void BucketHeadZombie::initEatAnimation()
 // Take damage
 void BucketHeadZombie::takeDamage(float damage)
 {
-    if (is_dead || _isDying)
+    if (is_dead || is_dying)
     {
         return;
     }
@@ -93,9 +93,9 @@ void BucketHeadZombie::takeDamage(float damage)
         if (_bucketHealth <= 0) {
             current_health += static_cast<int>(_bucketHealth);
             if (current_health <= 0) {
-                this->_isDying = true;
-                this->_targetPlant = nullptr;
-                this->_isEating = false;
+                this->is_dying = true;
+                this->target_plant = nullptr;
+                this->is_eating = false;
                 setState(static_cast<int>(ZombieState::DYING));
             }
             else
@@ -110,11 +110,11 @@ void BucketHeadZombie::takeDamage(float damage)
             current_health = 0;
 
             // Mark as dying (playing death animation)
-            _isDying = true;
+            is_dying = true;
 
             // CRITICAL: Clear target plant pointer to prevent dangling pointer access
-            _targetPlant = nullptr;
-            _isEating = false;
+            target_plant = nullptr;
+            is_eating = false;
 
             setState(static_cast<int>(ZombieState::DYING));
         }
@@ -144,7 +144,7 @@ void BucketHeadZombie::setAnimationForState()
             auto fadeOut = FadeOut::create(0.5f);
             auto markDead = CallFunc::create([this]() {
                 is_dead = true;
-                _isDying = false;
+                is_dying = false;
                 });
             auto sequence = Sequence::create(fadeOut, markDead, nullptr);
             this->runAction(sequence);
@@ -164,7 +164,7 @@ void BucketHeadZombie::onBucketBroken()
 
     int frameIndex = -1;
     // Maintain current frame index
-    if (_isEating){
+    if (is_eating){
         auto action = dynamic_cast<RepeatForever*>(_eatAction);
         auto animate = dynamic_cast<Animate*>(action->getInnerAction());
         frameIndex = animate->getCurrentFrameIndex();
@@ -176,7 +176,7 @@ void BucketHeadZombie::onBucketBroken()
     }
     stopAllActions();
 
-    if (_isEating) {
+    if (is_eating) {
         _walkAction = createNormalWalkActionFromFrame(1);
         _eatAction = createNormalEatActionFromFrame(frameIndex + 1);
         _walkAction->retain();

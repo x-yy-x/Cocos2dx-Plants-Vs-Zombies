@@ -30,7 +30,6 @@ Zomboni::Zomboni()
     , _specialDieAction(nullptr)
     , _iceAccumulate(0.0f)
     , _iceIndex(0)
-    , _hasBeenAttackedBySpike(false)
 {
     CCLOG("Zombie created.");
 }
@@ -97,7 +96,7 @@ void Zomboni::initSpecialDieAnimation()
 // Update every frame
 void Zomboni::update(float delta)
 {
-    if (is_dead || _isDying)
+    if (is_dead || is_dying)
         return;
 
     float dx = current_speed * delta;
@@ -113,18 +112,13 @@ void Zomboni::update(float delta)
         spawnIce();   // Lay a piece of ice
     }
 
-    if (newX < -100)
+    if (is_eating)
     {
-        CCLOG("Zombie reached the house!");
-    }
-
-    if (_isEating)
-    {
-        if(_targetPlant && !_targetPlant->isDead())
+        if(target_plant && !target_plant->isDead())
         {
-            _targetPlant->takeDamage(10000.0f);
-            _isEating = false;
-            _targetPlant = nullptr;
+            target_plant->takeDamage(10000.0f);
+            is_eating = false;
+            target_plant = nullptr;
             this->current_speed = MOVE_SPEED;
         }
     }
@@ -150,7 +144,7 @@ void Zomboni::setAnimationForState()
         auto fadeOut = FadeOut::create(0.5f);
         auto markDead = CallFunc::create([this]() {
             is_dead = true;
-            _isDying = false;
+            is_dying = false;
             CCLOG("Zombie death animation finished, marked as dead.");
             });
         auto sequence = Sequence::create(fadeOut, markDead, nullptr);
@@ -159,13 +153,13 @@ void Zomboni::setAnimationForState()
     }
     case ZombieState::SPECIAL:
         CCLOG("settting special animation");
-        cocos2d::AudioEngine::play2d("Explosion.mp3");
         this->stopAllActions();
-        this->_isDying = true;
+        this->is_dying = true;
         this->runAction(Sequence::create(_specialDieAction, CallFunc::create([this]() {
-            _isDying = true;
+            is_dying = true;
             this->setState(static_cast<int>(ZombieState::DYING));
             }),nullptr));
+        AudioEngine::play2d("Explosion.mp3");
         break;
     default:
         break;

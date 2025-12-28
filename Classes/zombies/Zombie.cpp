@@ -36,7 +36,7 @@ void Zombie::setState(int newState)
 // Take damage
 void Zombie::takeDamage(float damage)
 {
-    if (is_dead || _isDying)
+    if (is_dead || is_dying)
     {
         return;
     }
@@ -49,11 +49,11 @@ void Zombie::takeDamage(float damage)
         current_health = 0;
         
         // Mark as dying (playing death animation)
-        _isDying = true;
+        is_dying = true;
         
         // CRITICAL: Clear target plant pointer to prevent dangling pointer access
-        _targetPlant = nullptr;
-        _isEating = false;
+        target_plant = nullptr;
+        is_eating = false;
         
         setState(0);
     }
@@ -63,7 +63,7 @@ void Zombie::takeDamage(float damage)
 // Check and handle plant encounters
 void Zombie::encounterPlant(const std::vector<Plant*>& plants)
 {
-    if (_isEating || is_dead || _isDying) return;
+    if (is_eating || is_dead || is_dying) return;
 
     for (auto plant : plants)
     {
@@ -87,8 +87,8 @@ void Zombie::encounterPlant(const std::vector<Plant*>& plants)
 // Start eating a plant
 void Zombie::startEating(Plant* plant)
 {
-    _isEating = true;
-    _targetPlant = plant;
+    is_eating = true;
+    target_plant = plant;
     current_speed = 0;
     setState(2);
     CCLOG("Zombie start eating plant!");
@@ -98,32 +98,35 @@ void Zombie::startEating(Plant* plant)
 // Called when plant dies
 void Zombie::onPlantDied()
 {
-    _isEating = false;
+    is_eating = false;
     current_speed = MOVE_SPEED;
-    _targetPlant = nullptr;
+    target_plant = nullptr;
     setState(1);
     CCLOG("Zombie resume walking");
 }
 
+// update
 void Zombie::update(float delta)
 {
-    if (is_dead || _isDying)
+    if (is_dead || is_dying)
         return;   
-    if (_isEating)
+    if (is_eating)
         updateEating(delta);
     else 
         updateMoving(delta);      
 }
 
+// update for moving state
 void Zombie::updateMoving(float delta)
 {
     float newX = this->getPositionX() - current_speed * delta;
     this->setPositionX(newX);
 }
 
+// update for eating state
 void Zombie::updateEating(float delta)
 {
-    if (!_targetPlant || _targetPlant->isDead()) {
+    if (!target_plant || target_plant->isDead()) {
         onPlantDied();
         return;
     }
@@ -131,12 +134,12 @@ void Zombie::updateEating(float delta)
     // If eating, deal damage periodically
     if (accumulated_time >= ATTACK_INTERVAL)
     {
-        _targetPlant->takeDamage(ATTACK_DAMAGE);
+        target_plant->takeDamage(ATTACK_DAMAGE);
         cocos2d::AudioEngine::play2d("zombie_eating.mp3");
         accumulated_time = 0.0f;
 
         // Check if plant died
-        if (_targetPlant->isDead())
+        if (target_plant->isDead())
         {
             cocos2d::AudioEngine::play2d("zombie_gulp.mp3");
             onPlantDied();

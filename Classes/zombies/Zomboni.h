@@ -107,8 +107,7 @@ protected:
     // Animation actions
     cocos2d::RepeatForever* _driveAction;
     cocos2d::Animate* _specialDieAction;
-
+    
     // Mark if this zomboni has been attacked by spikeweed to prevent multiple damage
     bool _hasBeenAttackedBySpike;
-    
 };
